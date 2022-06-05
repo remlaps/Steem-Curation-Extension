@@ -4,6 +4,7 @@ const highLight = () => {
 	
 	var curatorBackgroundColor;
 	const listItem = document.querySelectorAll('li');
+	console.log("Highlight()");
 
 	for (let i=listItem.length-1; i>=0; i--) {
 		if ( listItem[i].textContent.match('null: .*%' ) && listItem[i].textContent.match('Promotion Cost .*\$') ) {
@@ -60,21 +61,12 @@ const highLight = () => {
 }
 
 highLight();
-window.addEventListener('click', () => {
-	console.log("Load event observed");
-	highLight();
-});
-window.addEventListener('DOMContentLoaded', 
-() => {
-	console.log("Load event observed");
-	highLight();
-});
 window.addEventListener('load', () => {
 	console.log("Load event observed");
 	highLight();
 });
 window.addEventListener('scroll', () => {
 	console.log("Scroll event observed");
-   highLight();
+	highLight();
 });
 console.log("The extension is done.");
