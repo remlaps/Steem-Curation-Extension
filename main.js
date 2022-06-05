@@ -60,13 +60,21 @@ const highLight = () => {
 }
 
 highLight();
-window.addEventListener('scroll', () => {
-	console.log("Scroll event observed");
-   highLight();
+window.addEventListener('click', () => {
+	console.log("Load event observed");
+	highLight();
+});
+window.addEventListener('DOMContentLoaded', 
+() => {
+	console.log("Load event observed");
+	highLight();
 });
 window.addEventListener('load', () => {
 	console.log("Load event observed");
 	highLight();
 });
-
+window.addEventListener('scroll', () => {
+	console.log("Scroll event observed");
+   highLight();
+});
 console.log("The extension is done.");
