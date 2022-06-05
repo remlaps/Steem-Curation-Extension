@@ -1,0 +1,11 @@
+{
+  "manifest_version":3,
+  "version":"0.0.2",
+  "name":"Barebone Curation Extension for Steem",
+  "content_scripts":[
+    {
+     "matches":["https://steemit.com/*", "https://steemitdev.com/*"],
+     "js":["main.js"]
+    }
+  ]
+}
