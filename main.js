@@ -166,12 +166,22 @@ function getAddress(elem) {
     return link ? link : null;
 }
 
-// highLight();
+highLight();
 window.addEventListener('scroll', () => {
     highLight();
 });
 window.addEventListener('load', () => {
     highLight();
+});
+
+window.addEventListener('click', () => {
+	console.log("Load event observed");
+	highLight();
+});
+window.addEventListener('DOMContentLoaded', 
+() => {
+	console.log("Load event observed");
+	highLight();
 });
 
 console.log("The extension is done.");
