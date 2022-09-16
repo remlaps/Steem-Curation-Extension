@@ -81,7 +81,7 @@ function getColorBurnPost ( nullPct) {
     return curatorBackgroundColor;
 }
 
-function getColorPromotedPost ( promotAmount ) {
+function getColorPromotedPost ( promoAmount ) {
     if ( promoAmount > 0 && promoAmount < 0.26 ) {
         curatorBackgroundColor = "paleturquoise";
     } else if ( promoAmount < 0.51 ) {
@@ -90,6 +90,8 @@ function getColorPromotedPost ( promotAmount ) {
         curatorBackgroundColor = "turquoise";
     } else if ( promoAmount > 0 ) {
         curatorBackgroundColor = "lightseagreen";
+    }
+    return curatorBackgroundColor;
 }
 
 // load transfers to null and prepare promotedPosts for further use
