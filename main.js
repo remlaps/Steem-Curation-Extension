@@ -5,8 +5,8 @@ const urlRequest = "https://sds.steemworld.org/transfers_api/getTransfersByTypeT
 /*
 // functions:
 // - highLight - Changes background color according to size of @null beneficiary or promotion amount
-// - getColorBurnPost - Sets color gradient for posts with @null beneficiaries and no post promotion
-// - getColorPromotedPost - Sets color gradient for posts with /promoted post promotion but not @null beneficiary
+// - getColorBurnPost - Takes beneficiary % as an argument and returns color gradient for posts with @null beneficiaries and no post promotion
+// - getColorPromotedPost - Takes promotion cost as an argument and returns color gradient for posts with post promotion but not @null beneficiary
 // - prepareData - takes list of trnansfers as argument, returns number of total promotions and promotions by author
 // - getAuthorPost - takes a memo string as an argument, returns the author of a post
 // - addText - takes a promoted post object as an argument from the web page and adds the number of promtoions and whether by self.
@@ -15,7 +15,6 @@ const urlRequest = "https://sds.steemworld.org/transfers_api/getTransfersByTypeT
 // - getAddress - takes a promoted post document object as an argument, returns the URL of a Steemit post
 */ 
 const highLight = () => {
-
     var curatorBackgroundColor;
     const listItem = document.querySelectorAll('li');
 
