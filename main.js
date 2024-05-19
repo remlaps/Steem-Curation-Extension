@@ -10,6 +10,7 @@ const highLight = () => {
     for (let i=listItem.length-1; i>=0; i--) {
         if ( listItem[i].textContent.match('null: .*%' ) && listItem[i].textContent.match('Promotion Cost .*\$') ) {
             console.log("Found a /promoted post in #burnsteem25 (outer block)");
+			console.log("Word count: ", listItem[i].body.str(" ").length());
             curatorBackgroundColor = '#1E90FF';
             listItem[i].style['background-color'] = curatorBackgroundColor;
         } else if ( listItem[i].textContent.match('null: .*%' )) {
