@@ -23,7 +23,7 @@ const highLight = () => {
 
         // Check for @null beneficiary and /promoted post promotion.
         if ( listItem[i].textContent.match('null: .*%' ) && listItem[i].textContent.match('Promotion Cost .*\$') ) {
-            // console.log("Found a /promoted post in #burnsteem25 (outer block)");
+            console.log("Found a /promoted post in #burnsteem25 (outer block)");
             curatorBackgroundColor = '#1E90FF';
             listItem[i].style['background-color'] = curatorBackgroundColor;
 

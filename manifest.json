@@ -4,7 +4,7 @@
   "name":"Steem Curation Extension",
   "content_scripts":[
     {
-     "matches":["https://steemit.com/*", "https://steemitdev.com/*", "http://localhost:443/*", "http://localhost:7788/*", "https://condenser-web-r64jisicxa-od.a.run.app/*"],
+     "matches":["https://steemit.com/*", "https://steemitdev.com/*", "https://condenser-web-r64jisicxa-od.a.run.app/*"],
      "js":["main.js"]
     }
   ],
