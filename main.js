@@ -7,9 +7,9 @@ const urlRequest = "https://sds.steemworld.org/transfers_api/getTransfersByTypeT
 // - highLight - Changes background color according to size of @null beneficiary or promotion amount
 // - getColorBurnPost - Takes beneficiary % as an argument and returns color gradient for posts with @null beneficiaries and no post promotion
 // - getColorPromotedPost - Takes promotion cost as an argument and returns color gradient for posts with post promotion but not @null beneficiary
-// - prepareData - takes list of trnansfers as argument, returns number of total promotions and promotions by author
+// - prepareData - takes list of transfers as argument, returns number of total promotions and promotions by author
 // - getAuthorPost - takes a memo string as an argument, returns the author of a post
-// - addText - takes a promoted post object as an argument from the web page and adds the number of promtoions and whether by self.
+// - addText - takes a promoted post object as an argument from the web page and adds the number of promotions and whether by self.
 // - getPost - takes an address as a target, returns [author]/[permlink] if matched, otherwise returns null.
 // - regexMatch - Checks whether a web page post object matches a transfer memo and returns true/false.
 // - getAddress - takes a promoted post document object as an argument, returns the URL of a Steemit post
@@ -18,12 +18,12 @@ const highLight = () => {
     var curatorBackgroundColor;
     const listItem = document.querySelectorAll('li');
 
-    // Working from bottom to top (for outside to inside in document nesting)
+    // Working from high to low (for outside to inside in document nesting)
     for (let i=listItem.length-1; i>=0; i--) {
 
         // Check for @null beneficiary and /promoted post promotion.
         if ( listItem[i].textContent.match('null: .*%' ) && listItem[i].textContent.match('Promotion Cost .*\$') ) {
-            // console.log("Found a /promoted post in #burnsteem25 (outer block)");
+            console.log("Found a /promoted post in #burnsteem25 (outer block)");
             curatorBackgroundColor = '#1E90FF';
             listItem[i].style['background-color'] = curatorBackgroundColor;
 
@@ -196,6 +196,8 @@ function getAddress(elem) {
 }
 
 highLight();
+
+
 window.addEventListener('scroll', () => {
     highLight();
 });
