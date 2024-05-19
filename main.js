@@ -2,19 +2,39 @@ console.log("The extension is up and running");
 var promotedPosts = {}; // contains all transactions for promoted posts with accounts, count and whether self promoted
 const urlRequest = "https://sds.steemworld.org/transfers_api/getTransfersByTypeTo/transfer/null/time/DESC/250/0";
 
+/*
+// functions:
+// - highLight - Changes background color according to size of @null beneficiary or promotion amount
+// - getColorBurnPost - Takes beneficiary % as an argument and returns color gradient for posts with @null beneficiaries and no post promotion
+// - getColorPromotedPost - Takes promotion cost as an argument and returns color gradient for posts with post promotion but not @null beneficiary
+// - prepareData - takes list of transfers as argument, returns number of total promotions and promotions by author
+// - getAuthorPost - takes a memo string as an argument, returns the author of a post
+// - addText - takes a promoted post object as an argument from the web page and adds the number of promotions and whether by self.
+// - getPost - takes an address as a target, returns [author]/[permlink] if matched, otherwise returns null.
+// - regexMatch - Checks whether a web page post object matches a transfer memo and returns true/false.
+// - getAddress - takes a promoted post document object as an argument, returns the URL of a Steemit post
+*/ 
 const highLight = () => {
-
     var curatorBackgroundColor;
     const listItem = document.querySelectorAll('li');
 
+    // Working from high to low (for outside to inside in document nesting)
     for (let i=listItem.length-1; i>=0; i--) {
+
+        // Check for @null beneficiary and /promoted post promotion.
         if ( listItem[i].textContent.match('null: .*%' ) && listItem[i].textContent.match('Promotion Cost .*\$') ) {
+<<<<<<< HEAD
             console.log("Found a /promoted post in #burnsteem25 (outer block)");
 			console.log("Word count: ", listItem[i].body.str(" ").length());
+=======
+            // console.log("Found a /promoted post in #burnsteem25 (outer block)");
+>>>>>>> 1748dc6b416bd306c90ac1490acf21cc1687ae58
             curatorBackgroundColor = '#1E90FF';
             listItem[i].style['background-color'] = curatorBackgroundColor;
+
+        // Check for just @null beneficiary
         } else if ( listItem[i].textContent.match('null: .*%' )) {
-            console.log("#burnsteem25 outer match: ");
+            // console.log("#burnsteem25 outer match: ");
             if ( listItem[i].textContent.match('^null:.*\%') ) {
                 console.log("Found #burnsteem25");
                 var str = listItem[i].textContent;
@@ -22,19 +42,13 @@ const highLight = () => {
                     str.indexOf(" ") + 1,
                     str.lastIndexOf("%")
                 );
-                if ( nullPct > 0 && nullPct < 25 ) {
-                    curatorBackgroundColor = "coral";
-                } else if ( nullPct < 50 ) {
-                    curatorBackgroundColor = "orange";
-                } else if ( nullPct < 75 ) {
-                    curatorBackgroundColor = "darkorange";
-                } else if ( nullPct > 0 ) {
-                    curatorBackgroundColor = "orangered";
-                }
-            }       
+                curatorBackgroundColor = getColorBurnPost (nullPct);
+            }
             listItem[i].style['background-color'] = curatorBackgroundColor;
+
+        // Check for just /promoted post promotion
         } else if ( listItem[i].textContent.match('Promotion Cost .*\$') ) {
-            console.log("Found a /promoted post (outer block)");
+            // console.log("Found a /promoted post (outer block)");
 
             if ( listItem[i].textContent.match('^Promotion Cost .*\$$') ) {
                 console.log("Found a /promoted post");
@@ -44,17 +58,9 @@ const highLight = () => {
                     str.indexOf("$") + 1,
                     indexEnd
                 );
-                console.log ("Promotion amount: " + promoAmount);
+                // console.log ("Promotion amount: " + promoAmount);
 
-                if ( promoAmount > 0 && promoAmount < 0.26 ) {
-                    curatorBackgroundColor = "paleturquoise";
-                } else if ( promoAmount < 0.51 ) {
-                    curatorBackgroundColor = "aquamarine";
-                } else if ( promoAmount < 1.01 ) {
-                    curatorBackgroundColor = "turquoise";
-                } else if ( promoAmount > 0 ) {
-                    curatorBackgroundColor = "lightseagreen";
-                }
+                curatorBackgroundColor = getColorPromotedPost ( promoAmount );
 
                 // now edit the textContent
                 addText(listItem[i]);
@@ -64,6 +70,33 @@ const highLight = () => {
             listItem[i].style['background-color'] = "initial";
         }
     }
+}
+
+function getColorBurnPost ( nullPct) {
+
+    if ( nullPct > 0 && nullPct < 25 ) {
+        curatorBackgroundColor = "coral";
+    } else if ( nullPct < 50 ) {
+        curatorBackgroundColor = "orange";
+    } else if ( nullPct < 75 ) {
+        curatorBackgroundColor = "darkorange";
+    } else if ( nullPct > 0 ) {
+        curatorBackgroundColor = "orangered";
+    }
+    return curatorBackgroundColor;
+}
+
+function getColorPromotedPost ( promoAmount ) {
+    if ( promoAmount > 0 && promoAmount < 0.26 ) {
+        curatorBackgroundColor = "paleturquoise";
+    } else if ( promoAmount < 0.51 ) {
+        curatorBackgroundColor = "aquamarine";
+    } else if ( promoAmount < 1.01 ) {
+        curatorBackgroundColor = "turquoise";
+    } else if ( promoAmount > 0 ) {
+        curatorBackgroundColor = "lightseagreen";
+    }
+    return curatorBackgroundColor;
 }
 
 // load transfers to null and prepare promotedPosts for further use
@@ -121,7 +154,7 @@ function addText(listItem) {
     if ( !listItem.textContent.includes('User') ) {
     // get the postid
         let address = getAddress(listItem);
-        // console.log("Address: " + address);
+        console.log("Address: " + address);
         if ( address !== null ) {
             let key = getPost(address);
             // console.log("Key: " + key);
@@ -168,6 +201,8 @@ function getAddress(elem) {
 }
 
 highLight();
+
+
 window.addEventListener('scroll', () => {
     highLight();
 });
@@ -176,12 +211,11 @@ window.addEventListener('load', () => {
 });
 
 window.addEventListener('click', () => {
-	console.log("Load event observed");
 	highLight();
 });
+
 window.addEventListener('DOMContentLoaded', 
 () => {
-	console.log("Load event observed");
 	highLight();
 });
 
