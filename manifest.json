@@ -1,11 +1,30 @@
 {
-  "manifest_version":3,
-  "version":"0.0.6",
-  "name":"Steem Curation Extension",
-  "content_scripts":[
+  "manifest_version": 3,
+  "name": "Steem Curation Extension",
+  "version": "20240630",
+  "description": "A browser extension for Steem curators.",
+  "permissions": [
+    "activeTab"
+  ],
+  "background": {
+    "service_worker": "background/background.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
     {
-     "matches":["https://steemit.com/*", "https://steemitdev.com/*", "https://condenser-web-r64jisicxa-od.a.run.app/*"],
-     "js":["main.js"]
+      "matches": [
+        "https://steemit.com/*",
+        "https://steemitdev.com/*",
+        "https://condenser-web-r64jisicxa-od.a.run.app/*"
+      ],
+      "js": ["content/main.js"]
     }
   ],
   "host_permissions": [
