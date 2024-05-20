@@ -1,0 +1,39 @@
+<html>
+<head>
+  <title>Steem Follower Checker</title>
+  <style>
+    #results p {
+      margin: 0;
+      padding: 5px 0;
+    }
+    /* Define the size of the popup window */
+    body {
+      width: 300px; /* Adjust width as needed */
+      /* height: 200px;  Adjust height as needed */
+    }
+    .container {
+      display: flex;
+      align-items: center;
+    }
+    .icon-container {
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon-container">
+      <img src="../icons/icon128.png" alt="Icon" width="64" height="64">
+    </div>
+    <div>
+      <label for="accountName">Steem Account Name:</label>
+      <input type="text" id="accountName" name="accountName">
+      <button id="checkFollowers">Check Followers</button>
+    </div>
+  </div>
+  <div id="progress" style="margin-top: 10px;"></div>
+  <div id="results" style="margin-top: 10px;"></div>
+  <p>Version: <span id="version"></span></p>
+  <script src="popup.js"></script>
+</body>
+</html>
