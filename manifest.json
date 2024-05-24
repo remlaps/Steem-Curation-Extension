@@ -1,6 +1,6 @@
 {
   "manifest_version":3,
-  "version":"0.0.6",
+  "version":"20240524",
   "name":"Steem Curation Extension",
   "content_scripts":[
     {
