@@ -45,6 +45,7 @@ const highLight = () => {
             listItem[i].style['background-color'] = "initial";
         }
     }
+    modifyUserElement();
 }
 
 function getColorBurnPost(nullPct) {
@@ -201,30 +202,29 @@ async function getVotingPower(username) {
 }
 
 // Function to create and show tooltip
-function showTooltip(element, text) {
-    const tooltip = document.createElement('div');
-    tooltip.textContent = text;
-    tooltip.style.cssText = `
-      position: absolute;
-      background: #333;
-      color: white;
-      padding: 5px;
-      border-radius: 3px;
-      font-size: 12px;
-      z-index: 1000;
-    `;
+// function showTooltip(element, text) {
+//     const tooltip = document.createElement('div');
+//     tooltip.textContent = text;
+//     tooltip.style.cssText = `
+//       position: absolute;
+//       background: #333;
+//       color: white;
+//       padding: 5px;
+//       border-radius: 3px;
+//       font-size: 12px;
+//       z-index: 1000;
+//     `;
 
-    const rect = element.getBoundingClientRect();
-    tooltip.style.left = `${rect.left}px`;
-    tooltip.style.top = `${rect.bottom + 5}px`;
+//     const rect = element.getBoundingClientRect();
+//     tooltip.style.left = `${rect.left}px`;
+//     tooltip.style.top = `${rect.bottom + 5}px`;
 
-    document.body.appendChild(tooltip);
-    return tooltip;
-}
+//     document.body.appendChild(tooltip);
+//     return tooltip;
+// }
 
-// Function to find and modify the specific element
+// Functions to find and modify the specific element and handle the tool tip
 let activeTooltip = null;
-let tooltipTimeout = null;
 
 function modifyUserElement() {
     const elements = document.querySelectorAll('li.title');
@@ -235,6 +235,9 @@ function modifyUserElement() {
             element.addEventListener('mouseleave', handleMouseLeave);
         }
     });
+
+    // Add click event listener to the document
+    document.addEventListener('click', handleDocumentClick, true);
 }
 
 async function handleMouseEnter(event) {
@@ -243,27 +246,27 @@ async function handleMouseEnter(event) {
     const votingPower = await getVotingPower(username);
     
     if (votingPower !== undefined) {
-        // Clear any existing timeout
-        if (tooltipTimeout) {
-            clearTimeout(tooltipTimeout);
-        }
-        
         // Remove any existing tooltip
-        if (activeTooltip) {
-            document.body.removeChild(activeTooltip);
-        }
+        removeTooltip();
         
         activeTooltip = showTooltip(element, `Voting power: ${votingPower / 100}%`);
     }
 }
 
 function handleMouseLeave() {
-    tooltipTimeout = setTimeout(() => {
-        if (activeTooltip) {
-            document.body.removeChild(activeTooltip);
-            activeTooltip = null;
-        }
-    }, 300); // 300ms delay, adjust as needed
+    removeTooltip();
+}
+
+function handleDocumentClick(event) {
+    // Always remove the tooltip on any click
+    removeTooltip();
+}
+
+function removeTooltip() {
+    if (activeTooltip && document.body.contains(activeTooltip)) {
+        document.body.removeChild(activeTooltip);
+        activeTooltip = null;
+    }
 }
 
 function showTooltip(element, text) {
@@ -285,11 +288,4 @@ function showTooltip(element, text) {
 
     document.body.appendChild(tooltip);
     return tooltip;
-}
-
-// Run the modification function when the DOM is fully loaded
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', modifyUserElement);
-} else {
-    modifyUserElement();
 }
