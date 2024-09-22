@@ -223,30 +223,68 @@ function showTooltip(element, text) {
 }
 
 // Function to find and modify the specific element
+let activeTooltip = null;
+let tooltipTimeout = null;
+
 function modifyUserElement() {
     const elements = document.querySelectorAll('li.title');
     console.dir(elements);
     elements.forEach(element => {
-        // This magic "if" statement came from Claude.  Looking for the list item
-        // with the userid in the title.  I guess it's just a lucky coincidence that
-        // there's only one "li" using "className "title".
         if (element.textContent.trim() === element.childNodes[0].textContent.trim()) {
-            element.addEventListener('mouseover', async (event) => {
-                const username = element.textContent.trim();
-                const votingPower = await getVotingPower(username);
-                if (votingPower !== undefined) {
-                    const tooltip = showTooltip(element, `Voting power: ${votingPower / 100}%`);
-
-                    const handleMouseLeave = () => {
-                        document.body.removeChild(tooltip);
-                        element.removeEventListener('mouseleave', handleMouseLeave);
-                    };
-
-                    element.addEventListener('mouseleave', handleMouseLeave);
-                }
-            });
+            element.addEventListener('mouseenter', handleMouseEnter);
+            element.addEventListener('mouseleave', handleMouseLeave);
         }
     });
+}
+
+async function handleMouseEnter(event) {
+    const element = event.target;
+    const username = element.textContent.trim();
+    const votingPower = await getVotingPower(username);
+    
+    if (votingPower !== undefined) {
+        // Clear any existing timeout
+        if (tooltipTimeout) {
+            clearTimeout(tooltipTimeout);
+        }
+        
+        // Remove any existing tooltip
+        if (activeTooltip) {
+            document.body.removeChild(activeTooltip);
+        }
+        
+        activeTooltip = showTooltip(element, `Voting power: ${votingPower / 100}%`);
+    }
+}
+
+function handleMouseLeave() {
+    tooltipTimeout = setTimeout(() => {
+        if (activeTooltip) {
+            document.body.removeChild(activeTooltip);
+            activeTooltip = null;
+        }
+    }, 300); // 300ms delay, adjust as needed
+}
+
+function showTooltip(element, text) {
+    const tooltip = document.createElement('div');
+    tooltip.textContent = text;
+    tooltip.style.cssText = `
+        position: absolute;
+        background: #333;
+        color: white;
+        padding: 5px;
+        border-radius: 3px;
+        font-size: 12px;
+        z-index: 1000;
+    `;
+
+    const rect = element.getBoundingClientRect();
+    tooltip.style.left = `${rect.left}px`;
+    tooltip.style.top = `${rect.bottom + 5}px`;
+
+    document.body.appendChild(tooltip);
+    return tooltip;
 }
 
 // Run the modification function when the DOM is fully loaded
