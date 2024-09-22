@@ -14,7 +14,8 @@ This functionality helps web site visitors to identify posts that may have recei
 ### Currently Supported Sites
 - `https://steemit.com/*`
 - `https://steemitdev.com/*`
-- `https://condenser-web-r64jisicxa-od.a.run.app/*`
+- `https://condenser-1077810928621.us-east5.run.app/*`
+- `https://steemit.steemnet.org/*`
 
 ## Installation Instructions
 
