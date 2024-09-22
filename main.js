@@ -2,6 +2,7 @@ console.log("The extension is up and running");
 
 var promotedPosts = {}; // contains all transactions for promoted posts with accounts, count, and whether self-promoted
 const urlRequest = "https://sds.steemworld.org/transfers_api/getTransfersByTypeTo/transfer/null/time/DESC/250/0";
+const steemApi = "https://api.moecki.online";
 
 const highLight = () => {
     var curatorBackgroundColor;
@@ -179,3 +180,78 @@ window.addEventListener('click', () => {
 });
 
 console.log("The extension is done.");
+
+// Function to get voting power
+async function getVotingPower(username) {
+    const response = await fetch(`${steemApi}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'condenser_api.get_accounts',
+            params: [[username]],
+            id: 1
+        })
+    });
+
+    const data = await response.json();
+    return data.result[0]?.voting_power;
+}
+
+// Function to create and show tooltip
+function showTooltip(element, text) {
+    const tooltip = document.createElement('div');
+    tooltip.textContent = text;
+    tooltip.style.cssText = `
+      position: absolute;
+      background: #333;
+      color: white;
+      padding: 5px;
+      border-radius: 3px;
+      font-size: 12px;
+      z-index: 1000;
+    `;
+
+    const rect = element.getBoundingClientRect();
+    tooltip.style.left = `${rect.left}px`;
+    tooltip.style.top = `${rect.bottom + 5}px`;
+
+    document.body.appendChild(tooltip);
+    return tooltip;
+}
+
+// Function to find and modify the specific element
+function modifyUserElement() {
+    const elements = document.querySelectorAll('li.title');
+    console.dir(elements);
+    elements.forEach(element => {
+        // This magic "if" statement came from Claude.  Looking for the list item
+        // with the userid in the title.  I guess it's just a lucky coincidence that
+        // there's only one "li" using "className "title".
+        if (element.textContent.trim() === element.childNodes[0].textContent.trim()) {
+            element.addEventListener('mouseover', async (event) => {
+                const username = element.textContent.trim();
+                const votingPower = await getVotingPower(username);
+                if (votingPower !== undefined) {
+                    const tooltip = showTooltip(element, `Voting power: ${votingPower / 100}%`);
+
+                    const handleMouseLeave = () => {
+                        document.body.removeChild(tooltip);
+                        element.removeEventListener('mouseleave', handleMouseLeave);
+                    };
+
+                    element.addEventListener('mouseleave', handleMouseLeave);
+                }
+            });
+        }
+    });
+}
+
+// Run the modification function when the DOM is fully loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', modifyUserElement);
+} else {
+    modifyUserElement();
+}

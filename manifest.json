@@ -1,14 +1,19 @@
 {
   "manifest_version":3,
-  "version":"20240524",
+  "version":"20240922",
   "name":"Steem Curation Extension",
   "content_scripts":[
     {
-     "matches":["https://steemit.com/*", "https://steemitdev.com/*", "https://condenser-web-r64jisicxa-od.a.run.app/*"],
+     "matches":["https://steemit.com/*", 
+     "https://steemitdev.com/*", 
+     "https://condenser-1077810928621.us-east5.run.app/*", 
+     "https://steemit.steemnet.org/*"],
      "js":["main.js"]
     }
   ],
   "host_permissions": [
-    "https://sds.steemworld.org/*"
+    "https://sds.steemworld.org/*",
+    "https://api.moecki.online/*",
+    "https://api.steemit.com/*"
   ]
 }
