@@ -2,7 +2,7 @@ console.log("The extension is up and running");
 
 var promotedPosts = {}; // contains all transactions for promoted posts with accounts, count, and whether self-promoted
 const urlRequest = "https://sds.steemworld.org/transfers_api/getTransfersByTypeTo/transfer/null/time/DESC/250/0";
-const steemApi = "https://api.moecki.online";
+const steemApi = "https://api.steemyy.com";
 
 const highLight = () => {
     var curatorBackgroundColor;
