@@ -273,7 +273,7 @@ function showTooltip(element, text) {
     const tooltip = document.createElement('div');
     tooltip.textContent = text;
     tooltip.style.cssText = `
-        position: absolute;
+        position: fixed;
         background: #333;
         color: white;
         padding: 5px;
