@@ -182,24 +182,50 @@ window.addEventListener('click', () => {
 
 console.log("The extension is done.");
 
-// Function to get voting power
-async function getVotingPower(username) {
-    const response = await fetch(`${steemApi}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            jsonrpc: '2.0',
-            method: 'condenser_api.get_accounts',
-            params: [[username]],
-            id: 1
-        })
-    });
+// Function to get voting power and estimate regeneration after last vote.
+async function getVotingPower(userName) {
+    try {
+        // Fetch voting power and last vote time from the Steem API
+        const response = await fetch(steemApi, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                method: 'condenser_api.get_accounts',
+                params: [[userName]],
+                id: 1,
+            }),
+        });
 
-    const data = await response.json();
-    return data.result[0]?.voting_power;
+        const data = await response.json();
+        const votingPower = data.result[0].voting_power;
+        const lastVoteTimeGMT = data.result[0].last_vote_time;
+
+        // Calculate vote regeneration
+        const nowDateUTC = new Date().toISOString();
+        const lastVoteTime = new Date(lastVoteTimeGMT + 'Z');
+        const timeDiff = new Date(nowDateUTC).getTime() - lastVoteTime.getTime();
+        const daysElapsed = timeDiff / (1000 * 60 * 60 * 24);
+        const voteRegenerationRate = 20; // 20% per day
+        const voteRegeneration = 100 * daysElapsed * voteRegenerationRate;
+
+        // Calculate voting power as a percentage
+        const maxVotingPower = 100;
+        const votingPowerPercentage =
+            ((votingPower + voteRegeneration) / maxVotingPower) > 100
+                ? 100
+                : ((votingPower + voteRegeneration) / maxVotingPower);
+
+        return votingPowerPercentage.toFixed(2);
+    } catch (error) {
+        console.error('Error fetching voting data:', error);
+        throw error;
+    }
 }
+  
+
 
 // Function to create and show tooltip
 // function showTooltip(element, text) {
@@ -249,7 +275,7 @@ async function handleMouseEnter(event) {
         // Remove any existing tooltip
         removeTooltip();
         
-        activeTooltip = showTooltip(element, `Voting power: ${votingPower / 100}%`);
+        activeTooltip = showTooltip(element, `Voting power: ${votingPower}%`);
     }
 }
 
