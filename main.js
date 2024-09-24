@@ -1,7 +1,8 @@
 console.log("The extension is up and running");
 
 var promotedPosts = {}; // contains all transactions for promoted posts with accounts, count, and whether self-promoted
-const urlRequest = "https://sds.steemworld.org/transfers_api/getTransfersByTypeTo/transfer/null/time/DESC/250/0";
+const urlRequestTransfers = "https://sds.steemworld.org/transfers_api/getTransfersByTypeTo/transfer/null/time/DESC/250/0";
+const urlRequestAccount = "https://sds.steemworld.org/accounts_api/getAccountExt/";
 const steemApi = "https://api.steemyy.com";
 
 const highLight = () => {
@@ -74,7 +75,7 @@ function getColorPromotedPost(promoAmount) {
     return curatorBackgroundColor;
 }
 
-fetch(urlRequest).then(function (response) {
+fetch(urlRequestTransfers).then(function (response) {
     return response.json();
 }).then(function (data) {
     prepareData(data);
@@ -184,21 +185,10 @@ console.log("The extension is done.");
 
 // Function to get voting power
 async function getVotingPower(username) {
-    const response = await fetch(`${steemApi}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            jsonrpc: '2.0',
-            method: 'condenser_api.get_accounts',
-            params: [[username]],
-            id: 1
-        })
-    });
-
+    const urlRequestAccountFull = `${urlRequestAccount}${username}/null/upvote_mana_percent`;
+    const response = await fetch(urlRequestAccountFull);
     const data = await response.json();
-    return data.result[0]?.voting_power;
+    return data.result?.upvote_mana_percent;
 }
 
 // Function to create and show tooltip
@@ -224,20 +214,28 @@ async function getVotingPower(username) {
 // }
 
 // Functions to find and modify the specific element and handle the tool tip
-let activeTooltip = null;
+// let activeTooltip = null;
 
 function modifyUserElement() {
-    const elements = document.querySelectorAll('li.title');
-    console.dir(elements);
-    elements.forEach(element => {
+    const usermenuDropdown = document.querySelector('.DropdownMenu.Header__usermenu');
+    usermenuDropdown.addEventListener('click', handleProfileDropdownClick);
+}
+
+async function handleProfileDropdownClick(event) {
+    const titleElements = document.querySelectorAll('li.title');
+    let accountElement;
+
+    titleElements.forEach(async element => {
         if (element.textContent.trim() === element.childNodes[0].textContent.trim()) {
-            element.addEventListener('mouseenter', handleMouseEnter);
-            element.addEventListener('mouseleave', handleMouseLeave);
+            accountElement = element;
         }
     });
-
-    // Add click event listener to the document
-    document.addEventListener('click', handleDocumentClick, true);
+    if (accountElement) {
+        let elementText = accountElement.textContent.trim();
+        const username = elementText.split(" ")[0] 
+        const votingPower = await getVotingPower(username);
+        accountElement.textContent = `${username} (VP: ${votingPower}%)`;
+    }
 }
 
 async function handleMouseEnter(event) {
@@ -289,3 +287,4 @@ function showTooltip(element, text) {
     document.body.appendChild(tooltip);
     return tooltip;
 }
+
