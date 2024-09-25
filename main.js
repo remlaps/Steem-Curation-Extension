@@ -181,6 +181,7 @@ window.addEventListener('click', () => {
     highLight();
 });
 
+
 console.log("The extension is done.");
 
 // Function to get voting power
@@ -191,34 +192,13 @@ async function getVotingPower(username) {
     return data.result?.upvote_mana_percent;
 }
 
-// Function to create and show tooltip
-// function showTooltip(element, text) {
-//     const tooltip = document.createElement('div');
-//     tooltip.textContent = text;
-//     tooltip.style.cssText = `
-//       position: absolute;
-//       background: #333;
-//       color: white;
-//       padding: 5px;
-//       border-radius: 3px;
-//       font-size: 12px;
-//       z-index: 1000;
-//     `;
-
-//     const rect = element.getBoundingClientRect();
-//     tooltip.style.left = `${rect.left}px`;
-//     tooltip.style.top = `${rect.bottom + 5}px`;
-
-//     document.body.appendChild(tooltip);
-//     return tooltip;
-// }
-
-// Functions to find and modify the specific element and handle the tool tip
-// let activeTooltip = null;
-
 function modifyUserElement() {
     const usermenuDropdown = document.querySelector('.DropdownMenu.Header__usermenu');
-    usermenuDropdown.addEventListener('click', handleProfileDropdownClick);
+    if ( usermenuDropdown ) {
+        usermenuDropdown.addEventListener('click', handleProfileDropdownClick);
+    } else {
+        console.debug ( "Dropdown menu not available.");
+    }
 }
 
 async function handleProfileDropdownClick(event) {
@@ -237,54 +217,3 @@ async function handleProfileDropdownClick(event) {
         accountElement.textContent = `${username} (VP: ${votingPower}%)`;
     }
 }
-
-async function handleMouseEnter(event) {
-    const element = event.target;
-    const username = element.textContent.trim();
-    const votingPower = await getVotingPower(username);
-    
-    if (votingPower !== undefined) {
-        // Remove any existing tooltip
-        removeTooltip();
-        
-        activeTooltip = showTooltip(element, `Voting power: ${votingPower / 100}%`);
-    }
-}
-
-function handleMouseLeave() {
-    removeTooltip();
-}
-
-function handleDocumentClick(event) {
-    // Always remove the tooltip on any click
-    removeTooltip();
-}
-
-function removeTooltip() {
-    if (activeTooltip && document.body.contains(activeTooltip)) {
-        document.body.removeChild(activeTooltip);
-        activeTooltip = null;
-    }
-}
-
-function showTooltip(element, text) {
-    const tooltip = document.createElement('div');
-    tooltip.textContent = text;
-    tooltip.style.cssText = `
-        position: fixed;
-        background: #333;
-        color: white;
-        padding: 5px;
-        border-radius: 3px;
-        font-size: 12px;
-        z-index: 1000;
-    `;
-
-    const rect = element.getBoundingClientRect();
-    tooltip.style.left = `${rect.left - 120}px`;
-    tooltip.style.top = `${rect.top + 10 }px`;
-
-    document.body.appendChild(tooltip);
-    return tooltip;
-}
-
