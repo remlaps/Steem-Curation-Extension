@@ -233,6 +233,16 @@ async function getVotingPower(username) {
     return data.result?.upvote_mana_percent;
 }
 
+// Should this be repeated with a timer?
+fetch(urlRequestTransfers).then(function (response) {
+    return response.json();
+}).then(function (data) {
+    prepareData(data);
+    highLight();
+}).catch(function (error) {
+    console.log("error: " + error);
+});
+
 /*
  * Execution and event handling
  */
@@ -254,15 +264,5 @@ window.addEventListener('click', () => {
 modifyUserElement();        // Click handler to add voting power to dropdown menu.
 observeDropdownCreation();  // Mutation observer for new dropdown menu after login.
                             // Don't run this inside of highlight()!!!
-
-// Should this be repeated with a timer?
-fetch(urlRequestTransfers).then(function (response) {
-    return response.json();
-}).then(function (data) {
-    prepareData(data);
-    highLight();
-}).catch(function (error) {
-    console.log("error: " + error);
-});
 
 console.log("The extension is done.");
