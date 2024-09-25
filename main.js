@@ -3,8 +3,19 @@ console.log("The extension is up and running");
 var promotedPosts = {}; // contains all transactions for promoted posts with accounts, count, and whether self-promoted
 const urlRequestTransfers = "https://sds.steemworld.org/transfers_api/getTransfersByTypeTo/transfer/null/time/DESC/250/0";
 const urlRequestAccount = "https://sds.steemworld.org/accounts_api/getAccountExt/";
-const steemApi = "https://api.steemyy.com";
+const steemApi = "https://api.steemyy.com";  // no longer used
 
+
+/*
+ *  The main logic is in highLight() and modifyUserElement()
+ * o highlight()
+ * - Add highlighting to posts with post promotion or @null beneficiaries.
+ * - Add highlighting to the burn & promotion settings when post-> value item is clicked.
+ * 
+ * o modifyUserElement()
+ * - Add a click handler to display the current voting power when the dropdown menu is clicked.
+ *
+ */
 const highLight = () => {
     var curatorBackgroundColor;
     const listItem = document.querySelectorAll('li');
@@ -46,9 +57,18 @@ const highLight = () => {
             listItem[i].style['background-color'] = "initial";
         }
     }
-    modifyUserElement();
 }
 
+function modifyUserElement() {
+    const usermenuDropdown = document.querySelector('.DropdownMenu.Header__usermenu');
+    if ( usermenuDropdown ) {
+        usermenuDropdown.addEventListener('click', handleProfileDropdownClick);
+    }
+}
+
+/*
+ * helper functions
+ */
 function getColorBurnPost(nullPct) {
     if (nullPct > 0 && nullPct < 25) {
         curatorBackgroundColor = "coral";
@@ -74,15 +94,6 @@ function getColorPromotedPost(promoAmount) {
     }
     return curatorBackgroundColor;
 }
-
-fetch(urlRequestTransfers).then(function (response) {
-    return response.json();
-}).then(function (data) {
-    prepareData(data);
-    highLight();
-}).catch(function (error) {
-    console.log("error: " + error);
-});
 
 function prepareData(data) {
     if (data) {
@@ -140,7 +151,7 @@ function addText(listItem) {
     if (added) {
         console.log("User added");
     } else {
-        console.log("Adding User went wrong");
+        console.log("Adding User went wrong");  // else branch not needed(?)
     }
 }
 
@@ -167,40 +178,6 @@ function getAddress(elem) {
     return link ? link : null;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    highLight();
-});
-
-window.addEventListener('scroll', () => {
-    highLight();
-});
-window.addEventListener('load', () => {
-    highLight();
-});
-window.addEventListener('click', () => {
-    highLight();
-});
-
-
-console.log("The extension is done.");
-
-// Function to get voting power
-async function getVotingPower(username) {
-    const urlRequestAccountFull = `${urlRequestAccount}${username}/null/upvote_mana_percent`;
-    const response = await fetch(urlRequestAccountFull);
-    const data = await response.json();
-    return data.result?.upvote_mana_percent;
-}
-
-function modifyUserElement() {
-    const usermenuDropdown = document.querySelector('.DropdownMenu.Header__usermenu');
-    if ( usermenuDropdown ) {
-        usermenuDropdown.addEventListener('click', handleProfileDropdownClick);
-    } else {
-        console.debug ( "Dropdown menu not available.");
-    }
-}
-
 async function handleProfileDropdownClick(event) {
     const titleElements = document.querySelectorAll('li.title');
     let accountElement;
@@ -217,3 +194,75 @@ async function handleProfileDropdownClick(event) {
         accountElement.textContent = `${username} (VP: ${votingPower}%)`;
     }
 }
+
+// Mutation observer to detect logout -> login
+function observeDropdownCreation() {
+    // Monitor for changes in the page header buttons that happen at login time
+    const parentElement = document.querySelector('.Header__buttons');
+    let observer;
+
+    if (parentElement) {
+        observer = new MutationObserver((mutations) => {
+            for (let mutation of mutations) {
+                if (mutation.type === 'childList') {
+                    const dropdown = parentElement.querySelector('.DropdownMenu.Header__usermenu');
+                    if (dropdown) {
+                        console.log('Dropdown menu created');
+                        highLight();
+                        modifyUserElement();  // Click handler to add voting power to dropdown menu.
+                        // Optionally, disconnect the observer if you don't need it anymore
+                        // observer.disconnect();
+                    }
+                }
+            }
+        });
+        const config = { childList: true, subtree: true };
+        observer.observe(parentElement, config);
+    }
+}
+
+/*
+ * Network queries
+ */
+
+// Function to get voting power
+async function getVotingPower(username) {
+    const urlRequestAccountFull = `${urlRequestAccount}${username}/null/upvote_mana_percent`;
+    const response = await fetch(urlRequestAccountFull);
+    const data = await response.json();
+    return data.result?.upvote_mana_percent;
+}
+
+/*
+ * Execution and event handling
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    highLight();
+});
+
+window.addEventListener('scroll', () => {
+    highLight();
+});
+window.addEventListener('load', () => {
+    highLight();
+});
+window.addEventListener('click', () => {
+    highLight();
+});
+
+modifyUserElement();        // Click handler to add voting power to dropdown menu.
+observeDropdownCreation();  // Mutation observer for new dropdown menu after login.
+                            // Don't run this inside of highlight()!!!
+
+// Should this be repeated with a timer?
+fetch(urlRequestTransfers).then(function (response) {
+    return response.json();
+}).then(function (data) {
+    prepareData(data);
+    highLight();
+}).catch(function (error) {
+    console.log("error: " + error);
+});
+
+console.log("The extension is done.");
