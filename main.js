@@ -198,7 +198,8 @@ async function handleProfileDropdownClick(event) {
 // Mutation observer to detect logout -> login
 function observeDropdownCreation() {
     // Monitor for changes in the page header buttons that happen at login time
-    const parentElement = document.querySelector('.Header__buttons');
+    // const parentElement = document.querySelector('.Header__buttons');
+    const parentElement = document;
     let observer;
 
     if (parentElement) {
@@ -212,6 +213,8 @@ function observeDropdownCreation() {
                         modifyUserElement();  // Click handler to add voting power to dropdown menu.
                         // Optionally, disconnect the observer if you don't need it anymore
                         // observer.disconnect();
+                    } else {
+                        highLight();
                     }
                 }
             }
