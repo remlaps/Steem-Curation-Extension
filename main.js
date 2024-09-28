@@ -5,15 +5,14 @@ const urlRequestTransfers = "https://sds.steemworld.org/transfers_api/getTransfe
 const urlRequestAccount = "https://sds.steemworld.org/accounts_api/getAccountExt/";
 const steemApi = "https://api.steemyy.com";  // no longer used
 
-
 /*
- *  The main logic is in highLight() and modifyUserElement()
+ *  The main logic is in highLight() and handleProfileDropdownClick()
  * o highlight()
  * - Add highlighting to posts with post promotion or @null beneficiaries.
  * - Add highlighting to the burn & promotion settings when post-> value item is clicked.
  * 
- * o modifyUserElement()
- * - Add a click handler to display the current voting power when the dropdown menu is clicked.
+ * o handleProfileDropdownClick()
+ * - Display the voting power of the logged in account when the dropdown menu is clicked.
  *
  */
 const highLight = () => {
@@ -22,6 +21,12 @@ const highLight = () => {
 
     // Working from high to low (for outside to inside in document nesting)
     for (let i = listItem.length - 1; i >= 0; i--) {
+        if (listItem[i].textContent.match('- Curators .*\$')) {
+            // Don't highlight promoted posts that already paid out.
+            listItem[i].style['background-color'] = "initial";
+            continue;
+        }
+
         // Check for @null beneficiary and /promoted post promotion.
         if (listItem[i].textContent.match('null: .*%') && listItem[i].textContent.match('Promotion Cost .*\$')) {
             console.log("Found a /promoted post in #burnsteem25 (outer block)");
@@ -59,10 +64,20 @@ const highLight = () => {
     }
 }
 
-function modifyUserElement() {
-    const usermenuDropdown = document.querySelector('.DropdownMenu.Header__usermenu');
-    if ( usermenuDropdown ) {
-        usermenuDropdown.addEventListener('click', handleProfileDropdownClick);
+async function handleProfileDropdownClick(event) {
+    const titleElements = document.querySelectorAll('li.title');
+    let accountElement;
+
+    titleElements.forEach(async element => {
+        if (element.textContent.trim() === element.childNodes[0].textContent.trim()) {
+            accountElement = element;
+        }
+    });
+    if (accountElement) {
+        let elementText = accountElement.textContent.trim();
+        const username = elementText.split(" ")[0] 
+        const votingPower = await getVotingPower(username);
+        accountElement.textContent = `${username} (VP: ${votingPower}%)`;
     }
 }
 
@@ -178,51 +193,6 @@ function getAddress(elem) {
     return link ? link : null;
 }
 
-async function handleProfileDropdownClick(event) {
-    const titleElements = document.querySelectorAll('li.title');
-    let accountElement;
-
-    titleElements.forEach(async element => {
-        if (element.textContent.trim() === element.childNodes[0].textContent.trim()) {
-            accountElement = element;
-        }
-    });
-    if (accountElement) {
-        let elementText = accountElement.textContent.trim();
-        const username = elementText.split(" ")[0] 
-        const votingPower = await getVotingPower(username);
-        accountElement.textContent = `${username} (VP: ${votingPower}%)`;
-    }
-}
-
-// Mutation observer to detect logout -> login
-function observeDropdownCreation() {
-    // Monitor for changes in the page header buttons that happen at login time
-    // const parentElement = document.querySelector('.Header__buttons');
-    const parentElement = document;
-    let observer;
-
-    if (parentElement) {
-        observer = new MutationObserver((mutations) => {
-            for (let mutation of mutations) {
-                if (mutation.type === 'childList') {
-                    const dropdown = parentElement.querySelector('.DropdownMenu.Header__usermenu');
-                    if (dropdown) {
-                        console.log('Dropdown menu created');
-                        highLight();
-                        modifyUserElement();  // Click handler to add voting power to dropdown menu.
-                        // Optionally, disconnect the observer if you don't need it anymore
-                        // observer.disconnect();
-                    } else {
-                        highLight();
-                    }
-                }
-            }
-        });
-        const config = { childList: true, subtree: true };
-        observer.observe(parentElement, config);
-    }
-}
 
 /*
  * Network queries
@@ -250,19 +220,40 @@ fetch(urlRequestTransfers).then(function (response) {
  * Execution and event handling
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-    highLight();
-});
+// Event handler when the dropdown menu is clicked.  Calls: handleProfileDropdownClick for modifications.
+function modifyUserElement() {
+    const usermenuDropdown = document.querySelector('.DropdownMenu.Header__usermenu');
+    if ( usermenuDropdown ) {
+        usermenuDropdown.addEventListener('click', handleProfileDropdownClick);
+    }
+}
 
-window.addEventListener('scroll', () => {
-    highLight();
-});
-window.addEventListener('load', () => {
-    highLight();
-});
-window.addEventListener('click', () => {
-    highLight();
-});
+// Mutation observer to detect logout -> login and other page changes.
+function observeDropdownCreation() {
+    const parentElement = document;
+    let observer;
+
+    if (parentElement) {
+        observer = new MutationObserver((mutations) => {
+            for (let mutation of mutations) {
+                if (mutation.type === 'childList') {
+                    // logout -> login
+                    const dropdown = parentElement.querySelector('.DropdownMenu.Header__usermenu');
+                    if (dropdown) {
+                        highLight();
+                        modifyUserElement();  // Click handler to add voting power to dropdown menu.
+                        // Optionally, disconnect the observer if you don't need it anymore
+                        // observer.disconnect();
+                    } else {
+                        highLight();
+                    }
+                }
+            }
+        });
+        const config = { childList: true, subtree: true };
+        observer.observe(parentElement, config);
+    }
+}
 
 modifyUserElement();        // Click handler to add voting power to dropdown menu.
 observeDropdownCreation();  // Mutation observer for new dropdown menu after login.
