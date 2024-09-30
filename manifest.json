@@ -4,11 +4,13 @@
   "name":"Steem Curation Extension",
   "content_scripts":[
     {
-     "matches":["https://steemit.com/*", 
-     "https://steemitdev.com/*", 
-     "https://condenser-1077810928621.us-east5.run.app/*", 
-     "https://steemit.steemnet.org/*"],
-     "js":["main.js"]
+      "matches":[
+        "https://steemit.com/*", 
+        "https://steemitdev.com/*", 
+        "https://condenser-1077810928621.us-east5.run.app/*", 
+        "https://steemit.steemnet.org/*"
+      ],
+      "js":["main.js"]
     }
   ],
   "host_permissions": [
