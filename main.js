@@ -77,7 +77,6 @@ async function handleProfileDropdownClick(event) {
         let elementText = accountElement.textContent.trim();
         const username = elementText.split(" ")[0] 
         const votingPower = await getVotingPower(username);
-        console.log("votingPower:", votingPower);
         accountElement.textContent = `${username} (VP: ${votingPower}%)`;
     }
 }
