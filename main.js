@@ -221,10 +221,8 @@ fetch(urlRequestTransfers).then(function (response) {
  */
 
 // Event handler when the dropdown menu is clicked.  Calls: handleProfileDropdownClick for modifications.
-function modifyUserElement(usermenuDropdown = null) {
-    if (!usermenuDropdown) {
-        usermenuDropdown = document.querySelector('.DropdownMenu.Header__usermenu');
-    }
+function modifyUserElement() {
+    const usermenuDropdown = document.querySelector('.DropdownMenu.Header__usermenu');
     if ( usermenuDropdown ) {
         usermenuDropdown.addEventListener('click', handleProfileDropdownClick);
     }
@@ -237,19 +235,7 @@ function observeDropdownCreation() {
 
     if (parentElement) {
         observer = new MutationObserver((mutations) => {
-            for (let mutation of mutations) {
-                if (mutation.type === 'childList') {
-                    for (let node of mutation.addedNodes) {
-                        if (node.matches && node.matches('.DropdownMenu.Header__usermenu')) {
-                            // logout -> login
-                            modifyUserElement(node);  // Click handler to add voting power to dropdown menu.
-                            // Optionally, disconnect the observer if you don't need it anymore
-                            // observer.disconnect();
-                            return; // Exit the loop after handling the dropdown
-                        }
-                    }
-                }
-            }
+            modifyUserElement();  // Click handler to add voting power to dropdown menu.
             highLight();
         });
         const config = { childList: true, subtree: true };
