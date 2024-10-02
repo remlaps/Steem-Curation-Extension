@@ -16,7 +16,7 @@
   "host_permissions": [
     "https://api.moecki.online/*",
     "https://api.steemit.com/*",
-    "https://api.steemyy.com",
+    "https://api.steemyy.com/*",
     "https://sds.steemworld.org/*"
   ]
 }
