@@ -1,15 +1,32 @@
 console.log("The extension is up and running");
 
 var promotedPosts = {}; // contains all transactions for promoted posts with accounts, count, and whether self-promoted
-const urlRequest = "https://sds.steemworld.org/transfers_api/getTransfersByTypeTo/transfer/null/time/DESC/250/0";
-const steemApi = "https://api.steemyy.com";
+const urlRequestTransfers = "https://sds.steemworld.org/transfers_api/getTransfersByTypeTo/transfer/null/time/DESC/250/0";
+const urlRequestAccount = "https://sds.steemworld.org/accounts_api/getAccountExt/";
+const steemApi = "https://api.steemyy.com";  // no longer used
 
+/*
+ *  The main logic is in highLight() and handleProfileDropdownClick()
+ * o highlight()
+ * - Add highlighting to posts with post promotion or @null beneficiaries.
+ * - Add highlighting to the burn & promotion settings when post-> value item is clicked.
+ * 
+ * o handleProfileDropdownClick()
+ * - Display the voting power of the logged in account when the dropdown menu is clicked.
+ *
+ */
 const highLight = () => {
     var curatorBackgroundColor;
     const listItem = document.querySelectorAll('li');
 
     // Working from high to low (for outside to inside in document nesting)
     for (let i = listItem.length - 1; i >= 0; i--) {
+        if (listItem[i].textContent.match('- Curators .*\$')) {
+            // Don't highlight promoted posts that already paid out.
+            listItem[i].style['background-color'] = "initial";
+            continue;
+        }
+
         // Check for @null beneficiary and /promoted post promotion.
         if (listItem[i].textContent.match('null: .*%') && listItem[i].textContent.match('Promotion Cost .*\$')) {
             console.log("Found a /promoted post in #burnsteem25 (outer block)");
@@ -45,9 +62,28 @@ const highLight = () => {
             listItem[i].style['background-color'] = "initial";
         }
     }
-    modifyUserElement();
 }
 
+async function handleProfileDropdownClick(event) {
+    const titleElements = document.querySelectorAll('li.title');
+    let accountElement;
+
+    titleElements.forEach(async element => {
+        if (element.textContent.trim() === element.childNodes[0].textContent.trim()) {
+            accountElement = element;
+        }
+    });
+    if (accountElement) {
+        let elementText = accountElement.textContent.trim();
+        const username = elementText.split(" ")[0] 
+        const votingPower = await getVotingPower(username);
+        accountElement.textContent = `${username} (VP: ${votingPower}%)`;
+    }
+}
+
+/*
+ * helper functions
+ */
 function getColorBurnPost(nullPct) {
     if (nullPct > 0 && nullPct < 25) {
         curatorBackgroundColor = "coral";
@@ -73,15 +109,6 @@ function getColorPromotedPost(promoAmount) {
     }
     return curatorBackgroundColor;
 }
-
-fetch(urlRequest).then(function (response) {
-    return response.json();
-}).then(function (data) {
-    prepareData(data);
-    highLight();
-}).catch(function (error) {
-    console.log("error: " + error);
-});
 
 function prepareData(data) {
     if (data) {
@@ -139,7 +166,7 @@ function addText(listItem) {
     if (added) {
         console.log("User added");
     } else {
-        console.log("Adding User went wrong");
+        console.log("Adding User went wrong");  // else branch not needed(?)
     }
 }
 
@@ -166,126 +193,58 @@ function getAddress(elem) {
     return link ? link : null;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    highLight();
-});
 
-window.addEventListener('scroll', () => {
-    highLight();
-});
-window.addEventListener('load', () => {
-    highLight();
-});
-window.addEventListener('click', () => {
-    highLight();
-});
-
-console.log("The extension is done.");
+/*
+ * Network queries
+ */
 
 // Function to get voting power
 async function getVotingPower(username) {
-    const response = await fetch(`${steemApi}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            jsonrpc: '2.0',
-            method: 'condenser_api.get_accounts',
-            params: [[username]],
-            id: 1
-        })
-    });
-
+    const urlRequestAccountFull = `${urlRequestAccount}${username}/null/upvote_mana_percent`;
+    const response = await fetch(urlRequestAccountFull);
     const data = await response.json();
-    return data.result[0]?.voting_power;
+    return data.result?.upvote_mana_percent;
 }
 
-// Function to create and show tooltip
-// function showTooltip(element, text) {
-//     const tooltip = document.createElement('div');
-//     tooltip.textContent = text;
-//     tooltip.style.cssText = `
-//       position: absolute;
-//       background: #333;
-//       color: white;
-//       padding: 5px;
-//       border-radius: 3px;
-//       font-size: 12px;
-//       z-index: 1000;
-//     `;
+// Should this be repeated with a timer?
+fetch(urlRequestTransfers).then(function (response) {
+    return response.json();
+}).then(function (data) {
+    prepareData(data);
+    highLight();
+}).catch(function (error) {
+    console.log("error: fetching transfers:", error);
+});
 
-//     const rect = element.getBoundingClientRect();
-//     tooltip.style.left = `${rect.left}px`;
-//     tooltip.style.top = `${rect.bottom + 5}px`;
+/*
+ * Execution and event handling
+ */
 
-//     document.body.appendChild(tooltip);
-//     return tooltip;
-// }
-
-// Functions to find and modify the specific element and handle the tool tip
-let activeTooltip = null;
-
+// Event handler when the dropdown menu is clicked.  Calls: handleProfileDropdownClick for modifications.
 function modifyUserElement() {
-    const elements = document.querySelectorAll('li.title');
-    console.dir(elements);
-    elements.forEach(element => {
-        if (element.textContent.trim() === element.childNodes[0].textContent.trim()) {
-            element.addEventListener('mouseenter', handleMouseEnter);
-            element.addEventListener('mouseleave', handleMouseLeave);
-        }
-    });
-
-    // Add click event listener to the document
-    document.addEventListener('click', handleDocumentClick, true);
-}
-
-async function handleMouseEnter(event) {
-    const element = event.target;
-    const username = element.textContent.trim();
-    const votingPower = await getVotingPower(username);
-    
-    if (votingPower !== undefined) {
-        // Remove any existing tooltip
-        removeTooltip();
-        
-        activeTooltip = showTooltip(element, `Voting power: ${votingPower / 100}%`);
+    const usermenuDropdown = document.querySelector('.DropdownMenu.Header__usermenu');
+    if ( usermenuDropdown ) {
+        usermenuDropdown.addEventListener('click', handleProfileDropdownClick);
     }
 }
 
-function handleMouseLeave() {
-    removeTooltip();
-}
+// Mutation observer to detect logout -> login and other page changes.
+function observeDropdownCreation() {
+    const parentElement = document;
+    let observer;
 
-function handleDocumentClick(event) {
-    // Always remove the tooltip on any click
-    removeTooltip();
-}
-
-function removeTooltip() {
-    if (activeTooltip && document.body.contains(activeTooltip)) {
-        document.body.removeChild(activeTooltip);
-        activeTooltip = null;
+    if (parentElement) {
+        observer = new MutationObserver((mutations) => {
+            modifyUserElement();  // Click handler to add voting power to dropdown menu.
+            highLight();
+        });
+        const config = { childList: true, subtree: true };
+        observer.observe(parentElement, config);
     }
 }
 
-function showTooltip(element, text) {
-    const tooltip = document.createElement('div');
-    tooltip.textContent = text;
-    tooltip.style.cssText = `
-        position: fixed;
-        background: #333;
-        color: white;
-        padding: 5px;
-        border-radius: 3px;
-        font-size: 12px;
-        z-index: 1000;
-    `;
+modifyUserElement();        // Click handler to add voting power to dropdown menu.
+observeDropdownCreation();  // Mutation observer for new dropdown menu after login.
+                            // Don't run this inside of highlight()!!!
 
-    const rect = element.getBoundingClientRect();
-    tooltip.style.left = `${rect.left - 120}px`;
-    tooltip.style.top = `${rect.top + 10 }px`;
-
-    document.body.appendChild(tooltip);
-    return tooltip;
-}
+console.log("The extension is done.");
