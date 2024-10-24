@@ -16,6 +16,7 @@ const steemApi = "https://api.steemyy.com";  // no longer used
  *
  */
 const highLight = () => {
+    addButtonsToSummaries(); // New for info buttons
     var curatorBackgroundColor;
     const listItem = document.querySelectorAll('li');
 
@@ -235,12 +236,134 @@ function observeDropdownCreation() {
 
     if (parentElement) {
         observer = new MutationObserver((mutations) => {
-            modifyUserElement();  // Click handler to add voting power to dropdown menu.
+            modifyUserElement();
             highLight();
+            addButtonsToSummaries();
         });
         const config = { childList: true, subtree: true };
         observer.observe(parentElement, config);
     }
+}
+
+// Function to create and show overlay
+function showOverlay(postInfo) {
+    // Remove any existing overlay
+    const existingOverlay = document.querySelector('.custom-overlay');
+    if (existingOverlay) {
+        existingOverlay.remove();
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-overlay';
+
+    // Create header section
+    const header = document.createElement('div');
+    header.className = 'overlay-header';
+    
+    const title = document.createElement('h3');
+    title.textContent = 'Post Information';
+    
+    const closeButton = document.createElement('button');
+    closeButton.className = 'close-button';
+    closeButton.textContent = '×';
+    closeButton.onclick = () => overlay.remove();
+
+    header.appendChild(title);
+    header.appendChild(closeButton);
+
+    // Create content section
+    const content = document.createElement('div');
+    content.className = 'overlay-content';
+    content.innerHTML = `
+        <p>Post URL: ${postInfo}</p>
+        <!-- Add more information here as needed -->
+    `;
+
+    overlay.appendChild(header);
+    overlay.appendChild(content);
+    document.body.appendChild(overlay);
+
+    // Click outside to close
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+}
+
+function showOverlay(postInfo, buttonElement) {
+    // Get existing overlay or create new one
+    let overlay = buttonElement.parentElement.querySelector('.custom-overlay');
+    
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'custom-overlay';
+
+        // Create header section
+        const header = document.createElement('div');
+        header.className = 'overlay-header';
+        
+        const title = document.createElement('h3');
+        title.style.margin = '0';
+        title.textContent = 'Post Information';
+        
+        header.appendChild(title);
+
+        // Create content section
+        const content = document.createElement('div');
+        content.className = 'overlay-content';
+        content.innerHTML = `
+            <p>Post URL: ${postInfo}</p>
+            <!-- Add more information here as needed -->
+        `;
+
+        overlay.appendChild(header);
+        overlay.appendChild(content);
+        
+        // Add overlay to the button's container
+        buttonElement.parentElement.appendChild(overlay);
+    }
+
+    overlay.style.display = 'block';
+}
+
+function hideOverlay(buttonElement) {
+    const overlay = buttonElement.parentElement.querySelector('.custom-overlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
+
+function addButtonsToSummaries() {
+    const headers = document.querySelectorAll('div.articles__summary-header');
+    
+    headers.forEach(header => {
+        if (!header.querySelector('.custom-action-button')) {
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'button-container';
+
+            const button = document.createElement('button');
+            button.className = 'custom-action-button';
+            button.textContent = 'Info';
+            
+            // Replace click handler with mouseover/mouseout
+            button.addEventListener('mouseover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const postUrl = getAddress(header);
+                showOverlay(postUrl, button);
+            });
+
+            button.addEventListener('mouseout', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                hideOverlay(button);
+            });
+            
+            buttonContainer.appendChild(button);
+            header.appendChild(buttonContainer);
+        }
+    });
 }
 
 modifyUserElement();        // Click handler to add voting power to dropdown menu.
