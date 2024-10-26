@@ -2,8 +2,7 @@
     position: absolute;
     right: 100%;
     top: 50%;
-    transform: translateY(-50%);
-    background-color: white;
+    transform: translateY(-30%);
     padding: 20px;
     border-radius: 8px;
     border: 1px solid #ccc;
@@ -13,7 +12,6 @@
     max-width: 500px;
     margin-right: 10px;
     display: none;  
-    color: navy;  /* Need to learn how to inherit the right value from condenser */
 }
 
 .overlay-header {
@@ -23,7 +21,12 @@
     margin-bottom: 15px;
     border-bottom: 1px solid #eee;
     padding-bottom: 10px;
-    color: navy; /* Need to learn how to inherit the right value from condenser */
+    color: inherit; /* Need to learn how to inherit the right value from condenser */
+}
+
+.overlay-title {
+    font-size: 10pt;
+    margin:0;
 }
 
 .custom-action-button {

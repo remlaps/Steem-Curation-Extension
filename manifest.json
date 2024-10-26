@@ -10,7 +10,7 @@
         "https://condenser-1077810928621.us-east5.run.app/*", 
         "https://steemit.steemnet.org/*"
       ],
-      "js": ["main.js"],
+      "js": ["overlay.js","main.js"],
       "css": ["styles.css"]
     }
   ],
