@@ -16,7 +16,8 @@ const steemApi = "https://api.steemyy.com";  // no longer used
  *
  */
 const highLight = () => {
-    addButtonsToSummaries(); // New for info buttons
+    addButtonsToSummaries(); // New for curation info buttons
+    // findBots();              // New for delegation bot indicator
     var curatorBackgroundColor;
     const listItem = document.querySelectorAll('li');
 
@@ -230,7 +231,7 @@ function modifyUserElement() {
 }
 
 // Mutation observer to detect logout -> login and other page changes.
-function observeDropdownCreation() {
+function sceMutationObserver() {
     const parentElement = document;
     let observer;
 
@@ -238,15 +239,14 @@ function observeDropdownCreation() {
         observer = new MutationObserver((mutations) => {
             modifyUserElement();
             highLight();
-            addButtonsToSummaries();
         });
         const config = { childList: true, subtree: true };
         observer.observe(parentElement, config);
     }
 }
 
-modifyUserElement();        // Click handler to add voting power to dropdown menu.
-observeDropdownCreation();  // Mutation observer for new dropdown menu after login.
-                            // Don't run this inside of highlight()!!!
+// modifyUserElement();        // Click handler to add voting power to dropdown menu.
+sceMutationObserver();         // Mutation observer for new dropdown menu after login.
+                               // Don't run this inside of highlight()!!!
 
 console.log("The extension is done.");

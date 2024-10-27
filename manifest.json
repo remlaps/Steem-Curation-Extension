@@ -5,13 +5,13 @@
   "content_scripts": [
     {
       "matches": [
-        "https://steemit.com/*", 
-        "https://steemitdev.com/*", 
-        "https://condenser-1077810928621.us-east5.run.app/*", 
+        "https://steemit.com/*",
+        "https://steemitdev.com/*",
+        "https://condenser-1077810928621.us-east5.run.app/*",
         "https://steemit.steemnet.org/*"
       ],
-      "js": ["overlay.js","main.js"],
-      "css": ["styles.css"]
+      "js": [ "botNotifier.js", "overlay.js", "main.js" ],
+      "css": [ "styles.css" ]
     }
   ],
   "host_permissions": [

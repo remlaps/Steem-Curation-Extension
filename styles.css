@@ -1,4 +1,4 @@
-.custom-overlay {
+.custom-overlay-pane {
     position: absolute;
     right: 100%;
     top: 50%;
@@ -17,11 +17,10 @@
 .overlay-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: left;
     margin-bottom: 15px;
     border-bottom: 1px solid #eee;
     padding-bottom: 10px;
-    color: inherit; /* Need to learn how to inherit the right value from condenser */
 }
 
 .overlay-title {
@@ -29,7 +28,7 @@
     margin:0;
 }
 
-.custom-action-button {
+.curator-custom-anchor {
     padding: 4px 8px;
     margin-left: 10px;
     border-radius: 4px;
@@ -43,9 +42,9 @@
     z-index: 1;
 }
 
-.button-container {
+.overlay-container {
     margin-left: auto;
     display: flex;
-    align-items: center;
+    align-items: left;
     position: relative;
 }
