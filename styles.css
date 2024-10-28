@@ -2,7 +2,7 @@
     position: absolute;
     right: 100%;
     top: 50%;
-    transform: translateY(-30%);
+    transform: translateY(-20%);
     padding: 20px;
     border-radius: 8px;
     border: 1px solid #ccc;
@@ -24,6 +24,14 @@
 }
 
 .overlay-title {
+    font-weight: bold;
+    font-style: italic;
+    font-size: 11pt;
+    margin: 0;
+    text-align: center; /* Centers the text horizontally */
+}
+
+.overlay-content {
     font-size: 10pt;
     margin:0;
 }
@@ -39,7 +47,6 @@
     font-size: 12px;
     white-space: nowrap;
     position: relative;
-    z-index: 1;
 }
 
 .overlay-container {

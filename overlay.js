@@ -19,13 +19,14 @@ function showOverlay(postInfo, curatorOverlayAnchor ) {
         overlayHeader.className = 'overlay-header';
         
         const overLayTitle = document.createElement('p');
-        overLayTitle.textContent = 'Overlay title';
+        overLayTitle.textContent = 'Info4Curators';
         overLayTitle.classList.add('overlay-title');
         
         overlayHeader.appendChild(overLayTitle);
 
         // Create content section
         const overlayContent = document.createElement('div');
+        overlayContent.classList.add('overlay-content');
         let author;
         let permlink;
         if (postInfo) {
@@ -40,14 +41,23 @@ function showOverlay(postInfo, curatorOverlayAnchor ) {
         getContent(author, permlink)
             .then(result => {
 
-                botVoteCount = countBotVotes( result.active_votes );
+                const pending_payout_value = parseFloat(result.pending_payout_value);
+                const total_paid = 2 * parseFloat(result.curator_payout_value);
+
+                const botVoteCount = countBotVotes( result.active_votes );
+                const botVotePct = calculateBotRsharePercentage(result.active_votes);
+                const organicValue = ( pending_payout_value  + total_paid ) * ( 1 - 0.01 * botVotePct);
+                const formattedOrganicValue = organicValue.toFixed(2);
+                const wordCount = getWordCount(result.body);
+                const readingTime = getReadingTime(wordCount);
 
                 overlayContent.innerHTML = `
-                <p>Author: ${author}</p>
-                <p>PermLink: ${permlink}</p>
-                <p>Vote count: ${result.net_votes}</p>
-                <p>Bot vote count: ${botVoteCount};
-                <!-- Add more information here as needed -->
+                    <p>Author: ${author}</p>
+                    <p>PermLink: ${permlink}</p>
+                    <p><b>Word count / Reading time:</b> ${wordCount} / ${readingTime} minutes</p>
+                    <p><b>Bot count / Paid pct:</b> ${botVoteCount} / ${botVotePct}%</p>
+                    <p><b>Organic value</b>: ${formattedOrganicValue} SBD</p>
+                    <!-- Add more information here as needed -->
                 `;
                 console.log(result);
             })
@@ -81,36 +91,32 @@ function addButtonsToSummaries() {
             overlayContainer.appendChild(curatorOverlayAnchor);
             header.appendChild(overlayContainer);
 
-            const summaryHeader = curatorOverlayAnchor.closest('.articles__summary-header');
-            let link;
-            if ( summaryHeader ) {
-                console.debug("Got summary header.");
-                const closest = curatorOverlayAnchor.closest('.articles__summary-header'); // Get the closest articles__summary-header
-                if ( closest ) {
-                    console.debug("Got closest");
-                    link = closest.parentElement // Go up to the parent of articles__summary-header
-                    .querySelector('.articles__content a.articles__link'); // Find the articles__link inside articles__content
-                }
-            }
-
-            let result;
-            if ( link && link.href ) {
-                curatorOverlayAnchor.href=link.href;
-                result = extractAuthorAndPermlink(curatorOverlayAnchor.href);
-                console.log(result); // { author: 'AUTHOR', permlink: 'PERMLINK' }
-            } else {
-                console.debug(`Couldn't proces: ${result}, link: ${link}`);
-                curatorOverlayAnchor.href="";
-            }
-
-
-
-
             curatorOverlayAnchor.addEventListener('mouseover', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const someInfo = result;
-                showOverlay(someInfo, curatorOverlayAnchor, result );
+
+                // Get fresh data on each mouseover
+                const summaryHeader = curatorOverlayAnchor.closest('.articles__summary-header');
+                let link;
+                
+                if (summaryHeader) {
+                    const postItem = summaryHeader.closest('li');
+                    if (postItem) {
+                        link = postItem.querySelector(
+                            '.articles__content h2 > a, .articles__content .PostSummary__body.entry-content > a'
+                        );
+                    }
+                }
+
+                let result;
+                if (link && link.href) {
+                    curatorOverlayAnchor.href = link.href;
+                    result = extractAuthorAndPermlink(curatorOverlayAnchor.href);
+                    showOverlay(result, curatorOverlayAnchor, result);
+                } else {
+                    console.debug(`Couldn't process: link not found`);
+                    curatorOverlayAnchor.href = "";
+                }
             });
 
             curatorOverlayAnchor.addEventListener('mouseout', (e) => {
@@ -119,10 +125,9 @@ function addButtonsToSummaries() {
             
                 const overlay = document.querySelector('.custom-overlay-pane');
                 if (overlay) {
-                    overlay.remove(); // This will remove the overlay from the DOM
+                    overlay.remove();
                 }
             });
-
         }
     });
 }
@@ -142,7 +147,7 @@ function extractAuthorAndPermlink(url) {
 }
 
 async function getContent(author, permlink) {
-    const response = await fetch("https://api.steemit.com", {
+    const response = await fetch(steemApi, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -158,10 +163,3 @@ async function getContent(author, permlink) {
     const data = await response.json();
     return data.result;  // Equivalent to `jq -S .result`
 }
-
-/*
- * Example call of getContent()
- */
-// getContent("remaps-lite", "what-info-would-you-want")
-//     .then(result => console.log(result))
-//     .catch(error => console.error("Error:", error));
