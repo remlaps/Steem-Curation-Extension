@@ -40,7 +40,7 @@ function showOverlay(postInfo, curatorOverlayAnchor ) {
 
         getContent(author, permlink)
             .then(result => {
-
+                // this should probably be a function.  It's getting lengthy.
                 const pending_payout_value = parseFloat(result.pending_payout_value);
                 const total_paid = 2 * parseFloat(result.curator_payout_value);
 
@@ -51,15 +51,20 @@ function showOverlay(postInfo, curatorOverlayAnchor ) {
                 const wordCount = getWordCount(result.body);
                 const readingTime = getReadingTime(wordCount);
 
+                    // <p>Author: ${author}</p>
+                    // <p>PermLink: ${permlink}</p>
                 overlayContent.innerHTML = `
-                    <p>Author: ${author}</p>
-                    <p>PermLink: ${permlink}</p>
-                    <p><b>Word count / Reading time:</b> ${wordCount} / ${readingTime} minutes</p>
-                    <p><b>Bot count / Paid pct:</b> ${botVoteCount} / ${botVotePct}%</p>
-                    <p><b>Organic value</b>: ${formattedOrganicValue} SBD</p>
+                    <p><b></i>Post Information</i></b></p>
+                    <ul>
+                    <li><b>Word count / Reading time:</b> ${wordCount} / ${readingTime} minutes</li>
+                    </ul>
+                    <p></p><p><b><i>Vote and Value Information</i></b></p>
+                    <ul>
+                    <li><b>Bot count / Paid pct:</b> ${botVoteCount} / ${botVotePct}%</li>
+                    <li><b>Organic value</b>: ${formattedOrganicValue} SBD</li>
+                    </ul>
                     <!-- Add more information here as needed -->
                 `;
-                console.log(result);
             })
             .catch(error => {
                 console.error("Error:", error)

@@ -1,4 +1,5 @@
-botList = ['upex', 'upmewhale', 'upvu', 'shy-fox', 'avle', 'nixiee', 'h4lab', 'justyy'];
+botList = ['upex', 'upmewhale', 'upvu', 'shy-fox', 'avle', 'nixiee', 'h4lab', 'justyy', 'oppps', 'support-kr', 'upvu.whitness',
+    'uco.bnb-d', 'uco.intern', 'vfund', 'suntr'];
 
 function countBotVotes (active_votes) {
     const botVotesCount = active_votes.filter(vote => botList.includes(vote.voter)).length;
@@ -6,6 +7,7 @@ function countBotVotes (active_votes) {
 }
 
 function calculateBotRsharePercentage(active_votes) {
+    // Using BigInt to avoid overflowing with really big numbers or rshares.
     let totalRshares = BigInt(0);
     let botRshares = BigInt(0);
 
@@ -18,7 +20,7 @@ function calculateBotRsharePercentage(active_votes) {
         }
     });
 
-    // Calculate non-bot rshare percentage
+    // Calculate bot rshare percentage
     if (totalRshares === BigInt(0)) {
         return 0; // Avoid division by zero
     }
