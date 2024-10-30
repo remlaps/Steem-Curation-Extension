@@ -1,8 +1,22 @@
 /*
  * Overlay functions
  */
-const bodyBackgroundColor = getComputedStyle(document.body).backgroundColor;
-const bodyFontColor = getComputedStyle(document.body).color;
+let bodyBackgroundColor = getComputedStyle(document.body).backgroundColor;
+let bodyFontColor = getComputedStyle(document.body).color;
+
+function checkAndUpdateAnchorColors() {
+    let localBackgroundColor = getComputedStyle(document.body).backgroundColor;
+    let localBodyFontColor = getComputedStyle(document.body).color;
+    console.debug("Inside: checkAndUpdateAnchorColors()");
+    if (localBackgroundColor !== bodyBackgroundColor) {
+        // Update all curator anchors
+        console.debug("Changing colors");
+        document.querySelectorAll('.curator-custom-anchor').forEach(anchor => {
+            anchor.style.color = localBodyFontColor;
+        });
+        bodyBackgroundColor = localBackgroundColor;
+    }
+}
 
 function showOverlay(postInfo, curatorOverlayAnchor ) {
     // Get existing overlay or create new one
@@ -135,6 +149,7 @@ function addButtonsToSummaries() {
             });
         }
     });
+    checkAndUpdateAnchorColors();
 }
 
 function extractAuthorAndPermlink(url) {

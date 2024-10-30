@@ -243,6 +243,7 @@ function sceMutationObserver() {
         observer.observe(parentElement, config);
     }
 }
+
 addButtonsToSummaries(); // New for curation info buttons
 // modifyUserElement();        // Click handler to add voting power to dropdown menu. - doesn't seem to be needed here.
 sceMutationObserver();         // Mutation observer for new dropdown menu after login.
