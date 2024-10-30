@@ -7,14 +7,13 @@ let bodyFontColor = getComputedStyle(document.body).color;
 function checkAndUpdateAnchorColors() {
     let localBackgroundColor = getComputedStyle(document.body).backgroundColor;
     let localBodyFontColor = getComputedStyle(document.body).color;
-    console.debug("Inside: checkAndUpdateAnchorColors()");
     if (localBackgroundColor !== bodyBackgroundColor) {
         // Update all curator anchors
-        console.debug("Changing colors");
         document.querySelectorAll('.curator-custom-anchor').forEach(anchor => {
             anchor.style.color = localBodyFontColor;
         });
         bodyBackgroundColor = localBackgroundColor;
+        bodyFontColor = localBodyFontColor;
     }
 }
 
