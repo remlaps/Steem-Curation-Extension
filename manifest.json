@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "version": "20241002",
+  "version": "20241031",
   "name": "Steem Curation Extension",
   "content_scripts": [
     {
@@ -8,7 +8,8 @@
         "https://steemit.com/*",
         "https://steemitdev.com/*",
         "https://condenser-1077810928621.us-east5.run.app/*",
-        "https://steemit.steemnet.org/*"
+        "https://steemit.steemnet.org/*",
+        "https://steemit.moecki.online/*"
       ],
       "js": [ "botNotifier.js", "postMetrics.js", "overlay.js", "main.js" ],
       "css": [ "styles.css" ]
