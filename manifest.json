@@ -1,16 +1,18 @@
 {
-  "manifest_version":3,
-  "version":"20241002",
-  "name":"Steem Curation Extension",
-  "content_scripts":[
+  "manifest_version": 3,
+  "version": "20241031",
+  "name": "Steem Curation Extension",
+  "content_scripts": [
     {
-      "matches":[
-        "https://steemit.com/*", 
-        "https://steemitdev.com/*", 
-        "https://condenser-1077810928621.us-east5.run.app/*", 
-        "https://steemit.steemnet.org/*"
+      "matches": [
+        "https://steemit.com/*",
+        "https://steemitdev.com/*",
+        "https://condenser-1077810928621.us-east5.run.app/*",
+        "https://steemit.steemnet.org/*",
+        "https://steemit.moecki.online/*"
       ],
-      "js":["main.js"]
+      "js": [ "botNotifier.js", "postMetrics.js", "overlay.js", "main.js" ],
+      "css": [ "styles.css" ]
     }
   ],
   "host_permissions": [

@@ -3,7 +3,7 @@ console.log("The extension is up and running");
 var promotedPosts = {}; // contains all transactions for promoted posts with accounts, count, and whether self-promoted
 const urlRequestTransfers = "https://sds.steemworld.org/transfers_api/getTransfersByTypeTo/transfer/null/time/DESC/250/0";
 const urlRequestAccount = "https://sds.steemworld.org/accounts_api/getAccountExt/";
-const steemApi = "https://api.steemyy.com";  // no longer used
+const steemApi = "https://api.steemyy.com";
 
 /*
  *  The main logic is in highLight() and handleProfileDropdownClick()
@@ -229,22 +229,24 @@ function modifyUserElement() {
 }
 
 // Mutation observer to detect logout -> login and other page changes.
-function observeDropdownCreation() {
+function sceMutationObserver() {
     const parentElement = document;
     let observer;
 
     if (parentElement) {
         observer = new MutationObserver((mutations) => {
-            modifyUserElement();  // Click handler to add voting power to dropdown menu.
+            addButtonsToSummaries(); // New for curation info buttons
+            modifyUserElement();
             highLight();
         });
-        const config = { childList: true, subtree: true };
+        const config = { childList: true, subtree: true, attributes: true };
         observer.observe(parentElement, config);
     }
 }
 
-modifyUserElement();        // Click handler to add voting power to dropdown menu.
-observeDropdownCreation();  // Mutation observer for new dropdown menu after login.
-                            // Don't run this inside of highlight()!!!
+addButtonsToSummaries(); // New for curation info buttons
+// modifyUserElement();        // Click handler to add voting power to dropdown menu. - doesn't seem to be needed here.
+sceMutationObserver();         // Mutation observer for new dropdown menu after login.
+                               // Don't run this inside of highlight()!!!
 
 console.log("The extension is done.");
