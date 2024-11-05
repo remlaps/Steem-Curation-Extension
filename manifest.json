@@ -11,7 +11,7 @@
         "https://steemit.steemnet.org/*",
         "https://steemit.moecki.online/*"
       ],
-      "js": [ "botNotifier.js", "postMetrics.js", "overlay.js", "main.js" ],
+      "js": [ "botNotifier.js", "postMetrics.js", "overlay.js", "resteemControl.js", "main.js" ],
       "css": [ "styles.css" ]
     }
   ],

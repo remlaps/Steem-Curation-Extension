@@ -193,7 +193,6 @@ function getAddress(elem) {
     return link ? link : null;
 }
 
-
 /*
  * Network queries
  */
@@ -223,7 +222,7 @@ fetch(urlRequestTransfers).then(function (response) {
 // Event handler when the dropdown menu is clicked.  Calls: handleProfileDropdownClick for modifications.
 function modifyUserElement() {
     const usermenuDropdown = document.querySelector('.DropdownMenu.Header__usermenu');
-    if ( usermenuDropdown ) {
+    if ( usermenuDropdown ) 
         usermenuDropdown.addEventListener('click', handleProfileDropdownClick);
     }
 }
@@ -238,6 +237,7 @@ function sceMutationObserver() {
             addButtonsToSummaries(); // New for curation info buttons
             modifyUserElement();
             highLight();
+            updateResteemVisibility();
         });
         const config = { childList: true, subtree: true, attributes: true };
         observer.observe(parentElement, config);
@@ -248,5 +248,6 @@ addButtonsToSummaries(); // New for curation info buttons
 // modifyUserElement();        // Click handler to add voting power to dropdown menu. - doesn't seem to be needed here.
 sceMutationObserver();         // Mutation observer for new dropdown menu after login.
                                // Don't run this inside of highlight()!!!
+ createToggleControl();         // Resteem checkbox
 
 console.log("The extension is done.");

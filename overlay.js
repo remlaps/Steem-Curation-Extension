@@ -69,7 +69,7 @@ function showOverlay(postInfo, curatorOverlayAnchor ) {
                 overlayContent.innerHTML = `
                     <p><b></i>Post Information</i></b></p>
                     <ul>
-                    <li><b>Word count / Reading time:</b> ${wordCount} / ${readingTime} minutes</li>
+                    <li><b>Word count / Reading time:</b> ${wordCount} / ${readingTime} min.</li>
                     </ul>
                     <p></p><p><b><i>Vote and Value Information</i></b></p>
                     <ul>
