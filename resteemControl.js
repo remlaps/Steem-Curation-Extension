@@ -45,6 +45,26 @@ function createToggleControl() {
 function updateResteemVisibility() {
     const checkbox = document.getElementById('resteem-toggle');
     if (checkbox) {
+        //***
+        // Hide the checkbox control if we're not on a feed link
+        // */
+        if (!window.location.pathname.endsWith('/feed')) {
+            const controlBox = document.querySelector('.sce-control');
+            if (controlBox) {
+                controlBox.style.display = 'none';
+                return;
+            } else {
+                console.warn("Control row element with class 'sce-control' not found!");
+            }
+        } else {
+            const controlBox = document.querySelector('.sce-control');
+            if (controlBox) {
+                controlBox.style.display = 'block';
+            } else {
+                console.warn("Control row element with class 'sce-control' not found!");
+            }
+        }
+
         const summaries = document.querySelectorAll('.articles__summary');
         summaries.forEach(summary => {
             const hasResteem = summary.querySelector('.articles__resteem') !== null;

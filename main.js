@@ -222,7 +222,7 @@ fetch(urlRequestTransfers).then(function (response) {
 // Event handler when the dropdown menu is clicked.  Calls: handleProfileDropdownClick for modifications.
 function modifyUserElement() {
     const usermenuDropdown = document.querySelector('.DropdownMenu.Header__usermenu');
-    if ( usermenuDropdown ) 
+    if ( usermenuDropdown ) {
         usermenuDropdown.addEventListener('click', handleProfileDropdownClick);
     }
 }
