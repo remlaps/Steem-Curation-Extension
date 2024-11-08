@@ -3,7 +3,8 @@ console.log("The extension is up and running");
 var promotedPosts = {}; // contains all transactions for promoted posts with accounts, count, and whether self-promoted
 const urlRequestTransfers = "https://sds.steemworld.org/transfers_api/getTransfersByTypeTo/transfer/null/time/DESC/250/0";
 const urlRequestAccount = "https://sds.steemworld.org/accounts_api/getAccountExt/";
-const steemApi = "https://api.steemyy.com";
+const steemApi = "https://api.moecki.online";
+const sdsEndpoint = "https://sds.steemworld.org";
 
 /*
  *  The main logic is in highLight() and handleProfileDropdownClick()

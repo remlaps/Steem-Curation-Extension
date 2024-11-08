@@ -17,7 +17,7 @@ function checkAndUpdateAnchorColors() {
     }
 }
 
-function showOverlay(postInfo, curatorOverlayAnchor ) {
+async function showOverlay(postInfo, curatorOverlayAnchor ) {
     // Get existing overlay or create new one
     let overlay = curatorOverlayAnchor.parentElement.querySelector('.custom-overlay-pane');
 
@@ -28,14 +28,14 @@ function showOverlay(postInfo, curatorOverlayAnchor ) {
         overlay.style.color = bodyFontColor;
 
         // Create header section
-        const overlayHeader = document.createElement('div');
-        overlayHeader.className = 'overlay-header';
+        // const overlayHeader = document.createElement('div');
+        // overlayHeader.className = 'overlay-header';
         
-        const overLayTitle = document.createElement('p');
-        overLayTitle.textContent = 'Info4Curators';
-        overLayTitle.classList.add('overlay-title');
+        // const overLayTitle = document.createElement('p');
+        // overLayTitle.textContent = 'Info4Curators';
+        // overLayTitle.classList.add('overlay-title');
         
-        overlayHeader.appendChild(overLayTitle);
+        // overlayHeader.appendChild(overLayTitle);
 
         // Create content section
         const overlayContent = document.createElement('div');
@@ -51,39 +51,64 @@ function showOverlay(postInfo, curatorOverlayAnchor ) {
             console.debug(`postInfo not set: ${postInfo}`);
         }
 
-        getContent(author, permlink)
-            .then(result => {
-                // this should probably be a function.  It's getting lengthy.
-                const pending_payout_value = parseFloat(result.pending_payout_value);
-                const total_paid = 2 * parseFloat(result.curator_payout_value);
+        let pending_payout_value, total_paid, botVoteCount, botVotePct, organicValue, formattedOrganicValue,
+            wordCount, readingTime, category, postMetaData, links, tags, images, imageLength, linksLength,
+            tagsLength, uniqueTags, tagString;
 
-                const botVoteCount = countBotVotes( result.active_votes );
-                const botVotePct = calculateBotRsharePercentage(result.active_votes);
-                const organicValue = ( pending_payout_value  + total_paid ) * ( 1 - 0.01 * botVotePct);
-                const formattedOrganicValue = organicValue.toFixed(2);
-                const wordCount = getWordCount(result.body);
-                const readingTime = getReadingTime(wordCount);
+        try {
+            result = await getContent(author, permlink);
+            pending_payout_value = parseFloat(result.pending_payout_value);
+            total_paid = 2 * parseFloat(result.curator_payout_value);
 
-                    // <p>Author: ${author}</p>
-                    // <p>PermLink: ${permlink}</p>
-                overlayContent.innerHTML = `
-                    <p><b></i>Post Information</i></b></p>
-                    <ul>
-                    <li><b>Word count / Reading time:</b> ${wordCount} / ${readingTime} min.</li>
-                    </ul>
-                    <p></p><p><b><i>Vote and Value Information</i></b></p>
-                    <ul>
-                    <li><b>Bot count / Paid pct:</b> ${botVoteCount} / ${botVotePct}%</li>
-                    <li><b>Organic value</b>: ${formattedOrganicValue} SBD</li>
-                    </ul>
-                    <!-- Add more information here as needed -->
-                `;
-            })
-            .catch(error => {
-                console.error("Error:", error)
-            });
+            botVoteCount = countBotVotes(result.active_votes);
+            botVotePct = calculateBotRsharePercentage(result.active_votes);
+            organicValue = (pending_payout_value + total_paid) * (1 - 0.01 * botVotePct);
+            formattedOrganicValue = organicValue.toFixed(2);
+            wordCount = getWordCount(result.body);
+            readingTime = getReadingTime(wordCount);
+            category = result.category;
+            postMetaData = JSON.parse(result.json_metadata);
+            links = postMetaData.links;
+            tags = postMetaData.tags;
+            images = postMetaData.image;
+            imageLength = images ? images.length : 0;
+            linksLength = links ? links.length : 0;
+            tagsLength = Array.isArray(tags) && tags.length || (tags ? 1 : 0); // Include "category" as a tag
+            uniqueTags = [...new Set([category, ...(tags || [])])].sort();
+            tagString = uniqueTags.slice(0, 6).join(", ");
+        } catch (error) {
+            console.warn("Error:", error);
+        }
 
-        overlay.appendChild(overlayHeader);
+        let resteemers, resteemLength;
+        try {
+            sdsResponse = await getResteems(author, permlink);
+            resteemers = sdsResponse.result.rows.map(row => row[1]);
+            resteemLength = resteemers ? resteemers.length : 0;
+        } catch (error ) {
+            console.warn(error);
+        }
+
+        overlayContent.innerHTML = `
+            <p><b></i>Post Information</i></b></p>
+            <ul>
+            <li><b>Word count / Reading time:</b> ${wordCount} / ${readingTime} min.</li>
+            <li><b>#images:</b> ${imageLength} / <b>#links</b>: ${linksLength} / <b>#tags:</b> ${tagsLength}</li>
+            <li><b>Tags:</b> ${tagString}</li>
+            </ul>
+            <p></p><p><b><i>Influence and Audience</i></b></p>
+            <ul>
+            <li><b># Resteems:</b> ${resteemLength}</li>
+            </ul>
+            <p></p><p><b><i>Vote and Value Information</i></b></p>
+            <ul>
+            <li><b>Bot count / Paid pct:</b> ${botVoteCount} / ${botVotePct}%</li>
+            <li><b>Organic value</b>: ${formattedOrganicValue} SBD</li>
+            </ul>
+            <!-- Add more information here as needed -->
+        `;
+
+        // overlay.appendChild(overlayHeader);
         overlay.appendChild(overlayContent);
         
         // Add overlay to the anchor's container
@@ -181,4 +206,13 @@ async function getContent(author, permlink) {
 
     const data = await response.json();
     return data.result;  // Equivalent to `jq -S .result`
+}
+
+async function getResteems(author, permlink) {
+    sdsUrl=`${sdsEndpoint}/post_resteems_api/getResteems/${author}/${permlink}`;
+    console.debug(sdsUrl);
+    const response = await fetch (sdsUrl);
+
+    const data = await response.json();
+    return data;
 }
