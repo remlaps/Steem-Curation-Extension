@@ -3,6 +3,10 @@
  */
 let bodyBackgroundColor = getComputedStyle(document.body).backgroundColor;
 let bodyFontColor = getComputedStyle(document.body).color;
+let overlayPromise = null;
+let clearPromise = null;
+let currentOverlay = null;
+let overlayTimeout = null;
 
 function checkAndUpdateAnchorColors() {
     let localBackgroundColor = getComputedStyle(document.body).backgroundColor;
@@ -17,79 +21,71 @@ function checkAndUpdateAnchorColors() {
     }
 }
 
-async function showOverlay(postInfo, curatorOverlayAnchor ) {
-    // Get existing overlay or create new one
-    let overlay = curatorOverlayAnchor.parentElement.querySelector('.custom-overlay-pane');
+async function showOverlay(postInfo, curatorOverlayAnchor) {
+    // Clear any existing overlay first
+    if (currentOverlay) {
+        currentOverlay.remove();
+        currentOverlay = null;
+    }
 
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.className = 'custom-overlay-pane';
-        overlay.style.backgroundColor = bodyBackgroundColor;
-        overlay.style.color = bodyFontColor;
+    // Create new overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'custom-overlay-pane';
+    overlay.style.backgroundColor = bodyBackgroundColor;
+    overlay.style.color = bodyFontColor;
 
-        // Create header section
-        // const overlayHeader = document.createElement('div');
-        // overlayHeader.className = 'overlay-header';
-        
-        // const overLayTitle = document.createElement('p');
-        // overLayTitle.textContent = 'Info4Curators';
-        // overLayTitle.classList.add('overlay-title');
-        
-        // overlayHeader.appendChild(overLayTitle);
+    const overlayContent = document.createElement('div');
+    overlayContent.classList.add('overlay-content');
+    let author;
+    let permlink;
+    if (postInfo) {
+        author = postInfo.author;
+        permlink = postInfo.permlink;
+    } else {
+        author = "";
+        permlink = "";
+        console.debug(`postInfo not set: ${postInfo}`);
+    }
 
-        // Create content section
-        const overlayContent = document.createElement('div');
-        overlayContent.classList.add('overlay-content');
-        let author;
-        let permlink;
-        if (postInfo) {
-            author = postInfo.author;
-            permlink = postInfo.permlink;
-        } else {
-            author = "";
-            permlink = "";
-            console.debug(`postInfo not set: ${postInfo}`);
-        }
+    let pending_payout_value, total_paid, botVoteCount, botVotePct, organicValue, formattedOrganicValue,
+        wordCount, readingTime, category, postMetaData, links, tags, images, imageLength, linksLength,
+        tagsLength, uniqueTags, tagString;
 
-        let pending_payout_value, total_paid, botVoteCount, botVotePct, organicValue, formattedOrganicValue,
-            wordCount, readingTime, category, postMetaData, links, tags, images, imageLength, linksLength,
-            tagsLength, uniqueTags, tagString;
+    try {
+        result = await getContent(author, permlink);
+        pending_payout_value = parseFloat(result.pending_payout_value);
+        total_paid = 2 * parseFloat(result.curator_payout_value);
 
-        try {
-            result = await getContent(author, permlink);
-            pending_payout_value = parseFloat(result.pending_payout_value);
-            total_paid = 2 * parseFloat(result.curator_payout_value);
+        botVoteCount = countBotVotes(result.active_votes);
+        botVotePct = calculateBotRsharePercentage(result.active_votes);
+        organicValue = (pending_payout_value + total_paid) * (1 - 0.01 * botVotePct);
+        formattedOrganicValue = organicValue.toFixed(2);
+        wordCount = getWordCount(result.body);
+        readingTime = getReadingTime(wordCount);
+        category = result.category;
+        postMetaData = JSON.parse(result.json_metadata);
+        links = postMetaData.links;
+        tags = postMetaData.tags;
+        images = postMetaData.image;
+        imageLength = images ? images.length : 0;
+        linksLength = links ? links.length : 0;
+        tagsLength = Array.isArray(tags) && tags.length || (tags ? 1 : 0);
+        uniqueTags = [...new Set([category, ...(tags || [])])].sort();
+        tagString = uniqueTags.slice(0, 6).join(", ");
+    } catch (error) {
+        console.warn("Error:", error);
+    }
 
-            botVoteCount = countBotVotes(result.active_votes);
-            botVotePct = calculateBotRsharePercentage(result.active_votes);
-            organicValue = (pending_payout_value + total_paid) * (1 - 0.01 * botVotePct);
-            formattedOrganicValue = organicValue.toFixed(2);
-            wordCount = getWordCount(result.body);
-            readingTime = getReadingTime(wordCount);
-            category = result.category;
-            postMetaData = JSON.parse(result.json_metadata);
-            links = postMetaData.links;
-            tags = postMetaData.tags;
-            images = postMetaData.image;
-            imageLength = images ? images.length : 0;
-            linksLength = links ? links.length : 0;
-            tagsLength = Array.isArray(tags) && tags.length || (tags ? 1 : 0); // Include "category" as a tag
-            uniqueTags = [...new Set([category, ...(tags || [])])].sort();
-            tagString = uniqueTags.slice(0, 6).join(", ");
-        } catch (error) {
-            console.warn("Error:", error);
-        }
+    let resteemers, resteemLength;
+    try {
+        sdsResponse = await getResteems(author, permlink);
+        resteemers = sdsResponse.result.rows.map(row => row[1]);
+        resteemLength = resteemers ? resteemers.length : 0;
+    } catch (error) {
+        console.warn(error);
+    }
 
-        let resteemers, resteemLength;
-        try {
-            sdsResponse = await getResteems(author, permlink);
-            resteemers = sdsResponse.result.rows.map(row => row[1]);
-            resteemLength = resteemers ? resteemers.length : 0;
-        } catch (error ) {
-            console.warn(error);
-        }
-
-        overlayContent.innerHTML = `
+    overlayContent.innerHTML = `
             <p><b></i>Post Information</i></b></p>
             <ul>
             <li><b>Word count / Reading time:</b> ${wordCount} / ${readingTime} min.</li>
@@ -105,17 +101,26 @@ async function showOverlay(postInfo, curatorOverlayAnchor ) {
             <li><b>Bot count / Paid pct:</b> ${botVoteCount} / ${botVotePct}%</li>
             <li><b>Organic value</b>: ${formattedOrganicValue} SBD</li>
             </ul>
-            <!-- Add more information here as needed -->
         `;
 
-        // overlay.appendChild(overlayHeader);
-        overlay.appendChild(overlayContent);
-        
-        // Add overlay to the anchor's container
-        curatorOverlayAnchor.parentElement.appendChild(overlay);
-    }
+    overlay.appendChild(overlayContent);
 
+    // Track the new overlay
+    currentOverlay = overlay;
+    curatorOverlayAnchor.parentElement.appendChild(overlay);
     overlay.style.display = 'block';
+    return overlay;
+}
+
+function clearAllOverlays() {
+    // Remove all overlay panes, not just the tracked one
+    const overlayElements = document.querySelectorAll('.custom-overlay-pane');
+    overlayElements.forEach(overlay => {
+        if (overlay) {
+            overlay.remove();
+        }
+    });
+    currentOverlay = null;
 }
 
 function addButtonsToSummaries() {
@@ -134,11 +139,14 @@ function addButtonsToSummaries() {
             overlayContainer.appendChild(curatorOverlayAnchor);
             header.appendChild(overlayContainer);
 
-            curatorOverlayAnchor.addEventListener('mouseover', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-
-                // Get fresh data on each mouseover
+            curatorOverlayAnchor.addEventListener('mouseenter', async () => {
+                if (clearPromise) {
+                    await clearPromise;
+                    clearPromise = null;
+                }
+                
+                clearTimeout(overlayTimeout);
+                
                 const summaryHeader = curatorOverlayAnchor.closest('.articles__summary-header');
                 let link;
                 
@@ -151,25 +159,31 @@ function addButtonsToSummaries() {
                     }
                 }
 
-                let result;
                 if (link && link.href) {
                     curatorOverlayAnchor.href = link.href;
-                    result = extractAuthorAndPermlink(curatorOverlayAnchor.href);
-                    showOverlay(result, curatorOverlayAnchor, result);
-                } else {
-                    console.debug(`Couldn't process: link not found`);
-                    curatorOverlayAnchor.href = "";
+                    const result = extractAuthorAndPermlink(curatorOverlayAnchor.href);
+                    overlayTimeout = setTimeout(async () => {
+                        overlayPromise = showOverlay(result, curatorOverlayAnchor);
+                        await overlayPromise;
+                    }, 150);
                 }
             });
 
-            curatorOverlayAnchor.addEventListener('mouseout', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-            
-                const overlay = document.querySelector('.custom-overlay-pane');
-                if (overlay) {
-                    overlay.remove();
+            curatorOverlayAnchor.addEventListener('mouseleave', async () => {
+                if (overlayPromise) {
+                    await overlayPromise;
+                    overlayPromise = null;
                 }
+
+                clearTimeout(overlayTimeout);
+                
+                clearPromise = new Promise((resolve) => {
+                    setTimeout(() => {
+                        clearAllOverlays();
+                        resolve();
+                    }, 75);
+                });
+                await clearPromise;
             });
         }
     });
@@ -177,7 +191,7 @@ function addButtonsToSummaries() {
 }
 
 function extractAuthorAndPermlink(url) {
-    const regex = /\/@([^\/]+)\/([^\/]+)$/; // Matches "@username/permlink" at the end
+    const regex = /\/@([^\/]+)\/([^\/]+)$/;
     const match = url.match(regex);
 
     if (match) {
@@ -205,14 +219,13 @@ async function getContent(author, permlink) {
     });
 
     const data = await response.json();
-    return data.result;  // Equivalent to `jq -S .result`
+    return data.result;
 }
 
 async function getResteems(author, permlink) {
     sdsUrl=`${sdsEndpoint}/post_resteems_api/getResteems/${author}/${permlink}`;
     console.debug(sdsUrl);
-    const response = await fetch (sdsUrl);
-
+    const response = await fetch(sdsUrl);
     const data = await response.json();
     return data;
 }
