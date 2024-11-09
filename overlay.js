@@ -49,7 +49,7 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
 
     let pending_payout_value, total_paid, botVoteCount, botVotePct, organicValue, formattedOrganicValue,
         wordCount, readingTime, category, postMetaData, links, tags, images, imageLength, linksLength,
-        tagsLength, uniqueTags, tagString;
+        tagsLength, uniqueTags, tagString, depth=-1;
 
     try {
         result = await getContent(author, permlink);
@@ -71,7 +71,8 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
         linksLength = links ? links.length : 0;
         tagsLength = Array.isArray(tags) && tags.length || (tags ? 1 : 0);
         uniqueTags = [...new Set([category, ...(tags || [])])].sort();
-        tagString = uniqueTags.slice(0, 6).join(", ");
+        tagString = uniqueTags.slice(0, 10).join(", ");
+        depth = result.depth;
     } catch (error) {
         console.warn("Error:", error);
     }
@@ -81,27 +82,63 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
         sdsResponse = await getResteems(author, permlink);
         resteemers = sdsResponse.result.rows.map(row => row[1]);
         resteemLength = resteemers ? resteemers.length : 0;
+        console.debug(resteemers);
     } catch (error) {
         console.warn(error);
     }
 
+    const subscriberCount = category.match("hive-*") ? await getCommunitySubscribersFromAPI(steemApi, category, "") : 0;
+    const [followerCount, resteemReach, postCount] = await Promise.all([
+        getFollowerCountFromAPI(steemApi, author),
+        calculateResteemReach(steemApi, resteemers, author),
+        getPostCount(steemApi, author)
+      ]);
+    const feedReach = ( depth === 0 ) ? subscriberCount + followerCount + resteemReach : 0;
+
     overlayContent.innerHTML = `
-            <p><b></i>Post Information</i></b></p>
+        <table>
+        <tr>
+            <th colspan="2"><b>Post Info</b></th>
+        </tr>
+        <tr>
+            <td colspan="2">
             <ul>
-            <li><b>Word count / Reading time:</b> ${wordCount} / ${readingTime} min.</li>
-            <li><b>#images:</b> ${imageLength} / <b>#links</b>: ${linksLength} / <b>#tags:</b> ${tagsLength}</li>
-            <li><b>Tags:</b> ${tagString}</li>
+                <li><b>Word count / Reading time:</b> ${wordCount} / ${readingTime} min.</li>
+                <li><b>#images:</b> ${imageLength} / <b>#links</b>: ${linksLength} / <b>#tags:</b> ${tagsLength}</li>
+                <li><b>Tags:</b> ${tagString}</li>
             </ul>
-            <p></p><p><b><i>Influence and Audience</i></b></p>
+            </td>
+        </tr>
+        <tr>
+            <th><b>Audience</b></th>
+            <th><b>Vote and Values</b></th>
+        </tr>
+        <tr>
+            <td>
             <ul>
-            <li><b># Resteems:</b> ${resteemLength}</li>
+                <li><b># Resteems:</b> ${resteemLength}</li>
+                <li><b>Feed-reach: ${feedReach}</b></li>
             </ul>
-            <p></p><p><b><i>Vote and Value Information</i></b></p>
+            </td>
+            <td>
             <ul>
-            <li><b>Bot count / Paid pct:</b> ${botVoteCount} / ${botVotePct}%</li>
-            <li><b>Organic value</b>: ${formattedOrganicValue} SBD</li>
+                <li><b>Bot count / Paid pct:</b> ${botVoteCount} / ${botVotePct}%</li>
+                <li><b>Organic value</b>: ${formattedOrganicValue} SBD</li>
             </ul>
-        `;
+            </td>
+        </tr>
+        <tr>
+            <th colspan="2"><b>Author Info</b></th>
+        </tr>
+        <tr>
+            <td colspan="2">
+            <ul>
+                <li><b>Comments / Post:</b> ${postCount}</li>
+            </ul>
+            </td>
+        </tr>
+        </table>
+    `;
 
     overlay.appendChild(overlayContent);
 
@@ -144,12 +181,12 @@ function addButtonsToSummaries() {
                     await clearPromise;
                     clearPromise = null;
                 }
-                
+
                 clearTimeout(overlayTimeout);
-                
+
                 const summaryHeader = curatorOverlayAnchor.closest('.articles__summary-header');
                 let link;
-                
+
                 if (summaryHeader) {
                     const postItem = summaryHeader.closest('li');
                     if (postItem) {
@@ -176,7 +213,7 @@ function addButtonsToSummaries() {
                 }
 
                 clearTimeout(overlayTimeout);
-                
+
                 clearPromise = new Promise((resolve) => {
                     setTimeout(() => {
                         clearAllOverlays();
@@ -223,9 +260,111 @@ async function getContent(author, permlink) {
 }
 
 async function getResteems(author, permlink) {
-    sdsUrl=`${sdsEndpoint}/post_resteems_api/getResteems/${author}/${permlink}`;
+    sdsUrl = `${sdsEndpoint}/post_resteems_api/getResteems/${author}/${permlink}`;
     console.debug(sdsUrl);
     const response = await fetch(sdsUrl);
     const data = await response.json();
     return data;
 }
+
+async function getCommunityInfo(apiEndpoint, community, observer = "") {
+    const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'bridge.get_community',
+            params: {
+                name: community,
+                observer: observer
+            },
+            id: 1
+        })
+    });
+
+    const result = await response.json();
+    return result.result;
+}
+
+/** Get subscriber count from communityInfo returned by getCommunityInfo() */
+function getCommunitySubscribers(communityInfo) {
+    return communityInfo.subscribers;
+}
+
+/** Get subscriber count by calling getCommunityInfo() */
+async function getCommunitySubscribersFromAPI(apiEndpoint, community, observer = "") {
+    const result = await getCommunityInfo(apiEndpoint, community, observer);
+    return result.subscribers;
+}
+
+async function getFollowCount(apiEndpoint, account) {
+    const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            jsonrpc: '2.0',
+            method: 'condenser_api.get_follow_count',
+            params: [account],
+            id: 1
+        })
+    });
+
+    const result = await response.json();
+    return result.result;
+}
+
+function getFollowerCount(followCountResult) {
+    return followCountResult.follower_count;
+}
+
+async function getFollowerCountFromAPI(apiEndpoint, account) {
+    const followCountResult = await getFollowCount(apiEndpoint, account);
+    return followCountResult.follower_count;
+}
+
+async function calculateResteemReach(steemApi, resteemerList, author, initialFeedReach = 0) {
+    let feedReach = initialFeedReach;
+
+    const promises = resteemerList.map(async (resteemer) => {
+        if ( resteemer != author ) {
+            const resteemFeed = await getFollowerCountFromAPI(steemApi, resteemer);
+            console.debug(`Resteemer: ${resteemer}, feedReach: ${feedReach}, resteemFeed: ${resteemFeed}`);
+            feedReach += resteemFeed;
+        } else {
+            console.debug (`Skipping ${author}`);
+        }
+    });
+
+    await Promise.all(promises);
+    return feedReach;
+}
+
+async function getAccountInfo(steemApi, accountName) {
+    const response = await fetch(steemApi, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        jsonrpc: '2.0',
+        method: 'condenser_api.get_accounts',
+        params: [[accountName]],
+        id: 1
+      })
+    });
+    const data = await response.json();
+    return data.result;
+  }
+
+  async function getPostCount(steemApi, accountName) {
+    const accountInfo = await getAccountInfo(steemApi, accountName );
+    return accountInfo[0].post_count;
+  }
+
+  function parsePostCount(jsonString) {
+    return JSON.parse(jsonString)[0].post_count;
+  }
