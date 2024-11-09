@@ -87,11 +87,12 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
         console.warn(error);
     }
 
-    const subscriberCount = category.match("hive-*") ? await getCommunitySubscribersFromAPI(steemApi, category, "") : 0;
-    const [followerCount, resteemReach, postCount] = await Promise.all([
+    // Execute network calls in parallel
+    const [subscriberCount, followerCount, resteemReach, {commentCount, postCount, replyCount}] = await Promise.all([
+        category.match("hive-*") ? getCommunitySubscribersFromAPI(steemApi, category, "") : 0,
         getFollowerCountFromAPI(steemApi, author),
         calculateResteemReach(steemApi, resteemers, author),
-        getPostCount(steemApi, author)
+        getPostAndCommentCountsForAccount (author)
       ]);
     const feedReach = ( depth === 0 ) ? subscriberCount + followerCount + resteemReach : 0;
 
@@ -122,7 +123,7 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
             </td>
             <td>
             <ul>
-                <li><b>Bot count / Paid pct:</b> ${botVoteCount} / ${botVotePct}%</li>
+                <li><b># bots / paid pct:</b> ${botVoteCount} / ${botVotePct}%</li>
                 <li><b>Organic value</b>: ${formattedOrganicValue} SBD</li>
             </ul>
             </td>
@@ -133,7 +134,9 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
         <tr>
             <td colspan="2">
             <ul>
-                <li><b>Comments / Post:</b> ${postCount}</li>
+                <li><b>Posts:</b> ${postCount.toFixed(0)}</li>
+                <li><b>Comments / Post:</b> ${(commentCount / postCount).toFixed(2)}</li>
+                <li><b>Replies / Post:</b> ${(replyCount / postCount).toFixed(2)}</li>
             </ul>
             </td>
         </tr>
@@ -343,28 +346,23 @@ async function calculateResteemReach(steemApi, resteemerList, author, initialFee
     return feedReach;
 }
 
-async function getAccountInfo(steemApi, accountName) {
-    const response = await fetch(steemApi, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        method: 'condenser_api.get_accounts',
-        params: [[accountName]],
-        id: 1
-      })
-    });
+const getExtendedStats = async (accountName) => {
+    sdsUrl = `${sdsEndpoint}/accounts_api/getAccountExt/${accountName}`;
+    const response = await fetch(sdsUrl);
     const data = await response.json();
     return data.result;
-  }
+};
 
-  async function getPostCount(steemApi, accountName) {
-    const accountInfo = await getAccountInfo(steemApi, accountName );
-    return accountInfo[0].post_count;
-  }
+const getPostAndCommentCountsForAccount = async (accountName) => {
+    const extendedStats = await getExtendedStats(accountName);
+    return getPostAndCommentCounts(extendedStats);
+};
 
-  function parsePostCount(jsonString) {
-    return JSON.parse(jsonString)[0].post_count;
-  }
+const getPostAndCommentCounts = (extendedStats) => {
+    return {
+        commentCount: extendedStats.count_comments,
+        postCount: extendedStats.count_root_posts,
+        replyCount: extendedStats.count_replies
+    };
+};
+
