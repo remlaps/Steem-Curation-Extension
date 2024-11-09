@@ -69,8 +69,8 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
         images = postMetaData.image;
         imageLength = images ? images.length : 0;
         linksLength = links ? links.length : 0;
-        tagsLength = Array.isArray(tags) && tags.length || (tags ? 1 : 0);
         uniqueTags = [...new Set([category, ...(tags || [])])].sort();
+        tagsLength = uniqueTags.length;
         tagString = uniqueTags.slice(0, 10).join(", ");
         depth = result.depth;
     } catch (error) {
