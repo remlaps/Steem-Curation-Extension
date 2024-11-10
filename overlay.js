@@ -88,58 +88,87 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
     }
 
     // Execute network calls in parallel
-    const [subscriberCount, followerCount, resteemReach, {commentCount, postCount, replyCount}] = await Promise.all([
+    const [
+        accountInfo,  // Add this line
+        subscriberCount, 
+        followerCount, 
+        resteemReach, 
+        {commentCount, postCount, replyCount}
+    ] = await Promise.all([
+        getAccountInfo(steemApi, author),  // Add this line
         category.match("hive-*") ? getCommunitySubscribersFromAPI(steemApi, category, "") : 0,
         getFollowerCountFromAPI(steemApi, author),
         calculateResteemReach(steemApi, resteemers, author),
-        getPostAndCommentCountsForAccount (author)
-      ]);
+        getPostAndCommentCountsForAccount(author)
+    ]);
+    
     const feedReach = ( depth === 0 ) ? subscriberCount + followerCount + resteemReach : 0;
+
+    /** Wallet information */
+    const vestingDetails = getVestingDetails(accountInfo);
+    const ownVests = vestingDetails.vesting_shares;
+    const effectiveVests = vestingDetails.vesting_shares - vestingDetails.delegated_vesting_shares + vestingDetails.received_vesting_shares;
+    const pendingWithdrawals = (vestingDetails.to_withdraw - vestingDetails.withdrawn);
+    const ownLevel = getVestingLevel(ownVests);
+    const effectiveLevel = getVestingLevel(effectiveVests);
+    const classDisplay = formatVestingLevels ( ownLevel, effectiveLevel );
+    console.debug(`pending withdrawals: ${pendingWithdrawals}`);
+    console.debug(`own vests: ${ownVests}`);
+    const powerdownPct = getPowerdownPercentage(pendingWithdrawals, ownVests);
+
+    
 
     overlayContent.innerHTML = `
         <table>
-        <tr>
-            <th colspan="2"><b>Post Info</b></th>
-        </tr>
-        <tr>
-            <td colspan="2">
-            <ul>
-                <li><b>Word count / Reading time:</b> ${wordCount} / ${readingTime} min.</li>
-                <li><b>#images:</b> ${imageLength} / <b>#links</b>: ${linksLength} / <b>#tags:</b> ${tagsLength}</li>
-                <li><b>Tags:</b> ${tagString}</li>
-            </ul>
-            </td>
-        </tr>
-        <tr>
-            <th><b>Audience</b></th>
-            <th><b>Vote and Values</b></th>
-        </tr>
-        <tr>
-            <td>
-            <ul>
-                <li><b># Resteems:</b> ${resteemLength}</li>
-                <li><b>Feed-reach: ${feedReach}</b></li>
-            </ul>
-            </td>
-            <td>
-            <ul>
-                <li><b># bots / paid pct:</b> ${botVoteCount} / ${botVotePct}%</li>
-                <li><b>Organic value</b>: ${formattedOrganicValue} SBD</li>
-            </ul>
-            </td>
-        </tr>
-        <tr>
-            <th colspan="2"><b>Author Info</b></th>
-        </tr>
-        <tr>
-            <td colspan="2">
-            <ul>
-                <li><b>Posts:</b> ${postCount.toFixed(0)}</li>
-                <li><b>Comments / Post:</b> ${(commentCount / postCount).toFixed(2)}</li>
-                <li><b>Replies / Post:</b> ${(replyCount / postCount).toFixed(2)}</li>
-            </ul>
-            </td>
-        </tr>
+            <tr>
+                <th colspan="2"><b>Post Info</b></th>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <ul>
+                        <li><b>Word count / Reading time:</b> ${wordCount} / ${readingTime} min.</li>
+                        <li><b>[#images / #links / #tags]:</b> [${imageLength} / ${linksLength} / ${tagsLength}]</li>
+                        <li><b>Tags:</b> ${tagString}</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <th><b>Audience</b></th>
+                <th><b>Vote and Values</b></th>
+            </tr>
+            <tr>
+                <td>
+                    <ul>
+                        <li><b># Resteems:</b> ${resteemLength}</li>
+                        <li><b>Feed-reach:</b> ${feedReach}</li>
+                    </ul>
+                </td>
+                <td>
+                    <ul>
+                        <li><b># bots / paid pct:</b> ${botVoteCount} / ${botVotePct}%</li>
+                        <li><b>Organic value</b>:</b> ${formattedOrganicValue} SBD</li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <th><b>Author Info</b></th>
+                <th><b>Wallet Info</b></th>
+            </tr>
+            <tr>
+                <td>
+                    <ul>
+                        <li><b>Posts:</b> ${postCount.toFixed(0)}</li>
+                        <li><b>Comments / Post:</b> ${(commentCount / postCount).toFixed(2)}</li>
+                        <li><b>Replies / Post:</b> ${(replyCount / postCount).toFixed(2)}</li>
+                    </ul>
+                </td>
+                <td>
+                    <ul>
+                        <li><b>${classDisplay}</b> </li>
+                        <li><b>Powerdown %:</b> ${powerdownPct.toFixed(2)} </li>
+                    </ul>
+                </td>
+            </tr>
         </table>
     `;
 
@@ -366,3 +395,65 @@ const getPostAndCommentCounts = (extendedStats) => {
     };
 };
 
+async function getAccountInfo(steemApi, username) {
+    try {
+        const response = await fetch(steemApi, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                method: 'condenser_api.get_accounts',
+                params: [[username]],
+                id: 1
+            })
+        });
+ 
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching account info:', error);
+        throw error;
+    }
+ }
+ 
+ function getVestingDetails(accountInfo) {
+    if (!accountInfo?.result?.[0]) {
+        throw new Error('Invalid account info object');
+    }
+ 
+    const account = accountInfo.result[0];
+    return {
+        vesting_shares: parseFloat(account.vesting_shares.split(' ')[0]),
+        delegated_vesting_shares: parseFloat(account.delegated_vesting_shares.split(' ')[0]),
+        received_vesting_shares: parseFloat(account.received_vesting_shares.split(' ')[0]),
+        vesting_withdraw_rate: parseFloat(account.vesting_withdraw_rate.split(' ')[0]),
+        to_withdraw: parseFloat(account.to_withdraw) / 1000000,
+        withdrawn: parseFloat(account.withdrawn) / 1000000
+    };
+ }
+ 
+ function getVestingLevel(vests) {
+    const levels = [
+        'nanoplankton',  // < 10K      (log10 < 4)
+        'plankton',      // 10K-100K   (log10 < 5)
+        'redfish',       // 100K-1M    (log10 < 6)
+        'minnow',        // 1M-10M     (log10 < 7)
+        'dolphin',       // 10M-100M   (log10 < 8)
+        'orca',          // 100M-1B    (log10 < 9)
+        'whale',         // 1B-10B     (log10 < 10)
+        'blue whale'     // > 10B      (log10 >= 10)
+    ];
+    
+    const index = Math.min(Math.floor(Math.log10(vests) - 3), 7);
+    return levels[Math.max(0, index)];
+}
+
+function formatVestingLevels(ownLevel, effectiveLevel) {
+    return ownLevel === effectiveLevel ? ownLevel : `${ownLevel} -> ${effectiveLevel}`;
+ }
+
+ function getPowerdownPercentage(pendingWithdrawals, vestingShares) {
+    if (vestingShares === 0) return 0;
+    return (pendingWithdrawals / vestingShares) * 100;
+ }
