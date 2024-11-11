@@ -1,5 +1,5 @@
-const botList = ['abb-curation', 'avle', 'h4lab', 'justyy', 'nixiee', 'oppps', 'shy-fox', 'suntr',
-    'support-kr', 'upex', 'upmewhale', 'upvu', 'upvu.whitness', 'uco.bnb-d', 'uco.intern', 'vfund', 'xiguang'];
+const botList = ['abb-curation', 'avle', 'h4lab', 'jsup', 'justyy', 'nixiee', 'oppps', 'shy-fox', 'suntr',
+    'support-kr', 'upex', 'upmewhale', 'upvu', 'upvu.witness', 'uco.bnb-d', 'uco.intern', 'vfund', 'xiguang'];
 
 
 function countBotVotes (active_votes) {

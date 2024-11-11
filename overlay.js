@@ -89,13 +89,13 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
 
     // Execute network calls in parallel
     const [
-        accountInfo,  // Add this line
+        accountInfo,
         subscriberCount, 
         followerCount, 
         resteemReach, 
         {commentCount, postCount, replyCount}
     ] = await Promise.all([
-        getAccountInfo(steemApi, author),  // Add this line
+        getAccountInfo(steemApi, author),
         category.match("hive-*") ? getCommunitySubscribersFromAPI(steemApi, category, "") : 0,
         getFollowerCountFromAPI(steemApi, author),
         calculateResteemReach(steemApi, resteemers, author),
@@ -112,11 +112,13 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
     const ownLevel = getVestingLevel(ownVests);
     const effectiveLevel = getVestingLevel(effectiveVests);
     const classDisplay = formatVestingLevels ( ownLevel, effectiveLevel );
-    console.debug(`pending withdrawals: ${pendingWithdrawals}`);
-    console.debug(`own vests: ${ownVests}`);
     const powerdownPct = getPowerdownPercentage(pendingWithdrawals, ownVests);
 
-    
+    // Comments & replies per week of account life
+    const created=accountInfo.result[0].created;
+    const ageInDays=accountAge(created) / (1000 * 60 * 60 * 24);  // age in weeks (approx.)
+    const commentsPerWeek = commentCount / (7 * ageInDays);
+    const repliesPerWeek = replyCount / (7 * ageInDays);
 
     overlayContent.innerHTML = `
         <table>
@@ -145,7 +147,7 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
                 </td>
                 <td>
                     <ul>
-                        <li><b># bots / paid pct:</b> ${botVoteCount} / ${botVotePct}%</li>
+                        <li><b># bots / % bots:</b> ${botVoteCount} / ${botVotePct}%</li>
                         <li><b>Organic value</b>:</b> ${formattedOrganicValue} SBD</li>
                     </ul>
                 </td>
@@ -160,6 +162,7 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
                         <li><b>Posts:</b> ${postCount.toFixed(0)}</li>
                         <li><b>Comments / Post:</b> ${(commentCount / postCount).toFixed(2)}</li>
                         <li><b>Replies / Post:</b> ${(replyCount / postCount).toFixed(2)}</li>
+                        <li><b>Age (days):</b> ${ageInDays.toFixed(0)}</li>
                     </ul>
                 </td>
                 <td>
@@ -457,3 +460,12 @@ function formatVestingLevels(ownLevel, effectiveLevel) {
     if (vestingShares === 0) return 0;
     return (pendingWithdrawals / vestingShares) * 100;
  }
+
+ function accountAge(dateStr) {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diff = now - date;
+
+    return diff;
+  }
+  
