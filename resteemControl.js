@@ -84,7 +84,7 @@ function updateResteemVisibility(username) {
                 ('#posts_list > ul > li > div > div.articles__summary-header > div.user > div.user__col.user__col--right > span.user__name > span > strong > a');
                 const resteemedAuthor = targetElement.textContent;
                 const isFollowed = await isFollowing ( steemApi, feedOwner, resteemedAuthor );
-                // console.debug(`${feedOwner} following ${resteemedAuthor}: ${isFollowed}`);
+                console.debug(`${feedOwner} following ${resteemedAuthor}: ${isFollowed}`);
                 
                 const parentLi = summary.closest('li');
                 if (parentLi && !isFollowed && resteemedAuthor !== feedOwner) {
@@ -95,7 +95,7 @@ function updateResteemVisibility(username) {
     }
 }
 
-const cacheExpiration = 30 * 60 * 1000; // 30 minutes in milliseconds
+const cacheExpiration = 1 * 60 * 1000; // 30 minutes in milliseconds
 let followingCache = null;
 
 async function isFollowing(steemApi, follower, following) {
@@ -131,7 +131,10 @@ async function isFollowing(steemApi, follower, following) {
     });
     const data = await response.json();
     const result = data.result;
-    const isFollowing = result.length > 0;
+    let isFollowing = false;
+    if (result.length > 0 && result[0].following === following) {
+      isFollowing = true;
+    }
 
     // Update the in-memory cache
     if (!followingCache) {
