@@ -56,8 +56,11 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
         pending_payout_value = parseFloat(result.pending_payout_value);
         total_paid = 2 * parseFloat(result.curator_payout_value);
 
-        botVoteCount = countBotVotes(result.active_votes);
-        botVotePct = calculateBotRsharePercentage(result.active_votes);
+        botVoteCount = countVotes(result.active_votes);
+        botVotePct = calculateRsharePercentage(result.active_votes);
+        steemitVoteCount = countVotes(result.active_votes, steemitList);
+        steemitVotePct = calculateRsharePercentage(result.active_votes, steemitList);
+        steemitVoteLabel = steemitVoteCount === 1 ? "vote" : "votes";
         organicValue = (pending_payout_value + total_paid) * (1 - 0.01 * botVotePct);
         formattedOrganicValue = organicValue.toFixed(2);
         wordCount = getWordCount(result.body);
@@ -148,8 +151,8 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
                 <td>
                     <ul>
                         <li><b># bots / % bots:</b> ${botVoteCount} / ${botVotePct}%</li>
+                        <li><b>Steemit:</b> ${steemitVoteCount} ${steemitVoteLabel} / ${steemitVotePct}%</li>
                         <li><b>Organic value</b>:</b> ${formattedOrganicValue} SBD</li>
-                    </ul>
                 </td>
             </tr>
             <tr>
@@ -161,8 +164,7 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
                     <ul>
                         <li><b>Posts:</b> ${postCount.toFixed(0)}</li>
                         <li><b>Comments / Post:</b> ${(commentCount / postCount).toFixed(2)}</li>
-                        <li><b>Replies / Post:</b> ${(replyCount / postCount).toFixed(2)}</li>
-                        <li><b>Age (days):</b> ${ageInDays.toFixed(0)}</li>
+                        <li><b>Replies / Post:</b> ${(replyCount / ( postCount + commentCount )).toFixed(2)}</li>
                     </ul>
                 </td>
                 <td>
