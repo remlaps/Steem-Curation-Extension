@@ -55,13 +55,14 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
         result = await getContent(author, permlink);
         pending_payout_value = parseFloat(result.pending_payout_value);
         total_paid = 2 * parseFloat(result.curator_payout_value);
+        totalValue = pending_payout_value + total_paid;
 
         botVoteCount = countVotes(result.active_votes);
         botVotePct = calculateRsharePercentage(result.active_votes);
         steemitVoteCount = countVotes(result.active_votes, steemitList);
         steemitVotePct = calculateRsharePercentage(result.active_votes, steemitList);
         steemitVoteLabel = steemitVoteCount === 1 ? "vote" : "votes";
-        organicValue = (pending_payout_value + total_paid) * (1 - 0.01 * botVotePct);
+        organicValue = totalValue * (1 - 0.01 * botVotePct);
         formattedOrganicValue = organicValue.toFixed(2);
         wordCount = getWordCount(result.body);
         readingTime = getReadingTime(wordCount);
@@ -106,6 +107,7 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
     ]);
     
     const feedReach = ( depth === 0 ) ? subscriberCount + followerCount + resteemReach : 0;
+    const dollarsPerFeed = ( feedReach === 0 ) ? "---" : (totalValue / feedReach).toFixed(5);
 
     /** Wallet information */
     const vestingDetails = getVestingDetails(accountInfo);
@@ -138,14 +140,14 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
                 </td>
             </tr>
             <tr>
-                <th><b>Audience</b></th>
-                <th><b>Vote and Values</b></th>
+                <th><b>Audience, Votes, and Values</b></th>
             </tr>
             <tr>
                 <td>
                     <ul>
                         <li><b># Resteems:</b> ${resteemLength}</li>
                         <li><b>Feed-reach:</b> ${feedReach}</li>
+                        <li><b>$ / feed:</b> ${dollarsPerFeed}</li>
                     </ul>
                 </td>
                 <td>
