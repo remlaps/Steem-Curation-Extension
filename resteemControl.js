@@ -37,7 +37,11 @@ function createToggleControl() {
     controlDiv.appendChild(controlRow);
 
     // Append the control div to the target container
-    targetContainer.appendChild(controlDiv);
+    try {
+        targetContainer.appendChild(controlDiv);
+    } catch (error) {
+        console.warn(`Couldn't append resteem control: ${error}`);
+    }
 
     // Add event listener for the checkbox
     checkbox.addEventListener('change', function () {
