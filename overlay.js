@@ -298,14 +298,6 @@ async function getContent(author, permlink) {
     return data.result;
 }
 
-async function getResteems(author, permlink) {
-    sdsUrl = `${sdsEndpoint}/post_resteems_api/getResteems/${author}/${permlink}`;
-    console.debug(sdsUrl);
-    const response = await fetch(sdsUrl);
-    const data = await response.json();
-    return data;
-}
-
 async function getCommunityInfo(apiEndpoint, community, observer = "") {
     const response = await fetch(apiEndpoint, {
         method: 'POST',
@@ -381,13 +373,6 @@ async function calculateResteemReach(steemApi, resteemerList, author, initialFee
     await Promise.all(promises);
     return feedReach;
 }
-
-const getExtendedStats = async (accountName) => {
-    sdsUrl = `${sdsEndpoint}/accounts_api/getAccountExt/${accountName}`;
-    const response = await fetch(sdsUrl);
-    const data = await response.json();
-    return data.result;
-};
 
 const getPostAndCommentCountsForAccount = async (accountName) => {
     const extendedStats = await getExtendedStats(accountName);

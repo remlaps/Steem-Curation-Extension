@@ -88,3 +88,153 @@
     pointer-events: auto;
     background: inherit;
 }
+
+.word-count-info {
+    font-family: 'Arial', sans-serif;
+    border-radius: 10px;
+    padding: 5px; /* Reduce padding to save space */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.word-count-info div {
+
+    transition: transform 0.3s ease;
+    gap: 8px; /* Reduce gap between elements */
+}
+
+.word-count-info div:hover {
+    transform: scale(1.1); /* Slight zoom effect */
+}
+
+.word-count-info span {
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px; /* Slightly smaller font size */
+}
+
+
+
+.vote-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    border-bottom: 1px solid #ccc;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.vote-item:last-child {
+    border-bottom: none; /* Remove border for the last item */
+}
+
+.vote-value {
+    color: #28a745; /* Green color for positive vote values */
+    font-weight: bold;
+}
+
+.vote-percentage {
+    color: #007bff; /* Blue color for percentages */
+    margin-left: 5px;
+}
+
+.vote-username {
+    flex-grow: 1;
+    margin-left: 10px;
+    color: #007bff; /* Blue color for links */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.vote-username:hover {
+    text-decoration: underline;
+}
+
+
+
+.vote-weight {
+    color: #6c757d; /* Gray color for weights */
+    margin-left: 10px;
+}
+
+#graphWrapper {
+    position: sticky;
+    top: 20px;
+    background-color: #1e1e1e;
+    padding: 10px;
+    border-radius: 10px;
+    z-index: -1000;
+}
+
+/* Add this CSS to your styles */
+.chart-container {
+    border: 1px solid #444; /* Dark gray outline */
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 20px; /* Spacing between graphs */
+    background-color: transparent; /* Inherit page background */
+}
+
+/* Container for the dropdown */
+.resteem-dropdown-container {
+    position: relative;
+    display: inline-block;
+    margin-left: -30px;
+    font-family: Arial, sans-serif;
+}
+
+/* Dropdown trigger button */
+.resteem-dropdown-trigger {
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+}
+
+.resteem-dropdown-trigger:hover {
+    text-decoration: underline;
+}
+
+/* Dropdown menu container */
+.resteem-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #1e1e1e; /* Dark background */
+    border: 1px solid #444; /* Slim border */
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    max-height: 200px; /* Limit height for long lists */
+    overflow-y: auto; /* Enable scrolling for long lists */
+    list-style: none; /* Remove default bullet points */
+    margin: 5px 0 0;
+    display: none; /* Hidden by default */
+    z-index: 1000; /* Ensure it appears above other elements */
+}
+
+/* Dropdown menu item */
+.resteem-dropdown-item {
+    margin: 1000px 0;
+}
+
+/* Dropdown menu link */
+.resteem-dropdown-link {
+    color: #FFF; /*Blue text for links*/
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.resteem-dropdown-link:hover {
+    text-decoration: underline;
+}
+
+/* Visible class for dropdown menu */
+.resteem-dropdown-menu.visible {
+    display: block;
+}
+
+
+

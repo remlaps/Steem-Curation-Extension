@@ -1,4 +1,4 @@
-console.log("The extension is up and running");
+console.log("The extension is up and running...");
 
 var promotedPosts = {}; // contains all transactions for promoted posts with accounts, count, and whether self-promoted
 const urlRequestTransfers = "https://sds.steemworld.org/transfers_api/getTransfersByTypeTo/transfer/null/time/DESC/250/0";
@@ -7,6 +7,8 @@ const urlRequestAccount = "https://sds.steemworld.org/accounts_api/getAccountExt
 // const steemApi = "https://api.steemyy.com";
 const steemApi = "https://api.steemit.com";
 const sdsEndpoint = "https://sds.steemworld.org";
+
+let post_info = {"author":null, "permlink":null}
 
 /*
  *  The main logic is in highLight() and handleProfileDropdownClick()
@@ -246,6 +248,16 @@ function sceMutationObserver() {
         observer.observe(parentElement, config);
     }
 }
+
+window.addEventListener('load', async () => {
+    post_info = await loadPost({"author":null, "permlink":null}); // Call your function
+});
+
+window.addEventListener('click', async () => {
+     // Call your function
+     post_info = await loadPost(post_info);
+});
+
 
 addButtonsToSummaries(); // New for curation info buttons
 // modifyUserElement();        // Click handler to add voting power to dropdown menu. - doesn't seem to be needed here.
