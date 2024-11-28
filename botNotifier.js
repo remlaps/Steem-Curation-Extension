@@ -1,6 +1,6 @@
 const botList = ["abb-curation", "avle", "bot-api", "boomerang", "coin-doubler",
-    "gotogether", "h4lab", "heroism", "justyy", "nixiee", "nutbox.mine",
-    "oppps", "robiniaswap", "shy-fox", "steem-punks", "steem.botto", 
+    "cur8", "gotogether", "h4lab", "heroism", "justyy", "nixiee", "nutbox.mine",
+    "oppps", "robiniaswap", "shy-fox", "steem-punks", "steem.botto", "steem.stack",
     "steembasicincome", "steemegg", "successgr.with", "suntr", "support-kr",
     "templar-kr", "tipu", "uco.bnb-d", "uco.intern", "upex", "upmewhale",
     "upvu", "upvu.witness", "vfund", "vote.steem-aaa", "xiguang"];
