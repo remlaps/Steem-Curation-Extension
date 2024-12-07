@@ -238,11 +238,17 @@ function sceMutationObserver() {
     let observer;
 
     if (parentElement) {
-        observer = new MutationObserver((mutations) => {
+        observer = new MutationObserver((mutationsList) => {
             addButtonsToSummaries(); // New for curation info buttons
             modifyUserElement();
             highLight();
             updateResteemVisibility();
+            for (let mutation of mutationsList) {
+                if (mutation.type === 'attributes' && (mutation.attributeName === 'class'
+                    || mutation.attributeName === 'style')) {
+                    createToggleControl();
+                }
+            }
         });
         const config = { childList: true, subtree: true, attributes: true };
         observer.observe(parentElement, config);
@@ -259,10 +265,8 @@ window.addEventListener('click', async () => {
 });
 
 
-addButtonsToSummaries(); // New for curation info buttons
-// modifyUserElement();        // Click handler to add voting power to dropdown menu. - doesn't seem to be needed here.
+addButtonsToSummaries();        // New for curation info buttons
 sceMutationObserver();         // Mutation observer for new dropdown menu after login.
-                               // Don't run this inside of highlight()!!!
- createToggleControl();         // Resteem checkbox
+// createToggleControl();         // Resteem checkbox
 
 console.log("The extension is done.");
