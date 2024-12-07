@@ -71,11 +71,11 @@ class Post {
                     })),
                 };
                 this.details.burnPct = 0
-                const null_vote = this.details.beneficiaries.find(b => b.account === "null")
-                if (null_vote) {
-                    this.details.burnPct = null_vote.weight / 10000
+                const null_beneficiary = this.details.beneficiaries.find(b => b.account === "null")
+                if (null_beneficiary) {
+                    this.details.burnPct = null_beneficiary.weight / 10000
                 }
-                this.details.burn_payout_value = this.details.burnPct * this.details.total_payout_value
+                this.details.burn_payout_value = this.details.burnPct * this.details.curator_payout_value;
                 const botVotePct = calculateRsharePercentage(rawDetails.active_votes);
                 this.details.organic_payout_value = this.details.total_payout_value * (1 - 0.01 * botVotePct);
                 this.details.wordCount = getWordCount(this.details.body);
@@ -120,7 +120,7 @@ class Post {
             botVotePct = calculateRsharePercentage(votes.slice(0,i));
             vote.organic_value = temp_total_value * (1 - 0.01 * botVotePct)
             // console.log(vote.organic_value)
-            vote.burn_value = temp_total_value * this.details.burnPct;
+            vote.burn_value = ( temp_total_value / 2 ) * this.details.burnPct;
         }
         return votes
     }

@@ -51,6 +51,8 @@ const formatTimeLabel = (elapsedMs, timeUnit) => {
  */
 const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxisLabel, showDollarSign = true) => {
     const graphContainer = document.querySelector(`.${containerClass}`);
+    const isDarkMode = document.body.classList.contains('theme-dark');
+    const textColor = isDarkMode ? '#FFFFFF' : '#333333';
 
     if (graphContainer) {
         // Create a wrapper div for the graph
@@ -100,6 +102,7 @@ const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxi
                     },
                     title: {
                         display: true,
+                        color: textColor,
                         text: title,
                         font: {
                             size: 18,
