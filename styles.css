@@ -97,7 +97,6 @@
 }
 
 .word-count-info div {
-
     transition: transform 0.3s ease;
     gap: 8px; /* Reduce gap between elements */
 }
@@ -152,8 +151,6 @@
     text-decoration: underline;
 }
 
-
-
 .vote-weight {
     color: #6c757d; /* Gray color for weights */
     margin-left: 10px;
@@ -174,7 +171,7 @@
     border-radius: 10px;
     padding: 10px;
     margin-bottom: 20px; /* Spacing between graphs */
-    background-color: transparent; /* Inherit page background */
+    background-color: inherit; /* Inherit page background */
 }
 
 /* Container for the dropdown */
@@ -217,14 +214,20 @@
 
 /* Dropdown menu item */
 .resteem-dropdown-item {
-    margin: 1000px 0;
+    margin: 5px 0; /* Adjusted margin for better spacing */
+    padding: 5px 10px; /* Add some padding for better appearance */
+    border-bottom: 1px solid #444; /* Optional: Add a bottom border for separation */
 }
 
 /* Dropdown menu link */
 .resteem-dropdown-link {
-    color: #FFF; /*Blue text for links*/
+    color: #FFF; /* Blue text for links */
     text-decoration: none;
     font-size: 14px;
+    display: block; /* Ensure the link takes up the full width of the list item */
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden; /* Hide overflow if text is too long */
+    text-overflow: ellipsis; /* Show ellipsis if text is too long */
 }
 
 .resteem-dropdown-link:hover {
@@ -235,6 +238,5 @@
 .resteem-dropdown-menu.visible {
     display: block;
 }
-
 
 

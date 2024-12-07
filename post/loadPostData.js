@@ -106,17 +106,14 @@ const displayWordCountAndReadingTime = (containerClass, wordCount, readingTimeMi
     container.appendChild(infoWrapper);
 };
 
-/**
- * Load the graph for post value over time.
- * @param {Object} post - The post object containing details and active_votes.
- */
 const loadPostValueGraph = (post) => {
-    const postCreationTime = new Date(post.details.created);
+    // Ensure the date strings are treated as UTC by appending 'Z'
+    const postCreationTime = new Date(post.details.created + 'Z');
     const payoutEndTime = new Date(postCreationTime.getTime() + 7 * 24 * 60 * 60 * 1000); // Add 7 days to creation time
 
-    // Filter votes within the payout period
+    // Filter votes within the payout period, treating times as UTC
     const activeVotes = sortVotesByTime(
-        post.details.active_votes.filter((vote) => new Date(vote.time) <= payoutEndTime)
+        post.details.active_votes.filter((vote) => new Date(vote.time + 'Z') <= payoutEndTime)
     );
 
     if (activeVotes.length === 0) {
@@ -126,7 +123,7 @@ const loadPostValueGraph = (post) => {
 
     // Determine the scaling range based on post age
     const currentTime = new Date();
-    const latestVoteTime = new Date(activeVotes[activeVotes.length - 1].time).getTime();
+    const latestVoteTime = new Date(activeVotes[activeVotes.length - 1].time + 'Z').getTime();
     const maxElapsedMs = Math.min(latestVoteTime - postCreationTime.getTime(), currentTime - postCreationTime);
 
     const numIntervals = 10; // Define the number of intervals for the X-axis
@@ -148,7 +145,7 @@ const loadPostValueGraph = (post) => {
 
     // Assign cumulative values to intervals
     activeVotes.forEach((vote) => {
-        const voteTime = new Date(vote.time).getTime();
+        const voteTime = new Date(vote.time + 'Z').getTime();
         const elapsedMs = voteTime - postCreationTime.getTime();
         const intervalIndex = Math.min(Math.floor(elapsedMs / intervalMs), numIntervals - 1);
         cumulativeTotal += vote.value;
@@ -168,19 +165,19 @@ const loadPostValueGraph = (post) => {
     }
 
     const data = [];
-    if (cumulativeTotal === 0){
-        console.warn("Post has no value")
-        return
-    }
-    
-    data.push({ label: 'Total Value', data: cumulativeTotalValues, color: 'rgba(75, 192, 192, 1)' })
-
-    if (cumulativeOrganic > 0){
-        data.push({ label: 'Organic Value', data: cumulativeOrganicValues, color: 'rgba(0, 200, 0, 1)' })
+    if (cumulativeTotal === 0) {
+        console.warn("Post has no value");
+        return;
     }
 
-    if (cumulativeBurn > 0){
-        data.push({ label: 'Burn Value', data: cumulativeBurnValues, color: 'rgba(200, 0, 0, 1)' })
+    data.push({ label: 'Total Value', data: cumulativeTotalValues, color: 'rgba(75, 192, 192, 1)' });
+
+    if (cumulativeOrganic > 0) {
+        data.push({ label: 'Organic Value', data: cumulativeOrganicValues, color: 'rgba(0, 200, 0, 1)' });
+    }
+
+    if (cumulativeBurn > 0) {
+        data.push({ label: 'Burn Value', data: cumulativeBurnValues, color: 'rgba(255, 0, 0, 1)' });
     }
 
     createLineGraph(
@@ -193,12 +190,15 @@ const loadPostValueGraph = (post) => {
     );
 };
 
-const loadPostVoteGraph = (post) => {
-    const postCreationTime = new Date(post.details.created);
-    const payoutEndTime = new Date(postCreationTime.getTime() + 7 * 24 * 60 * 60 * 1000); // Add 7 days to creation time
 
+const loadPostVoteGraph = (post) => {
+    // Ensure the date strings are treated as UTC by appending 'Z'
+    const postCreationTime = new Date(post.details.created + 'Z');
+    const payoutEndTime = new Date(postCreationTime.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    // Filter and sort active votes within the payout period, treating times as UTC
     const activeVotes = sortVotesByTime(
-        post.details.active_votes.filter(vote => new Date(vote.time) <= payoutEndTime)
+        post.details.active_votes.filter(vote => new Date(vote.time + 'Z') <= payoutEndTime)
     );
 
     if (activeVotes.length === 0) {
@@ -208,7 +208,7 @@ const loadPostVoteGraph = (post) => {
 
     // Determine the scaling range based on post age
     const currentTime = new Date();
-    const latestVoteTime = new Date(activeVotes[activeVotes.length - 1].time).getTime();
+    const latestVoteTime = new Date(activeVotes[activeVotes.length - 1].time + 'Z').getTime();
     const maxElapsedMs = Math.min(latestVoteTime - postCreationTime.getTime(), currentTime - postCreationTime);
 
     const numIntervals = 10; // Define the number of intervals for the X-axis
@@ -226,7 +226,7 @@ const loadPostVoteGraph = (post) => {
     // Assign cumulative votes to intervals
     let totalVotes = 0;
     activeVotes.forEach(vote => {
-        const voteTime = new Date(vote.time).getTime();
+        const voteTime = new Date(vote.time + 'Z').getTime();
         const elapsedMs = voteTime - postCreationTime.getTime();
         const intervalIndex = Math.min(Math.floor(elapsedMs / intervalMs), numIntervals - 1);
         totalVotes += 1;
@@ -242,11 +242,12 @@ const loadPostVoteGraph = (post) => {
 
     createLineGraph(
         'c-sidebr-market',
-        'postVoteGraph',
+        'postVoteGraph', 
         'Total Votes Over Time',
         timeLabels,
         [{ label: 'Total Votes', data: cumulativeVoteCounts, color: 'rgba(75, 192, 192, 1)' }],
-        'Votes'
+        'Votes',
+        false
     );
 };
 
@@ -308,7 +309,7 @@ const loadAuthorWeeklyEarningsBarGraph = (payouts) => {
     console.log({ totalSum, organicSum, burnSum });
 
     if (totalSum===0){
-        console.warn("Total Value 0")
+        console.log("Total Value 0")
         return
     }
 
@@ -401,7 +402,6 @@ const displayPostResteemData = async (post, votingClassSelector) => {
         return;
     }
     if (resteems.length === 0){
-        console.warn("There are no resteems")
         return
     }
 
@@ -418,19 +418,20 @@ const displayPostResteemData = async (post, votingClassSelector) => {
     const dropdownMenu = document.createElement('ul');
     dropdownMenu.className = 'resteem-dropdown-menu';
 
+    console.log("Resteems data:", resteems);
     // Populate the dropdown menu with resteemers
     resteems.forEach(resteem => {
+        console.log("This resteem: ", resteem);
         const listItem = document.createElement('li');
         listItem.className = 'resteem-dropdown-item';
-
-        const link = document.createElement('a');
-        link.href = `/@${resteem[1]}`;
-        link.textContent = resteem[1];
-        link.className = 'resteem-dropdown-link';
-
-        listItem.appendChild(link);
-        dropdownMenu.appendChild(listItem);
-    });
+            const link = document.createElement('a');
+            link.href = `/@${resteem[1]}`;
+            link.textContent = resteem[1];
+            link.className = 'resteem-dropdown-link';
+        
+            listItem.appendChild(link);
+            dropdownMenu.appendChild(listItem);
+        });
 
     // Toggle dropdown visibility on trigger click
     dropdownTrigger.addEventListener('click', () => {

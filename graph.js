@@ -47,8 +47,9 @@ const formatTimeLabel = (elapsedMs, timeUnit) => {
  * @param {Array} labels - The labels for the X-axis.
  * @param {Array} data - The data for the Y-axis.
  * @param {string} yAxisLabel - The label for the Y-axis.
+ * @param {boolean} showDollarSign - Whether to show a dollar sign with datapoints on mouseover.
  */
-const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxisLabel) => {
+const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxisLabel, showDollarSign = true) => {
     const graphContainer = document.querySelector(`.${containerClass}`);
 
     if (graphContainer) {
@@ -108,7 +109,9 @@ const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxi
                     tooltip: {
                         callbacks: {
                             label: function (tooltipItem) {
-                                return `$${tooltipItem.raw.toFixed(2)}`;
+                                return showDollarSign ? 
+                                    `$${tooltipItem.raw.toFixed(2)}` : 
+                                    `${tooltipItem.raw.toFixed(0)}`;  // Remove decimal places for non-dollar values
                             },
                         },
                     },
