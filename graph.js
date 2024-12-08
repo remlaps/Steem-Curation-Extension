@@ -112,8 +112,8 @@ const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxi
                     tooltip: {
                         callbacks: {
                             label: function (tooltipItem) {
-                                return showDollarSign ? 
-                                    `$${tooltipItem.raw.toFixed(2)}` : 
+                                return showDollarSign ?
+                                    `$${tooltipItem.raw.toFixed(2)}` :
                                     `${tooltipItem.raw.toFixed(0)}`;  // Remove decimal places for non-dollar values
                             },
                         },
@@ -192,6 +192,9 @@ const createLineGraphWithClickableDots = (containerClass, canvasId, title, label
         return;
     }
 
+    const isDarkMode = document.body.classList.contains('theme-dark');
+    const textColor = isDarkMode ? '#FFFFFF' : '#333333';
+
     // Remove existing chart if it exists
     const existingCanvas = document.getElementById(canvasId);
     if (existingCanvas) {
@@ -205,17 +208,19 @@ const createLineGraphWithClickableDots = (containerClass, canvasId, title, label
     // Wrap the canvas in a styled container
     const containerDiv = document.createElement('div');
     containerDiv.classList.add('chart-container');
-    containerDiv.style.border = '1px solid #444';
-    containerDiv.style.padding = '10px';
-    containerDiv.style.borderRadius = '5px';
-    containerDiv.style.marginBottom = '20px';
-    containerDiv.style.backgroundColor = 'transparent';
+    containerDiv.style.marginTop = '20px';
     containerDiv.appendChild(canvas);
     graphContainer.appendChild(containerDiv);
 
+    // Create a custom status bar element
+    const statusBar = document.createElement('div');
+    statusBar.id = 'custom-status-bar';
+    statusBar.style.display = 'none'; // Initially hidden
+    document.body.appendChild(statusBar);
+
     // Generate the graph using Chart.js
     const ctx = canvas.getContext('2d');
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
@@ -237,13 +242,10 @@ const createLineGraphWithClickableDots = (containerClass, canvasId, title, label
             plugins: {
                 legend: {
                     display: false,
-                    position: 'top',
-                    labels: {
-                        color: '#333',
-                    },
                 },
                 title: {
                     display: true,
+                    color: textColor,
                     text: title,
                     font: {
                         size: 18,
@@ -273,7 +275,6 @@ const createLineGraphWithClickableDots = (containerClass, canvasId, title, label
                         },
                     },
                     ticks: {
-                        color: '#AAA',
                         maxRotation: 45,
                         minRotation: 0,
                     },
@@ -287,31 +288,89 @@ const createLineGraphWithClickableDots = (containerClass, canvasId, title, label
                             weight: 'bold',
                         },
                     },
-                    ticks: {
-                        color: '#AAA',
-                    },
                 },
             },
             onClick: (event, elements) => {
+                // This handles left-clicks.
+                // Opening new tabs with middle-clicks is ouside the Chart in "handleMouseUp".
                 if (elements.length > 0) {
                     const elementIndex = elements[0].index;
                     const post = posts[elementIndex];
                     const postUrl = `/@${post.details.author}/${post.details.permlink}`;
-                    window.location.href = postUrl;
+                        window.location.href = postUrl;
                 }
             },
         },
     });
+
+    // Add custom event listeners for mouseover and mouseout
+    const handleMouseMove = (event) => {
+        const element = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+        if (element.length > 0) {
+            const elementIndex = element[0].index;
+            const post = posts[elementIndex];
+            const postUrl = `/@${post.details.author}/${post.details.permlink}`;
+            canvas.style.cursor = 'pointer';
+            statusBar.textContent = postUrl; // Update the status bar content
+            statusBar.style.display = 'block'; // Show the status bar
+        } else {
+            canvas.style.cursor = 'default';
+            statusBar.style.display = 'none'; // Hide the status bar
+        }
+    };
+
+    const handleMouseOut = () => {
+        canvas.style.cursor = 'default';
+        statusBar.style.display = 'none'; // Hide the status bar
+    };
+
+    const handleMouseUp = (event) => {
+        const elements = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
+        if (elements.length > 0) {
+            const elementIndex = elements[0].index;
+            const post = posts[elementIndex];
+            const postUrl = `/@${post.details.author}/${post.details.permlink}`;
+            
+            if (event.button === 1) { // Middle mouse button
+                event.preventDefault();
+                window.open(postUrl, '_blank');
+            }
+        }
+    };
+
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseout', handleMouseOut);
+    canvas.addEventListener('mouseup', handleMouseUp );
+
+    // Optionally, return a cleanup function to remove event listeners and the status bar
+    return () => {
+        canvas.removeEventListener('mousemove', handleMouseMove);
+        canvas.removeEventListener('mouseout', handleMouseOut);
+        document.body.removeChild(statusBar);
+    };
 };
 
-
-
+/**
+ * Creates a bar graph using Chart.js within a specified container.
+ * 
+ * @param {string} containerClass - The class of the container where the graph will be appended.
+ * @param {string} canvasId - The ID for the canvas element that will be created for the graph.
+ * @param {string} title - The title of the graph, displayed at the top.
+ * @param {Array<string>} labels - An array of labels for the X-axis, representing categories or groups.
+ * @param {Array<number>} data - An array of numerical data points corresponding to each label.
+ * @param {string} yAxisLabel - The label for the Y-axis, describing the units of the data.
+ * @param {Array<string>} colors - An array of color strings for each bar in the graph.
+ * @returns {void}
+ */
 const createBarGraph = (containerClass, canvasId, title, labels, data, yAxisLabel, colors) => {
     const graphContainer = document.querySelector(`.${containerClass}`);
     if (!graphContainer) {
         console.error(`Graph container not found: ${containerClass}`);
         return;
     }
+
+    const isDarkMode = document.body.classList.contains('theme-dark');
+    const textColor = isDarkMode ? '#FFFFFF' : '#333333';
 
     // Remove existing chart if it exists
     const existingCanvas = document.getElementById(canvasId);
@@ -354,6 +413,7 @@ const createBarGraph = (containerClass, canvasId, title, labels, data, yAxisLabe
                 },
                 title: {
                     display: true,
+                    color: textColor,
                     text: title,
                     font: {
                         size: 18,
@@ -399,6 +459,4 @@ const createBarGraph = (containerClass, canvasId, title, labels, data, yAxisLabe
         },
     });
 };
-
-
 
