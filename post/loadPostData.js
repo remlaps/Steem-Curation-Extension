@@ -9,12 +9,12 @@ const loadPost = async (p_info) => {
         const post = await Post.create(author, permlink);
 
         if (post) {
-            if (!(p_info.author === author && p_info.permlink === permlink)){
+            if (!(p_info.author === author && p_info.permlink === permlink)) {
                 displayWordCountAndReadingTime("PostFull__time_author_category_large", post.details.wordCount, post.details.readingTimeMinutes)
                 loadPostValueGraph(post);
                 loadPostVoteGraph(post);
                 const payouts = await loadAuthorWeeklyEarningsGraph(post);
-                if (payouts){
+                if (payouts) {
                     console.log(payouts)
                     loadAuthorWeeklyEarningsBarGraph(payouts);
                 }
@@ -23,17 +23,17 @@ const loadPost = async (p_info) => {
             } else {
                 return p_info
             }
-            
+
             // Select the unordered list 
 
             // Get the element with the class 'Voting__voters_list'
-            
+
         } else {
             console.log('There was a problem loading the post data!');
         }
-        return {"author":author, "permlink":permlink}
+        return { "author": author, "permlink": permlink }
     } else {
-        return {"author":null, "permlink":null}
+        return { "author": null, "permlink": null }
     }
 };
 
@@ -242,7 +242,7 @@ const loadPostVoteGraph = (post) => {
 
     createLineGraph(
         'c-sidebr-market',
-        'postVoteGraph', 
+        'postVoteGraph',
         'Total Votes Over Time',
         timeLabels,
         [{ label: 'Total Votes', data: cumulativeVoteCounts, color: 'rgba(75, 192, 192, 1)' }],
@@ -263,7 +263,7 @@ const loadAuthorWeeklyEarningsGraph = async (post) => {
     if (payouts.length === 1) {
         console.warn("Only 1 payout in last week");
         return payouts;
-    } else if (payouts.length === 0){
+    } else if (payouts.length === 0) {
         return null
     }
 
@@ -308,7 +308,7 @@ const loadAuthorWeeklyEarningsBarGraph = (payouts) => {
 
     console.log({ totalSum, organicSum, burnSum });
 
-    if (totalSum===0){
+    if (totalSum === 0) {
         console.log("Total Value 0")
         return
     }
@@ -316,12 +316,12 @@ const loadAuthorWeeklyEarningsBarGraph = (payouts) => {
     const xAxisLabels = ['Total Value'];
     const dataValues = [totalSum];
     const colors = ['rgba(75, 192, 192, 0.7)']; // Blue for Total
-    if (organicSum > 0){
+    if (organicSum > 0) {
         xAxisLabels.push('Organic Value');
         dataValues.push(organicSum);
         colors.push('rgba(0, 255, 0, 0.7)') // Green for Organic
     }
-    if (burnSum > 0){
+    if (burnSum > 0) {
         xAxisLabels.push('Burn Value')
         dataValues.push(burnSum)
         colors.push('rgba(255, 0, 0, 0.7)') // Red for Burn
@@ -340,57 +340,57 @@ const loadAuthorWeeklyEarningsBarGraph = (payouts) => {
 const loadPostVoteData = (post) => {
     const votingClass = document.getElementsByClassName('Voting__voters_list');
 
-            if (votingClass.length > 0) {
-                // Access the first element with the class 'Voting__voters_list'
-                const votingElement = votingClass[0]; // Index may change in future updates!
+    if (votingClass.length > 0) {
+        // Access the first element with the class 'Voting__voters_list'
+        const votingElement = votingClass[0]; // Index may change in future updates!
 
-                // Find the <ul> with the specified classes inside the 'Voting' element
-                const voters_list = votingElement.querySelector('ul.VerticalMenu.menu.vertical');
-                
-                if (voters_list) {
-                    const listItems = voters_list.querySelectorAll('li');
+        // Find the <ul> with the specified classes inside the 'Voting' element
+        const voters_list = votingElement.querySelector('ul.VerticalMenu.menu.vertical');
 
-                    if (listItems) {
-                        listItems.forEach((item) => {
+        if (voters_list) {
+            const listItems = voters_list.querySelectorAll('li');
 
-                            // Extract the username from the textContent (assumes format "+ username")
-                            const username = item.textContent.split(' ')[1].trim()
-                
-                            // Find the corresponding vote in the activeVotes list
-                            const vote = post.details.active_votes.find(v => v.voter === username);
-                
-                            if (vote) {
-                                // Reformat the text content
-                                const first_digit = item.textContent.split(' ')[0];
-                                const percent = (vote.percent / 100).toFixed(0);
-                            
-                                // Add a custom class to style the list items
-                                item.classList.add('vote-item');
-                            
-                                // Format and update the text content with a clickable link for the username
-                                if (vote.value > 0) {
-                                    item.innerHTML = `
+            if (listItems) {
+                listItems.forEach((item) => {
+
+                    // Extract the username from the textContent (assumes format "+ username")
+                    const username = item.textContent.split(' ')[1].trim()
+
+                    // Find the corresponding vote in the activeVotes list
+                    const vote = post.details.active_votes.find(v => v.voter === username);
+
+                    if (vote) {
+                        // Reformat the text content
+                        const first_digit = item.textContent.split(' ')[0];
+                        const percent = (vote.percent / 100).toFixed(0);
+
+                        // Add a custom class to style the list items
+                        item.classList.add('vote-item');
+
+                        // Format and update the text content with a clickable link for the username
+                        if (vote.value > 0) {
+                            item.innerHTML = `
                                         <span class="vote-value">$${vote.value.toFixed(2)}</span>
                                         <span class="vote-percentage">(${vote.percentage}%)</span>
                                         <a href="/@${username}" class="vote-username">${username}</a>
                                         <span class="vote-weight">(${percent}% weight)</span>
                                     `;
-                                } else {
-                                    item.innerHTML = `
+                        } else {
+                            item.innerHTML = `
                                         <a href="/@${username}" class="vote-username">${username}</a>
                                         <span class="vote-weight">(${percent}% weight)</span>
                                     `;
-                                }
-                            
-                            }                                                                              
-                        });
+                        }
+
                     }
-                } else {
-                    console.error('Unordered list not found within votingClass element.');
-                }
-            } else {
-                console.error('Element with class "Voting__voters_list" not found.');
+                });
             }
+        } else {
+            console.error('Unordered list not found within votingClass element.');
+        }
+    } else {
+        console.error('Element with class "Voting__voters_list" not found.');
+    }
 }
 
 const displayPostResteemData = async (post, votingClassSelector) => {
@@ -401,7 +401,7 @@ const displayPostResteemData = async (post, votingClassSelector) => {
         console.error(`Element with class "${votingClassSelector}" not found.`);
         return;
     }
-    if (resteems.length === 0){
+    if (resteems.length === 0) {
         return
     }
 
@@ -410,13 +410,53 @@ const displayPostResteemData = async (post, votingClassSelector) => {
     dropdownContainer.className = 'DropdownMenu';
 
     // Create the dropdown trigger button
-    const dropdownTrigger = document.createElement('span');
-    dropdownTrigger.textContent = `${resteems.length} Resteems ▼`;
-    dropdownTrigger.className = 'DropdownMenu';
+    // const dropdownTrigger = document.createElement('span');
+    // dropdownTrigger.textContent = `${resteems.length} Resteems ▼`;
+    // dropdownTrigger.className = 'DropdownMenu';
+
+    // Create the dropdown trigger as an anchor element
+    const dropdownTrigger = document.createElement('a');
+    dropdownTrigger.href = '#'; // Set href to "#" to emulate an anchor
+    dropdownTrigger.className = 'resteem-dropdown-trigger';
+
+    // Add an event listener to the dropdown menu to prevent snap-back to the top
+    dropdownTrigger.addEventListener('click', (event) => {
+        event.preventDefault(); // Prevent the default anchor behavior
+        dropdownMenu.classList.toggle('visible');
+    });
+
+    // Create an SVG element for the triangle icon
+    const svgIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svgIcon.setAttribute("width", "16"); // Set the width of the icon
+    svgIcon.setAttribute("height", "16"); // Set the height of the icon
+    svgIcon.setAttribute("viewBox", "0 0 512 512"); // Set the view box for the SVG
+    svgIcon.classList.add('triangle-icon'); // Add a class for styling
+
+    // Create the polygon element for the triangle
+    const triangle = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+    triangle.setAttribute("points", "128,90 256,218 384,90");
+    triangle.setAttribute("fill", "currentColor"); // Use current color for the fill
+
+    // Append the triangle to the SVG
+    svgIcon.appendChild(triangle);
+
+    // Create a text node for the resteem count
+    // const resteemCountText = document.createTextNode(`${resteems.length} Resteems `);
+    const resteemCountText = document.createElement('span');
+    resteemCountText.textContent = `${resteems.length} Resteems `;
+    resteemCountText.classList.add('resteem-count-text'); // Add a class for styling
+
+    // Append the text and the SVG icon to the dropdown trigger
+    dropdownTrigger.appendChild(resteemCountText);
+    dropdownTrigger.appendChild(svgIcon);
 
     // Create the dropdown menu
+    const isDarkMode = document.body.classList.contains('theme-dark');
+    const resteemDropdownBgColor = isDarkMode ? '#1C252B' : '#F4F4F4';
     const dropdownMenu = document.createElement('ul');
     dropdownMenu.className = 'resteem-dropdown-menu';
+    // Set the background color of the dropdown menu, depending on dark/light mode
+    dropdownMenu.style.backgroundColor = resteemDropdownBgColor;
 
     console.log("Resteems data:", resteems);
     // Populate the dropdown menu with resteemers
@@ -424,18 +464,13 @@ const displayPostResteemData = async (post, votingClassSelector) => {
         console.log("This resteem: ", resteem);
         const listItem = document.createElement('li');
         listItem.className = 'resteem-dropdown-item';
-            const link = document.createElement('a');
-            link.href = `/@${resteem[1]}`;
-            link.textContent = resteem[1];
-            link.className = 'resteem-dropdown-link';
-        
-            listItem.appendChild(link);
-            dropdownMenu.appendChild(listItem);
-        });
+        const link = document.createElement('a');
+        link.href = `/@${resteem[1]}`;
+        link.textContent = resteem[1];
+        link.className = 'resteem-dropdown-link';
 
-    // Toggle dropdown visibility on trigger click
-    dropdownTrigger.addEventListener('click', () => {
-        dropdownMenu.classList.toggle('visible');
+        listItem.appendChild(link);
+        dropdownMenu.appendChild(listItem);
     });
 
     // Close dropdown when clicking outside

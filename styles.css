@@ -112,8 +112,6 @@
     font-size: 11px; /* Slightly smaller font size */
 }
 
-
-
 .vote-item {
     display: flex;
     justify-content: space-between;
@@ -186,7 +184,6 @@
 .resteem-dropdown-trigger {
     font-size: 12px;
     font-weight: bold;
-    cursor: pointer;
     user-select: none;
 }
 
@@ -199,7 +196,6 @@
     position: absolute;
     top: 100%;
     left: 0;
-    background-color: #1e1e1e; /* Dark background */
     border: 1px solid #444; /* Slim border */
     border-radius: 5px;
     padding: 10px;
@@ -210,6 +206,11 @@
     margin: 5px 0 0;
     display: none; /* Hidden by default */
     z-index: 1000; /* Ensure it appears above other elements */
+}
+
+/* Visible class for dropdown menu */
+.resteem-dropdown-menu.visible {
+    display: block; /* Show the dropdown when visible class is added */
 }
 
 /* Dropdown menu item */
@@ -239,4 +240,24 @@
     display: block;
 }
 
+/* Custom Status Bar */
+#custom-status-bar {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #FFFFFF;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    z-index: 1000;
+    display: none; /* Initially hidden */
+}
 
+.triangle-icon polygon {
+    fill: rgb(138, 138, 138); /* Set the fill color to the desired RGB value */
+}
+
+.resteem-count-text {
+    color: rgb(6, 214, 169); /* Set the text color to the desired RGB value */
+}
