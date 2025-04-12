@@ -1,5 +1,5 @@
-const botList = ["abb-curation", "avle", "bot-api", "boomerang", "coin-doubler",
-    "cur8", "gotogether", "h4lab", "heroism", "justyy", "nixiee", "nutbox.mine",
+const botList = ["abb-curation", "avle", "bot-api", "boomerang", "coin-doubler", "cur8",
+    "droida", "gotogether", "h4lab", "heroism", "jsup", "justyy", "nixiee", "nutbox.mine",
     "oppps", "robiniaswap", "shy-fox", "steem-punks", "steem.botto", "steem.stack",
     "steemegg", "successgr.with", "suntr", "support-kr", "templar-kr",
     "tipu", "uco.bnb-d", "uco.intern", "upex", "upmewhale", "upvotefund", "upvu",

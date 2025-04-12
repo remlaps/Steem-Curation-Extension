@@ -7,18 +7,11 @@
       "matches": [
         "https://steemit.com/*",
         "https://steemitdev.com/*",
-        "https://condenser-1077810928621.us-east5.run.app/*",
         "https://steemit.steemnet.org/*",
         "https://steemit.moecki.online/*"
       ],
       "js": ["steemworld.js", "useful.js", "post/author.js", "graph.js", "post/Post.js", "post/loadPostData.js", "libs/chart.min.js","botNotifier.js", "postMetrics.js", "overlay.js", "resteemControl.js", "main.js"],
       "css": [ "styles.css" ]
     }
-  ],
-  "host_permissions": [
-    "https://api.moecki.online/*",
-    "https://api.steemit.com/*",
-    "https://api.steemyy.com/*",
-    "https://sds.steemworld.org/*"
   ]
 }

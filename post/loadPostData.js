@@ -19,7 +19,7 @@ const loadPost = async (p_info) => {
                     loadAuthorWeeklyEarningsBarGraph(payouts);
                 }
                 loadPostVoteData(post);
-                displayPostResteemData(post, ".Voting");
+                displayPostResteemData(post, ".RightShare__Menu");
             } else {
                 return p_info
             }
@@ -393,26 +393,31 @@ const loadPostVoteData = (post) => {
     }
 }
 
-const displayPostResteemData = async (post, votingClassSelector) => {
+const displayPostResteemData = async (post, anchorClassSelector) => {
     const res = await getResteems(post.author, post.permlink)
     const resteems = res.result.rows
-    const votingElement = document.querySelector(votingClassSelector);
-    if (!votingElement) {
-        console.error(`Element with class "${votingClassSelector}" not found.`);
-        return;
-    }
     if (resteems.length === 0) {
         return
+    }
+
+    const anchorElement = document.querySelector(anchorClassSelector);
+    if (!anchorElement) {
+        console.warn(`Element with class "${anchorClassSelector}" not found.`);
+        return;
+    }
+    const existingDropdown = anchorElement.querySelector('.sce-resteem-dropdown-container');
+    if (existingDropdown) {
+        console.log("SCE: Resteem dropdown already exists for this post (relative positioning).");
+        return;
     }
 
     // Create the dropdown container
     const dropdownContainer = document.createElement('div');
     dropdownContainer.className = 'DropdownMenu';
-
-    // Create the dropdown trigger button
-    // const dropdownTrigger = document.createElement('span');
-    // dropdownTrigger.textContent = `${resteems.length} Resteems ▼`;
-    // dropdownTrigger.className = 'DropdownMenu';
+    // dropdownContainer.style.position = 'relative';
+    // dropdownContainer.style.left = '55%'; // Adjust '335px' as needed (positive value moves right) - TODO: anchor location to resteem button.
+    // dropdownContainer.style.top = '0';
+    dropdownContainer.style.marginLeft = 0;
 
     // Create the dropdown trigger as an anchor element
     const dropdownTrigger = document.createElement('a');
@@ -454,6 +459,7 @@ const displayPostResteemData = async (post, votingClassSelector) => {
     const isDarkMode = document.body.classList.contains('theme-dark');
     const resteemDropdownBgColor = isDarkMode ? '#1C252B' : '#F4F4F4';
     const dropdownMenu = document.createElement('ul');
+    // dropdownMenu.className = 'resteem-dropdown-menu';
     dropdownMenu.className = 'resteem-dropdown-menu';
     // Set the background color of the dropdown menu, depending on dark/light mode
     dropdownMenu.style.backgroundColor = resteemDropdownBgColor;
@@ -461,16 +467,29 @@ const displayPostResteemData = async (post, votingClassSelector) => {
     console.log("Resteems data:", resteems);
     // Populate the dropdown menu with resteemers
     resteems.forEach(resteem => {
-        console.log("This resteem: ", resteem);
+        const resteemer = resteem[1];
         const listItem = document.createElement('li');
         listItem.className = 'resteem-dropdown-item';
         const link = document.createElement('a');
-        link.href = `/@${resteem[1]}`;
-        link.textContent = resteem[1];
-        link.className = 'resteem-dropdown-link';
+        link.href = `/@${resteemer}`;
+        link.textContent = resteemer;
+        // link.className = 'resteem-dropdown-link';
+        link.className = 'vote-username';
 
         listItem.appendChild(link);
         dropdownMenu.appendChild(listItem);
+    });
+
+    // Prevent clicks inside the dropdown menu from closing it
+    dropdownMenu.addEventListener('click', (event) => {
+        event.stopPropagation();
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (event) => {
+        if (!dropdownWrapper.contains(event.target)) {
+            dropdownMenu.classList.remove('visible');
+        }
     });
 
     // Close dropdown when clicking outside
@@ -480,21 +499,15 @@ const displayPostResteemData = async (post, votingClassSelector) => {
         }
     });
 
-    // Append the dropdown components to the container
-    dropdownContainer.appendChild(dropdownTrigger);
+    // Create a wrapper for the dropdown
+    const dropdownWrapper = document.createElement('div');
+    dropdownWrapper.className = 'resteem-dropdown-wrapper';
+
+    // Append the dropdown components to the wrapper
     dropdownContainer.appendChild(dropdownMenu);
+    dropdownContainer.appendChild(dropdownTrigger);
+    dropdownWrapper.appendChild(dropdownContainer);
 
-    // Append the dropdown container to the Voting element
-    votingElement.appendChild(dropdownContainer);
+    // Append the dropdown container to the Reshare container element
+    anchorElement.appendChild(dropdownWrapper);
 }
-
-
-
-
-
-
-
-
-
-
-

@@ -2,7 +2,22 @@
 // let bodyFontColor = getComputedStyle(document.body).color;
 let sceControlRowBackgroundColor = getComputedStyle(document.querySelector('.sce-control-row') || document.body).backgroundColor; // Initialize with body color if no sce-control-row is found
 
-function createToggleControl() {
+function createResteemToggleControl() {
+    // Remove the Condenser toggle, since its behavior is overridden by this one.
+    try {
+        const oldCheckboxInput = document.getElementById('hideResteems');
+        if (oldCheckboxInput) {
+            // Find the parent div of the checkbox
+            const oldControlContainer = oldCheckboxInput.closest('div'); // Or oldCheckboxInput.parentElement;
+            if (oldControlContainer) {
+                oldControlContainer.style.display = 'none';
+                console.log("SCE: Hiding the pre-existing 'hideResteems' control.");
+            }
+        }
+    } catch (error) {
+        console.warn("SCE: Error trying to hide the old 'hideResteems' control:", error);
+    }
+
     // Find the target container element
     const targetContainer = document.querySelector('#content > div > div:nth-child(2) > div > div > header > nav > div.small-6.medium-8.large-7.columns.Header__buttons');
 

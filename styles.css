@@ -119,8 +119,8 @@
     padding: 5px 10px;
     border-bottom: 1px solid #ccc;
     font-family: Arial, sans-serif;
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 12px;
+    line-height: 1;
 }
 
 .vote-item:last-child {
@@ -177,14 +177,16 @@
     position: relative;
     display: inline-block;
     margin-left: -30px;
-    font-family: Arial, sans-serif;
+    /* font-family: Arial, sans-serif; */
 }
 
 /* Dropdown trigger button */
 .resteem-dropdown-trigger {
-    font-size: 12px;
-    font-weight: bold;
+    font-size: 14px;
     user-select: none;
+    display: inline-flex; /* Keeps the trigger inline with its content */
+    align-items: center;
+    gap: 4px; /* Adds spacing between the text and the icon */
 }
 
 .resteem-dropdown-trigger:hover {
@@ -193,19 +195,22 @@
 
 /* Dropdown menu container */
 .resteem-dropdown-menu {
-    position: absolute;
+    position: absolute; /* Ensure it is positioned relative to its parent */
+    z-index: 1000; /* Ensure it appears above other elements */
+    background-color: #fff; /* Set a background color for visibility */
+    border: 1px solid #ccc; /* Optional: Add a border for clarity */
+    padding: 8px; /* Add padding for better usability */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow for better visibility */
+    font-weight: bold;
     top: 100%;
     left: 0;
-    border: 1px solid #444; /* Slim border */
-    border-radius: 5px;
-    padding: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     max-height: 200px; /* Limit height for long lists */
     overflow-y: auto; /* Enable scrolling for long lists */
     list-style: none; /* Remove default bullet points */
     margin: 5px 0 0;
     display: none; /* Hidden by default */
-    z-index: 1000; /* Ensure it appears above other elements */
+    margin-top: 4px; /* Adds spacing between the trigger and the menu */
+    left: 0; /* Align the dropdown menu to the left */
 }
 
 /* Visible class for dropdown menu */
@@ -215,20 +220,47 @@
 
 /* Dropdown menu item */
 .resteem-dropdown-item {
-    margin: 5px 0; /* Adjusted margin for better spacing */
-    padding: 5px 10px; /* Add some padding for better appearance */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    border-bottom: 1px solid #ccc;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.resteem-dropdown-item:hover {
+    text-decoration: underline;
+}
+
+.resteem-dropdown-item .vote-username { /* Target the link inside */
+    display: block; /* Make the link a block element */
+    width: 100%;   /* Make it fill the width */
+    height: 100%;  /* Make it fill the height */
+    /* Remove default link padding/margin if display:block is used */
+    padding: 0;
+    margin: 0;
+    /* Ensure text color is still correct (it should inherit or use .vote-username style) */
+    color: inherit; /* Or specific color if needed */
+    text-decoration: none; /* Ensure no underline unless hovered */
+    white-space: nowrap;
+    overflow: hidden; /* Prevent overflow */
+}
+
+.resteem-dropdown-item:last-child {
     border-bottom: 1px solid #444; /* Optional: Add a bottom border for separation */
 }
 
 /* Dropdown menu link */
 .resteem-dropdown-link {
-    color: #FFF; /* Blue text for links */
-    text-decoration: none;
-    font-size: 14px;
-    display: block; /* Ensure the link takes up the full width of the list item */
-    white-space: nowrap; /* Prevent text from wrapping */
-    overflow: hidden; /* Hide overflow if text is too long */
-    text-overflow: ellipsis; /* Show ellipsis if text is too long */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
 }
 
 .resteem-dropdown-link:hover {
@@ -260,4 +292,12 @@
 
 .resteem-count-text {
     color: rgb(6, 214, 169); /* Set the text color to the desired RGB value */
+}
+
+.resteem-dropdown-wrapper {
+    display: block; /* Forces the dropdown to appear on a new line */
+    margin-top: 8px; /* Add spacing from the first row */
+    margin-left: 0; /* Align to the left side of the container */
+    text-align: left; /* Align content to the left */
+    position: relative; /* Ensure the wrapper is the reference point for the dropdown */
 }

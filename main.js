@@ -246,7 +246,7 @@ function sceMutationObserver() {
             for (let mutation of mutationsList) {
                 if (mutation.type === 'attributes' && (mutation.attributeName === 'class'
                     || mutation.attributeName === 'style')) {
-                    createToggleControl();
+                        createResteemToggleControl();
                 }
             }
         });
@@ -264,9 +264,8 @@ window.addEventListener('click', async () => {
      post_info = await loadPost(post_info);
 });
 
-
 addButtonsToSummaries();        // New for curation info buttons
 sceMutationObserver();         // Mutation observer for new dropdown menu after login.
-// createToggleControl();         // Resteem checkbox
+// createResteemToggleControl();         // Resteem checkbox
 
 console.log("The extension is done.");
