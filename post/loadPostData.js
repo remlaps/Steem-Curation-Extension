@@ -261,7 +261,7 @@ const loadAuthorWeeklyEarningsGraph = async (post) => {
     const payouts = await getAuthorPayoutsInWeekBefore(post.details.author, post.details.created);
 
     if (payouts.length === 1) {
-        console.warn("Only 1 payout in last week");
+        console.log("Only 1 payout in last week");
         return payouts;
     } else if (payouts.length === 0) {
         return null
