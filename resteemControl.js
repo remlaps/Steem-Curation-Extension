@@ -1,56 +1,101 @@
-function createToggleControl() {
+// let bodyBackgroundColor = getComputedStyle(document.body).backgroundColor;
+// let bodyFontColor = getComputedStyle(document.body).color;
+let sceControlRowBackgroundColor = getComputedStyle(document.querySelector('.sce-control-row') || document.body).backgroundColor; // Initialize with body color if no sce-control-row is found
+
+function createResteemToggleControl() {
+    // Remove the Condenser toggle, since its behavior is overridden by this one.
+    try {
+        const oldCheckboxInput = document.getElementById('hideResteems');
+        if (oldCheckboxInput) {
+            // Find the parent div of the checkbox
+            const oldControlContainer = oldCheckboxInput.closest('div'); // Or oldCheckboxInput.parentElement;
+            if (oldControlContainer) {
+                oldControlContainer.style.display = 'none';
+                console.log("SCE: Hiding the pre-existing 'hideResteems' control.");
+            }
+        }
+    } catch (error) {
+        console.warn("SCE: Error trying to hide the old 'hideResteems' control:", error);
+    }
+
     // Find the target container element
     const targetContainer = document.querySelector('#content > div > div:nth-child(2) > div > div > header > nav > div.small-6.medium-8.large-7.columns.Header__buttons');
 
-    // Create the control elements
-    const controlDiv = document.createElement('div');
-    controlDiv.className = 'sce-control';
-
-    const titleLink = document.createElement('a');
-    titleLink.href = 'https://github.com/remlaps/Steem-Curation-Extension';
-    titleLink.textContent = 'Steem Curation Extension';
-    titleLink.target = '_blank';
-    titleLink.className = 'sce-title-link';
-
-    const controlRow = document.createElement('div');
-    controlRow.className = 'sce-control-row';
-
-    const checkbox = document.createElement('input');
-    checkbox.type = 'checkbox';
-    checkbox.id = 'resteem-toggle';
-    // Get saved state, default to true if not set
-    checkbox.checked = localStorage.getItem('showResteems') !== 'false';
-
-    const label = document.createElement('label');
-    label.htmlFor = 'resteem-toggle';
-    label.textContent = 'Show Resteems';
-
-    const computedStyle = window.getComputedStyle(document.body);
-    label.style.fontFamily = computedStyle.fontFamily;
-    titleLink.style.fontFamily = computedStyle.fontFamily;
-    label.style.color = computedStyle.color;
-
-    // Append the elements to the control div
-    controlDiv.appendChild(titleLink);
-    controlRow.appendChild(checkbox);
-    controlRow.appendChild(label);
-    controlDiv.appendChild(controlRow);
-
-    // Append the control div to the target container
-    try {
-        targetContainer.appendChild(controlDiv);
-    } catch (error) {
-        console.warn(`Couldn't append resteem control: ${error}`);
+    if (!targetContainer) {
+        console.warn("Target container not found!");
+        return;
     }
 
-    // Add event listener for the checkbox
-    checkbox.addEventListener('change', function () {
-        // Save state when changed
-        localStorage.setItem('showResteems', this.checked);
+    // Check if the control already exists
+    let controlDiv = document.querySelector('.sce-control');
+
+    if (!controlDiv) {
+        // Create the control elements
+        controlDiv = document.createElement('div');
+        controlDiv.className = 'sce-control';
+
+        const titleLink = document.createElement('a');
+        titleLink.href = 'https://github.com/remlaps/Steem-Curation-Extension';
+        titleLink.textContent = 'Steem Curation Extension';
+        titleLink.target = '_blank';
+        titleLink.className = 'sce-title-link';
+
+        const controlRow = document.createElement('div');
+        controlRow.className = 'sce-control-row';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = 'resteem-toggle';
+        // Get saved state, default to true if not set
+        checkbox.checked = localStorage.getItem('showResteems') !== 'false';
+
+        const label = document.createElement('label');
+        label.htmlFor = 'resteem-toggle';
+        label.textContent = 'Show Resteems';
+
+        // Append the elements to the control div
+        controlDiv.appendChild(titleLink);
+        controlRow.appendChild(checkbox);
+        controlRow.appendChild(label);
+        controlDiv.appendChild(controlRow);
+
+        // Append the control div to the target container
+        try {
+            targetContainer.appendChild(controlDiv);
+        } catch (error) {
+            console.warn(`Couldn't append resteem control: ${error}`);
+        }
+
+        // Add event listener for the checkbox
+        checkbox.addEventListener('change', function () {
+            // Save state when changed
+            localStorage.setItem('showResteems', this.checked);
+            updateResteemVisibility();
+        });
+
+        // Apply initial state
         updateResteemVisibility();
-    });
-    // Apply initial state
-    updateResteemVisibility();
+    }
+
+    // Update colors
+    updateColors();
+}
+
+function updateColors() {
+    const computedStyle = window.getComputedStyle(document.body);
+    const label = document.querySelector('.sce-control-row label');
+    const titleLink = document.querySelector('.sce-title-link');
+    console.debug("Inside updateColors");
+
+    if (label) {
+        label.style.color = computedStyle.color;
+        label.style.fontFamily = computedStyle.fontFamily;
+    }
+
+    if (titleLink) {
+        titleLink.style.color = computedStyle.color;
+        titleLink.style.fontFamily = computedStyle.fontFamily;
+    }
 }
 
 function setControlBoxVisibility(visibility) {
@@ -66,9 +111,7 @@ function updateResteemVisibility(username) {
     const checkbox = document.getElementById('resteem-toggle');
 
     if (checkbox) {
-        //***
         // Hide the checkbox control if we're not on a feed/blog link
-        // */
         if (!(window.location.pathname.match(/\/(feed|blog)$|\/\@[a-zA-Z0-9._-]+$/))) {
             setControlBoxVisibility('none'); // Hides the control box
             return;
@@ -81,13 +124,11 @@ function updateResteemVisibility(username) {
             setControlBoxVisibility('block'); // Shows the control box
         }
 
-
         const feedOwner = window.location.pathname.split('/')[1].replace('@', '');
         const showState = checkbox.checked;
         summaries.forEach(async summary => {
             const hasResteem = summary.querySelector('.articles__resteem') !== null;
             if (hasResteem) {
-
                 const targetElement = summary.querySelector
                     ('#posts_list > ul > li > div > div.articles__summary-header > div.user > div.user__col.user__col--right > span.user__name > span > strong > a');
                 const resteemedAuthor = targetElement.textContent;

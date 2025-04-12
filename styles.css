@@ -88,3 +88,216 @@
     pointer-events: auto;
     background: inherit;
 }
+
+.word-count-info {
+    font-family: 'Arial', sans-serif;
+    border-radius: 10px;
+    padding: 5px; /* Reduce padding to save space */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.word-count-info div {
+    transition: transform 0.3s ease;
+    gap: 8px; /* Reduce gap between elements */
+}
+
+.word-count-info div:hover {
+    transform: scale(1.1); /* Slight zoom effect */
+}
+
+.word-count-info span {
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px; /* Slightly smaller font size */
+}
+
+.vote-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    border-bottom: 1px solid #ccc;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.vote-item:last-child {
+    border-bottom: none; /* Remove border for the last item */
+}
+
+.vote-value {
+    color: #28a745; /* Green color for positive vote values */
+    font-weight: bold;
+}
+
+.vote-percentage {
+    color: #007bff; /* Blue color for percentages */
+    margin-left: 5px;
+}
+
+.vote-username {
+    flex-grow: 1;
+    margin-left: 10px;
+    color: #007bff; /* Blue color for links */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.vote-username:hover {
+    text-decoration: underline;
+}
+
+.vote-weight {
+    color: #6c757d; /* Gray color for weights */
+    margin-left: 10px;
+}
+
+#graphWrapper {
+    position: sticky;
+    top: 20px;
+    background-color: #1e1e1e;
+    padding: 10px;
+    border-radius: 10px;
+    z-index: -1000;
+}
+
+/* Add this CSS to your styles */
+.chart-container {
+    border: 1px solid #444; /* Dark gray outline */
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 20px; /* Spacing between graphs */
+    background-color: inherit; /* Inherit page background */
+}
+
+/* Container for the dropdown */
+.resteem-dropdown-container {
+    position: relative;
+    display: inline-block;
+    margin-left: -30px;
+    /* font-family: Arial, sans-serif; */
+}
+
+/* Dropdown trigger button */
+.resteem-dropdown-trigger {
+    font-size: 14px;
+    user-select: none;
+    display: inline-flex; /* Keeps the trigger inline with its content */
+    align-items: center;
+    gap: 4px; /* Adds spacing between the text and the icon */
+}
+
+.resteem-dropdown-trigger:hover {
+    text-decoration: underline;
+}
+
+/* Dropdown menu container */
+.resteem-dropdown-menu {
+    position: absolute; /* Ensure it is positioned relative to its parent */
+    z-index: 1000; /* Ensure it appears above other elements */
+    background-color: #fff; /* Set a background color for visibility */
+    border: 1px solid #ccc; /* Optional: Add a border for clarity */
+    padding: 8px; /* Add padding for better usability */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Add a shadow for better visibility */
+    font-weight: bold;
+    top: 100%;
+    left: 0;
+    max-height: 200px; /* Limit height for long lists */
+    overflow-y: auto; /* Enable scrolling for long lists */
+    list-style: none; /* Remove default bullet points */
+    margin: 5px 0 0;
+    display: none; /* Hidden by default */
+    margin-top: 4px; /* Adds spacing between the trigger and the menu */
+    left: 0; /* Align the dropdown menu to the left */
+}
+
+/* Visible class for dropdown menu */
+.resteem-dropdown-menu.visible {
+    display: block; /* Show the dropdown when visible class is added */
+}
+
+/* Dropdown menu item */
+.resteem-dropdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    border-bottom: 1px solid #ccc;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.resteem-dropdown-item:hover {
+    text-decoration: underline;
+}
+
+.resteem-dropdown-item .vote-username { /* Target the link inside */
+    display: block; /* Make the link a block element */
+    width: 100%;   /* Make it fill the width */
+    height: 100%;  /* Make it fill the height */
+    /* Remove default link padding/margin if display:block is used */
+    padding: 0;
+    margin: 0;
+    /* Ensure text color is still correct (it should inherit or use .vote-username style) */
+    color: inherit; /* Or specific color if needed */
+    text-decoration: none; /* Ensure no underline unless hovered */
+    white-space: nowrap;
+    overflow: hidden; /* Prevent overflow */
+}
+
+.resteem-dropdown-item:last-child {
+    border-bottom: 1px solid #444; /* Optional: Add a bottom border for separation */
+}
+
+/* Dropdown menu link */
+.resteem-dropdown-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+}
+
+.resteem-dropdown-link:hover {
+    text-decoration: underline;
+}
+
+/* Visible class for dropdown menu */
+.resteem-dropdown-menu.visible {
+    display: block;
+}
+
+/* Custom Status Bar */
+#custom-status-bar {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #FFFFFF;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    z-index: 1000;
+    display: none; /* Initially hidden */
+}
+
+.triangle-icon polygon {
+    fill: rgb(138, 138, 138); /* Set the fill color to the desired RGB value */
+}
+
+.resteem-count-text {
+    color: rgb(6, 214, 169); /* Set the text color to the desired RGB value */
+}
+
+.resteem-dropdown-wrapper {
+    display: block; /* Forces the dropdown to appear on a new line */
+    margin-top: 8px; /* Add spacing from the first row */
+    margin-left: 0; /* Align to the left side of the container */
+    text-align: left; /* Align content to the left */
+    position: relative; /* Ensure the wrapper is the reference point for the dropdown */
+}
