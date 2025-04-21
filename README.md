@@ -14,8 +14,8 @@ This functionality helps web site visitors to identify posts that may have recei
 ### Currently Supported Sites
 - `https://steemit.com/*`
 - `https://steemitdev.com/*`
-- `https://condenser-1077810928621.us-east5.run.app/*`
 - `https://steemit.steemnet.org/*`
+- `https://steemit.moecki.online/*`
 
 ## Installation Instructions
 
@@ -94,11 +94,19 @@ If you would like to contribute to this project, please fork the repository and 
 
 For any questions or suggestions, feel free to open an issue on the GitHub repository or contact the repository owner directly.
 
-### Disclaimer
+# Caution
+
+- It is not recommended to enable untrusted browser extensions on any page that has access to your Steem master password or your Steem active/owner keys.  Beware that browser extensions can steel your keys.
+- You can review this extension's code in the associated github repo.
+- This extension does not require, request, or use any keys or passwords.
+- This extension is not intended for use with any pages that have access to your Steem active/owner keys or your Steem master password.
+- It is recommended to login to condenser with your posting key - not with your active/owner key or your master password.
+
+# Disclaimer
 
 This extension is provided as-is without warranty of any kind. The developer is not responsible for any issues that may arise from using this extension.
 
-### References
+# References
 - 20220529 - [Programming Diary #6: A barebones browser extension for Steem curation](https://steemit.com/programming/@remlaps/programming-diary-6-a-barebones-browser-extension-for-steem-curation)
-- 20220530 - [Programming Diary #7: Browser extension updates to activate when scrolling and show color gradients](https://steemit.com/hive-192037/@remlaps/programming-diary-7-browser-extension-updates-to-activate-when-scrolling-and-show-color-gradients)
-- 20220815 - [Upgrade Browser Extension for promoted/burnsteem Posts](https://steemit.com/hive-192037/@moecki/upgrade-browser-extension-for-promoted-burnsteem-posts)
+- 20220530 - [Programming Diary #7: Browser extension updates to activate when scrolling and show color gradients](https://steemit.com/steemit-dev-group/@remlaps/programming-diary-7-browser-extension-updates-to-activate-when-scrolling-and-show-color-gradients)
+- 20220815 - [Upgrade Browser Extension for promoted/burnsteem Posts](https://steemit.com/steemit-dev-group/@moecki/upgrade-browser-extension-for-promoted-burnsteem-posts)
