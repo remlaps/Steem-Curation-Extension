@@ -1,6 +1,7 @@
 {
   "manifest_version": 3,
-  "version": "0.5.0-beta",
+  "version": "0.5.0",
+  "version_name": "0.5.0 Beta",
   "name": "Steem Curation Extension",
   "description": "Provide supplemental information for curators on Steem/Condenser based web sites.",
   "icons": { 
