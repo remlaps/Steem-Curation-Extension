@@ -5,6 +5,8 @@ const urlRequestTransfers = "https://sds.steemworld.org/transfers_api/getTransfe
 const urlRequestAccount = "https://sds.steemworld.org/accounts_api/getAccountExt/";
 const steemApi = "https://api.steemit.com";
 const sdsEndpoint = "https://sds.steemworld.org";
+const curatorStringRegex = /- (Curators|Curador|Curateurs|Curatori|キュレーター|큐레이터|Kuratorzy|Кураторские|Кураториські|审查收入) /
+const promotedCostStringRegex = /(?:Promotion Cost|Coste de promoción|Cout de la promotion|Costo della Promozione|プロモーションコスト|홍보 비용|Koszty promocji|Цена продвижения|Вартість просування|推广费)(?::)?\s*.*?\$.*/
 
 let post_info = {"author":null, "permlink":null}
 
@@ -24,14 +26,14 @@ const highLight = () => {
 
     // Working from high to low (for outside to inside in document nesting)
     for (let i = listItem.length - 1; i >= 0; i--) {
-        if (listItem[i].textContent.match('- Curators .*\$')) {
+        if (listItem[i].textContent.match(curatorStringRegex)) {
             // Don't highlight promoted posts that already paid out.
             listItem[i].style['background-color'] = "initial";
             continue;
         }
 
         // Check for @null beneficiary and /promoted post promotion.
-        if (listItem[i].textContent.match('null: .*%') && listItem[i].textContent.match('Promotion Cost .*\$')) {
+        if (listItem[i].textContent.match('null: .*%') && listItem[i].textContent.match(promotedCostStringRegex)) {
             console.log("Found a /promoted post in #burnsteem25 (outer block)");
             curatorBackgroundColor = '#1E90FF';
             listItem[i].style['background-color'] = curatorBackgroundColor;
@@ -48,7 +50,7 @@ const highLight = () => {
             listItem[i].style['background-color'] = curatorBackgroundColor;
 
         // Check for just /promoted post promotion
-        } else if (listItem[i].textContent.match('Promotion Cost .*\$')) {
+        } else if (listItem[i].textContent.match(promotedCostStringRegex)) {
             console.log("Found a /promoted post");
             var str = listItem[i].textContent;
             var indexEnd = (str.indexOf("(") >= 0) ? str.indexOf("(") - 1 : str.length;
