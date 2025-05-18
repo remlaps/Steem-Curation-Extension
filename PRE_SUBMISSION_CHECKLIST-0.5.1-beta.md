@@ -109,8 +109,13 @@ This checklist covers files and areas needing inspection before submitting the S
     - [ ] Verify all referenced image files exist in the correct paths.
     - [ ] Ensure icons meet Chrome Web Store dimension requirements.
     - [ ] Optimize images for size where possible.
+    - [ ] Ensure that character case matches file system case
 
-## VI. Overall & Store Listing
+## VI. Compatibility
+    - [ ] Test all languages in condenser (where possible)
+    - [ ] Test startup in linux
+
+## VII. Overall & Store Listing
 
 - [ ] **Single Purpose:** Confirm the extension focuses on its core described functionality.
 - [ ] **No Malware/Deception:** Ensure no malicious code, phishing, or deceptive practices.
