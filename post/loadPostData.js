@@ -46,7 +46,7 @@ const displayWordCountAndReadingTime = (containerClass, wordCount, readingTimeMi
     console.log("entered function");
     const container = document.querySelector(`.${containerClass}`);
     if (!container) {
-        console.error(`Container with class "${containerClass}" not found.`);
+        console.log(`Container with class "${containerClass}" not found.`);
         return;
     }
 

@@ -5,7 +5,7 @@ const urlRequestTransfers = "https://sds.steemworld.org/transfers_api/getTransfe
 const urlRequestAccount = "https://sds.steemworld.org/accounts_api/getAccountExt/";
 const steemApi = "https://api.steemit.com";
 const sdsEndpoint = "https://sds.steemworld.org";
-const curatorStringRegex = /- (Curators|Curador|Curateurs|Curatori|キュレーター|큐레이터|Kuratorzy|Кураторские|Кураториські|审查收入) /
+const curatorStringRegex = /(Curators|Curador|Curateurs|Curatori|キュレーター|큐레이터 |Kuratorzy|Кураторские|Кураториські|审查收入)/
 const promotedCostStringRegex = /(?:Promotion Cost|Coste de promoción|Cout de la promotion|Costo della Promozione|プロモーションコスト|홍보 비용|Koszty promocji|Цена продвижения|Вартість просування|推广费)(?::)?\s*.*?\$.*/
 
 let post_info = {"author":null, "permlink":null}
