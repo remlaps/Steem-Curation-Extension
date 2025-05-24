@@ -46,7 +46,7 @@ const displayWordCountAndReadingTime = (containerClass, wordCount, readingTimeMi
     console.log("entered function");
     const container = document.querySelector(`.${containerClass}`);
     if (!container) {
-        console.error(`Container with class "${containerClass}" not found.`);
+        console.log(`Container with class "${containerClass}" not found.`);
         return;
     }
 
@@ -117,7 +117,7 @@ const loadPostValueGraph = (post) => {
     );
 
     if (activeVotes.length === 0) {
-        console.warn('No votes during the payout period to display.');
+        console.log('SCE:No votes during the payout period to display.');
         return;
     }
 
@@ -166,7 +166,7 @@ const loadPostValueGraph = (post) => {
 
     const data = [];
     if (cumulativeTotal === 0) {
-        console.warn("Post has no value");
+        console.log("SCE: Post has no value");
         return;
     }
 
@@ -202,7 +202,7 @@ const loadPostVoteGraph = (post) => {
     );
 
     if (activeVotes.length === 0) {
-        console.warn('No votes to display.');
+        console.log('SCE: No votes to display.');
         return;
     }
 
@@ -386,10 +386,10 @@ const loadPostVoteData = (post) => {
                 });
             }
         } else {
-            console.error('Unordered list not found within votingClass element.');
+            console.log('SCE: Unordered list not found within votingClass element.');
         }
     } else {
-        console.error('Element with class "Voting__voters_list" not found.');
+        console.log('SCE: Element with class "Voting__voters_list" not found.');
     }
 }
 

@@ -13,6 +13,7 @@ This checklist covers files and areas needing inspection before submitting the S
     - [ ] **`description`:** Present, clear, and concise description.
     - [ ] **`icons`:** All required icon sizes (16, 32, 48, 128) are present, referenced correctly, and exist as files.
     - [ ] **`content_scripts.matches`:** URLs are specific and minimal for required functionality.
+    - [ ] **`content_scripts.[js|css]`:** Character case in file names matches the actual character case (Test on linux, if possible).
     - [ ] **`permissions`:** List *only* necessary permissions (e.g., `storage` if `chrome.storage` is used). Justify each in store listing.
     - [ ] **`host_permissions`:** List *all* external domains the extension fetches data from (e.g., `*://*.steemworld.org/*`). Justify each in store listing.
     - [ ] **`action`:** Include if a toolbar button/popup is intended. Ensure `default_popup`, `default_icon`, `default_title` are correct.
@@ -79,7 +80,7 @@ This checklist covers files and areas needing inspection before submitting the S
     - [ ] Check logic for showing/hiding resteems and the control checkbox.
     - [ ] General checks, as specified above.
 
-- [ ] **`steemworld.js`** *(Assumed based on usage)*:
+- [ ] **`steemWorld.js`** *(Assumed based on usage)*:
     - [ ] **Critical:** Verify *all* API calls target permitted domains (`sds.steemworld.org` or Steemit).
     - [ ] Review any data processing logic specific to Steemworld API responses.
     - [ ] General checks, as specified above.
@@ -108,8 +109,13 @@ This checklist covers files and areas needing inspection before submitting the S
     - [ ] Verify all referenced image files exist in the correct paths.
     - [ ] Ensure icons meet Chrome Web Store dimension requirements.
     - [ ] Optimize images for size where possible.
+    - [ ] Ensure that character case matches file system case
 
-## VI. Overall & Store Listing
+## VI. Compatibility
+    - [ ] Test all languages in condenser (where possible)
+    - [ ] Test startup in linux
+
+## VII. Overall & Store Listing
 
 - [ ] **Single Purpose:** Confirm the extension focuses on its core described functionality.
 - [ ] **No Malware/Deception:** Ensure no malicious code, phishing, or deceptive practices.

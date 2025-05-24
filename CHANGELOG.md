@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1-beta] - 2025-04-25]
+### Added
+
+- Promoted post language handling for all locales in condenser (Issue 16)
+- Updated chart.js version to version 4.4.9 (https://www.jsdelivr.com/package/npm/chart.js?path=dist)
+
+### Fixed
+
+- Character case typo in file naming that effected non-Windows platforms (Issue 17)
+
 ## [0.5.0-beta] - 2025-04-21
 ### Added
 
