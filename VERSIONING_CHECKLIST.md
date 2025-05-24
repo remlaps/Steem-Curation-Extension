@@ -11,6 +11,8 @@ This checklist outlines the steps for updating the extension version, changelog,
 *   This workflow uses the "Copy and Commit" method for Section I. The original template files (`PRE_SUBMISSION_CHECKLIST.md`, `VERSIONING_CHECKLIST.md`) should remain clean in the `main` branch.
 *   Section III serves only as a pointer to the submission process guide.
 
+**Note on Self-Reference:** If you choose to commit a versioned copy of this `VERSIONING_CHECKLIST.md` (as per the optional part of Step 7), that committed file will naturally show its own Step 7 (and subsequent steps like 8, 9, etc.) as incomplete (`[ ]`). This is expected. The Git commit for Step 7 and the merge commit for Step 8 serve as the definitive record of their completion. The committed checklist primarily documents the completion of preparatory steps (1-6) and the items staged for the release commit.
+
 ---
 
 ## I. Release Preparation (Working Branch)
@@ -18,7 +20,6 @@ This checklist outlines the steps for updating the extension version, changelog,
 - [ ] **1. Decide on the New Version Number**
     - [ ] Review changes since the last release (Git history, `CHANGELOG.md`).
     - [ ] Determine SemVer increment (`MAJOR.MINOR.PATCH`).
-    - *Note: Strongly consider using SemVer (`X.Y.Z`) instead of date format.*
 
 - [ ] **2. Prepare Pre-Submission Checklist Copy**
     - [ ] Copy `PRE_SUBMISSION_CHECKLIST.md` to `PRE_SUBMISSION_CHECKLIST_vX.Y.Z.md` (using version from Step 1).
@@ -89,4 +90,3 @@ This checklist outlines the steps for updating the extension version, changelog,
 
 - [ ] **11. Submit to Chrome Web Store:**
     - [ ] After completing Section II and creating the `.zip` package, follow the steps outlined in the **`SUBMISSION_CHECKLIST.md`** file to upload and submit your extension via the Chrome Web Store Developer Dashboard.
-
