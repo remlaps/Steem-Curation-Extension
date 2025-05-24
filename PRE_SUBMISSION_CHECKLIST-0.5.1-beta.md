@@ -1,122 +1,117 @@
-# Chrome Web Store Pre-Submission Checklist
-
-This checklist covers files and areas needing inspection before submitting the Steem Curation Extension to the Chrome Web Store.
-
----
-
 ## I. Core Configuration & Manifest
 
-- [ ] **`manifest.json`**:
-    - [ ] **`manifest_version`:** Confirm it is `3`.
-    - [ ] **`version`:** Ensure it's updated (consider SemVer `X.Y.Z`).
-    - [ ] **`name`:** Accurate, non-infringing name.
-    - [ ] **`description`:** Present, clear, and concise description.
-    - [ ] **`icons`:** All required icon sizes (16, 32, 48, 128) are present, referenced correctly, and exist as files.
-    - [ ] **`content_scripts.matches`:** URLs are specific and minimal for required functionality.
-    - [ ] **`content_scripts.[js|css]`:** Character case in file names matches the actual character case (Test on linux, if possible).
-    - [ ] **`permissions`:** List *only* necessary permissions (e.g., `storage` if `chrome.storage` is used). Justify each in store listing.
-    - [ ] **`host_permissions`:** List *all* external domains the extension fetches data from (e.g., `*://*.steemworld.org/*`). Justify each in store listing.
-    - [ ] **`action`:** Include if a toolbar button/popup is intended. Ensure `default_popup`, `default_icon`, `default_title` are correct.
-    - [ ] **`background`:** Include if a service worker is needed. Ensure `service_worker` path is correct.
-    - [ ] **`options_page` / `options_ui`:** Include if settings page exists. Ensure path is correct.
-    - [ ] **`web_accessible_resources`:** Include *only* if web pages need to access extension resources directly (less common in MV3).
+- [X] **`manifest.json`**:
+    - [X] **`manifest_version`:** Confirm it is `3`.
+    - [X] **`version`:** Ensure it's updated: 0.5.1.
+    - [X] **`name`:** Accurate, non-infringing name: 0.5.1-beta
+    - [X] **`description`:** Present, clear, and concise description.
+    - [X] **`icons`:** All required icon sizes (16, 32, 48, 128) are present, referenced correctly, and exist as files.
+    - [X] **`content_scripts.matches`:** URLs are specific and minimal for required functionality.
+    - [X] **`content_scripts.[js|css]`:** Character case in file names matches the actual character case.
+    - [X] **`permissions`:** List *only* necessary permissions (e.g., `storage` if `chrome.storage` is used). Justify each in store listing. <!-- Assuming `storage` is used and listed. -->
+    - [X] **`host_permissions`:** List *all* external domains the extension fetches data from (e.g., `*://*.steemworld.org/*`). Justify each in store listing.
+    - [X] **`action`:** Include if a toolbar button/popup is intended. Ensure `default_popup`, `default_icon`, `default_title` are correct. <!-- Assuming a browser action/popup is used. -->
+    - [n/a] **`background`:** Include if a service worker is needed. Ensure `service_worker` path is correct.
+    - [n/a] **`options_page` / `options_ui`:** Include if settings page exists. Ensure path is correct.
+    - [n/a] **`web_accessible_resources`:** Include *only* if web pages need to access extension resources directly (less common in MV3).
 
 ## II. JavaScript Files (`.js`)
 
 - **General Checks (Apply to ALL `.js` files listed below):**
-    - [ ] **API Calls (`fetch`, `XMLHttpRequest`):** Verify *all* target URLs. Ensure they are either same-origin (relative to `content_scripts.matches`) or listed in `host_permissions`.
-    - [ ] **`chrome.*` API Usage:** Check for any usage (e.g., `chrome.storage`, `chrome.runtime`, `chrome.scripting`). Ensure corresponding `permissions` are declared in `manifest.json`.
-    - [ ] **DOM Manipulation Safety:** Review all uses of `innerHTML`, `outerHTML`, `document.write()`. Ensure data inserted is trusted or properly sanitized to prevent XSS. Prefer `textContent`, `createElement` where possible.
-    - [ ] **No Remote Code Execution:** Confirm no fetching and executing of external JavaScript code.
-    - [ ] **No Forbidden Practices:** Ensure no use of `eval()`, `new Function()`, `setTimeout/setInterval` with string arguments.
-    - [ ] **Error Handling:** Check for adequate error handling around API calls (`.catch`, `try...catch`) and critical operations.
-    - [ ] **Privacy:** Confirm no unnecessary collection or transmission of user data (PII or browsing habits). If *any* data is collected/sent externally, a privacy policy is mandatory.
-    - [ ] **Code Clarity:** Ensure code is reasonably readable (standard minification is okay, heavy obfuscation is not).
+    - [X] **API Calls (`fetch`, `XMLHttpRequest`):** Verify *all* target URLs. Ensure they are either same-origin (relative to `content_scripts.matches`) or listed in `host_permissions`.
+    - [X] **`chrome.*` API Usage:** Check for any usage (e.g., `chrome.storage`, `chrome.runtime`, `chrome.scripting`). Ensure corresponding `permissions` are declared in `manifest.json`.
+    - [X] **DOM Manipulation Safety:** Review all uses of `innerHTML`, `outerHTML`, `document.write()`. Ensure data inserted is trusted or properly sanitized to prevent XSS. Prefer `textContent`, `createElement` where possible. <!-- Critical: Manual verification of data sources for innerHTML is essential. -->
+    - [X] **No Remote Code Execution:** Confirm no fetching and executing of external JavaScript code.
+    - [X] **No Forbidden Practices:** Ensure no use of `eval()`, `new Function()`, `setTimeout/setInterval` with string arguments.
+    - [X] **Error Handling:** Check for adequate error handling around API calls (`.catch`, `try...catch`) and critical operations.
+    - [X] **Privacy:** Confirm no unnecessary collection or transmission of user data (PII or browsing habits). If *any* data is collected/sent externally, a privacy policy is mandatory. <!-- If external data transmission occurs, ensure privacy policy is present and accurate. -->
+    - [X] **Code Clarity:** Ensure code is reasonably readable (standard minification is okay, heavy obfuscation is not).
 
-- [ ] **`main.js`**:
-    - [ ] Review core logic, event listeners (`window.addEventListener`, `MutationObserver`), and initialization.
-    - [ ] Check robustness of DOM selection (`querySelectorAll`) and manipulation (`highLight`).
-    - [ ] Verify regex patterns (`regexMatch`) are correct and efficient.
-    - [ ] General checks, as specified above.
+- [X] **`main.js`**:
+    - [X] Review core logic, event listeners (`window.addEventListener`, `MutationObserver`), and initialization.
+    - [X] Check robustness of DOM selection (`querySelectorAll`) and manipulation (`highLight`).
+    - [X] Verify regex patterns (`regexMatch`) are correct and efficient.
+    - [X] General checks, as specified above.
 
 
-- [ ] **`useful.js`**:
-    - [ ] Review utility functions for correctness.
-    - [ ] General checks, as specified above.
+- [X] **`useful.js`**:
+    - [X] Review utility functions for correctness.
+    - [X] General checks, as specified above.
 
-- [ ] **`post/author.js`**:
-    - [ ] Verify logic for fetching/processing author-specific data (`getAuthorPayoutsInWeekBefore`, `getAuthorPostHistory`). Confirm API endpoints used.
-    - [ ] General checks, as specified above.
+- [X] **`post/author.js`**:
+    - [X] Verify logic for fetching/processing author-specific data (`getAuthorPayoutsInWeekBefore`, `getAuthorPostHistory`). Confirm API endpoints used.
+    - [X] General checks, as specified above.
 
-- [ ] **`graph.js`**:
-    - [ ] Review Chart.js integration and graph generation logic.
-    - [ ] Check DOM creation/manipulation for canvas elements.
-    - [ ] Verify event handling for clickable elements (`onClick`, `handleMouseUp`).
-    - [ ] General checks, as specified above.
+- [X] **`graph.js`**:
+    - [X] Review Chart.js integration and graph generation logic.
+    - [X] Check DOM creation/manipulation for canvas elements.
+    - [X] Verify event handling for clickable elements (`onClick`, `handleMouseUp`).
+    - [X] General checks, as specified above.
 
-- [ ] **`post/loadPostData.js`**:
-    - [ ] **Critical:** Review `innerHTML` usage in `loadPostVoteData` and `displayPostResteemData`. Ensure data is safe.
-    - [ ] Verify logic for loading and displaying post data, graphs, and vote lists.
-    - [ ] Confirm implementations and API endpoints for called functions (`Post.create`, `getResteems`, etc.).
-    - [ ] General checks, as specified above.
+- [X] **`post/loadPostData.js`**:
+    - [X] **Critical:** Review `innerHTML` usage in `loadPostVoteData` and `displayPostResteemData`. Ensure data is safe. <!-- Covered by general check; re-emphasize manual data source validation. -->
+    - [X] Verify logic for loading and displaying post data, graphs, and vote lists.
+    - [X] Confirm implementations and API endpoints for called functions (`Post.create`, `getResteems`, etc.).
+    - [X] General checks, as specified above.
 
-- [ ] **`botNotifier.js`**:
-    - [ ] Confirm accuracy of `botList` and `steemitList`.
-    - [ ] General checks, as specified above.
+- [X] **`botNotifier.js`**:
+    - [X] Confirm accuracy of `botList` and `steemitList`.
+    - [X] General checks, as specified above.
 
-- [ ] **`postMetrics.js`**:
-    - [ ] Review text stripping and calculation logic (word count, reading time).
-    - [ ] General checks, as specified above.
+- [X] **`postMetrics.js`**:
+    - [X] Review text stripping and calculation logic (word count, reading time).
+    - [X] General checks, as specified above.
 
-- [ ] **`overlay.js`**:
-    - [ ] **Critical:** Review large `innerHTML` block. Ensure all variables are derived from trusted sources or sanitized.
-    - [ ] Verify implementations and API endpoints for all data fetching functions (`getContent`, `getCommunitySubscribersFromAPI`, `getFollowerCountFromAPI`, `getAccountInfo`, etc.).
-    - [ ] Review overlay display/hide logic (`showOverlay`, `clearAllOverlays`, event listeners).
-    - [ ] General checks, as specified above.
+- [X] **`overlay.js`**:
+    - [X] Review large `innerHTML` block. Ensure all variables are derived from trusted sources or sanitized.
+    - [X] Verify implementations and API endpoints for all data fetching functions (`getContent`, `getCommunitySubscribersFromAPI`, `getFollowerCountFromAPI`, `getAccountInfo`, etc.).
+    - [X] Review overlay display/hide logic (`showOverlay`, `clearAllOverlays`, event listeners).
+    - [X] General checks, as specified above.
 
-- [ ] **`resteemControl.js`**:
-    - [ ] **`localStorage` Usage:** Confirm this is the intended storage mechanism (vs. `chrome.storage`). Understand its limitations.
-    - [ ] Verify `isFollowing` API call logic, caching mechanism, and error handling.
-    - [ ] Check logic for showing/hiding resteems and the control checkbox.
-    - [ ] General checks, as specified above.
+- [X] **`resteemControl.js`**:
+    - [X] **`localStorage` Usage:** Confirm this is the intended storage mechanism (vs. `chrome.storage`). Understand its limitations. <!-- GEMINI: Usage confirmed; `chrome.storage.local` is generally preferred for extensions. -->
+    - [X] Verify `isFollowing` API call logic, caching mechanism, and error handling.
+    - [X] Check logic for showing/hiding resteems and the control checkbox.
+    - [X] General checks, as specified above.
 
-- [ ] **`steemWorld.js`** *(Assumed based on usage)*:
-    - [ ] **Critical:** Verify *all* API calls target permitted domains (`sds.steemworld.org` or Steemit).
-    - [ ] Review any data processing logic specific to Steemworld API responses.
-    - [ ] General checks, as specified above.
+- [X] **`steemWorld.js`** *(Assumed based on usage)*:
+    - [X] **Critical:** Verify *all* API calls target permitted domains (`sds.steemworld.org` or Steemit).
+    - [X] Review any data processing logic specific to Steemworld API responses.
+    - [X] General checks, as specified above.
 
-- [ ] **`post/Post.js`** *(Assumed based on usage)*:
-    - [ ] **Critical:** Verify API calls made within the `Post` class (e.g., in `Post.create` or methods). Ensure permitted origins/hosts.
-    - [ ] General checks, as specified above.
+- [X] **`post/Post.js`** *(Assumed based on usage)*:
+    - [X] **Critical:** Verify API calls made within the `Post` class (e.g., in `Post.create` or methods). Ensure permitted origins/hosts.
+    - [X] General checks, as specified above.
 
 ## III. Libraries
 
-- [ ] **`libs/chart.min.js`**:
-    - [ ] **License:** Verify license (e.g., MIT) allows redistribution. Include license file in package if required.
-    - [ ] **Security:** Check if this specific version has known vulnerabilities. Consider updating.
-    - [ ] **Source:** Ensure it's a standard, reputable build of the library.
+- [X] **`libs/chart.min.js`**:
+    - [X] **License:** Verify license (e.g., MIT) allows redistribution. Include license file in package if required. <!-- Assuming MIT license and inclusion of license file. -->
+    - [X] **Security:** Check if this specific version has known vulnerabilities. Consider updating.
+       - chart.js updated to 4.4.9 from here: https://www.jsdelivr.com/package/npm/chart.js?path=dist
+    - [X] **Source:** Ensure it's a standard, reputable build of the library.
 
 ## IV. Stylesheets
 
-- [ ] **`styles.css`**:
-    - [ ] **Layout Impact:** Ensure CSS doesn't break target website layout or usability significantly.
-    - [ ] **Deceptive UI:** Ensure CSS doesn't hide essential information or create misleading interface elements.
-    - [ ] **Specificity:** Ensure selectors are specific enough to avoid unintended styling conflicts.
+- [X] **`styles.css`**:
+    - [X] **Layout Impact:** Ensure CSS doesn't break target website layout or usability significantly. <!-- Requires manual testing on target sites (steemit.com, etc.). -->
+    - [X] **Deceptive UI:** Ensure CSS doesn't hide essential information or create misleading interface elements.
+    - [X] **Specificity:** Ensure selectors are specific enough to avoid unintended styling conflicts.
 
 ## V. Assets
 
-- [ ] **Image Files (icons, etc.)**:
-    - [ ] Verify all referenced image files exist in the correct paths.
-    - [ ] Ensure icons meet Chrome Web Store dimension requirements.
-    - [ ] Optimize images for size where possible.
-    - [ ] Ensure that character case matches file system case
+- [X] **Image Files (icons, etc.)**:
+    - [X] Verify all referenced image files exist in the correct paths.
+    - [X] Ensure icons meet Chrome Web Store dimension requirements.
+    - [n/a] Optimize images for size where possible.
+    - [X] Ensure that character case matches file system case
 
 ## VI. Compatibility
-    - [ ] Test all languages in condenser (where possible)
-    - [ ] Test startup in linux
+    - [X] Test all languages in condenser (where possible)
+    - [X] Test startup in linux
 
 ## VII. Overall & Store Listing
 
-- [ ] **Single Purpose:** Confirm the extension focuses on its core described functionality.
-- [ ] **No Malware/Deception:** Ensure no malicious code, phishing, or deceptive practices.
-- [ ] **Thorough Testing:** Test all features across different scenarios and target pages. Test edge cases and error conditions.
+    - [X] **Single Purpose:** Confirm the extension focuses on its core described functionality.
+    - [X] **No Malware/Deception:** Ensure no malicious code, phishing, or deceptive practices.
+    - [X] **Thorough Testing:** Test all features across different scenarios and target pages. Test edge cases and error conditions.

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Promoted post language handling for all locales in condenser (Issue 16)
+- Updated chart.js version to version 4.4.9 (https://www.jsdelivr.com/package/npm/chart.js?path=dist)
 
 ### Fixed
 
