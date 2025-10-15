@@ -6,7 +6,7 @@ const parseValue = (valString) => {
     let value = '';
     let decimalSymbol;
     let currencySymbol;
-    let csPosition = "end";
+    let csPosition = "start";
     const decimalSymbols = [
         ".",   // Period — used in English-speaking countries (US, UK, etc.)
         ",",   // Comma — used in most of Europe and Latin America
@@ -27,8 +27,8 @@ const parseValue = (valString) => {
             if (!currencySymbol){
                 currencySymbol = char
             }
-            if (i ==valString.length - 1){
-                csPosition = "start"
+            if (i == valString.length - 1){
+                csPosition = "end"
                 continue
             } else {
                 return {
@@ -40,7 +40,7 @@ const parseValue = (valString) => {
             }
         };
     };
-}
+};
 
 const getPaidPostCurationVal = (post) => {
     const vertMen = post.querySelectorAll('.VerticalMenu li');
@@ -135,13 +135,19 @@ const addBeneficiaryVal = (post, beneficiaryValue, currencySymb, csPos, decSymb)
     beneficiaryValStr = beneficiaryValue.toString().split('.');
     const integer = beneficiaryValStr[0];
     let decimal = beneficiaryValStr[1];
+
+    let ben_text = getBeneficiaryInLanguage(USER_LANGUAGE);
+    
+
     if (decimal.length == 1){
         decimal = decimal + "0";
     };
+    
+    console.log(csPos)
     if (csPos == "start"){
-        beneficiarySpan.textContent = " - Beneficiaries " + currencySymb + integer + decSymb + decimal;
+        beneficiarySpan.textContent = ben_text + currencySymb + integer + decSymb + decimal;
     } else {
-        beneficiarySpan.textContent = " - Beneficiaries " + integer + decSymb + decimal + currencySymb;
+        beneficiarySpan.textContent = ben_text + integer + decSymb + decimal + currencySymb;
     }
     beneficiaryLi.appendChild(beneficiarySpan);
 
@@ -159,7 +165,7 @@ const updatePayoutValue = () => {
             curationValue = curationReturns.value;
             decimalSymbol = curationReturns.decimalSymbol;
             currencySymbol = curationReturns.currencySymbol;
-            csPosition = curationReturns.csPos;
+            csPosition = curationReturns.currencySymbolPosition;
             totalValue = 2 * curationValue;
         } else {
             return

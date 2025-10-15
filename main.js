@@ -10,6 +10,8 @@ const promotedCostStringRegex = /(?:Promotion Cost|Coste de promoción|Cout de l
 
 let post_info = {"author":null, "permlink":null}
 
+let USER_LANGUAGE;
+
 /*
  *  The main logic is in highLight() and handleProfileDropdownClick()
  * o highlight()
@@ -243,6 +245,9 @@ function sceMutationObserver() {
             modifyUserElement();
             highLight();
             updateResteemVisibility();
+            USER_LANGUAGE = detectUserLanguage();
+            updatePayoutValue();
+            console.log(USER_LANGUAGE)
             for (let mutation of mutationsList) {
                 if (mutation.type === 'attributes' && (mutation.attributeName === 'class'
                     || mutation.attributeName === 'style')) {
@@ -257,7 +262,6 @@ function sceMutationObserver() {
 
 window.addEventListener('load', async () => {
     post_info = await loadPost({"author":null, "permlink":null}); // Call your function
-    updatePayoutValue();
 });
 
 window.addEventListener('click', async () => {
@@ -266,7 +270,6 @@ window.addEventListener('click', async () => {
 });
 
 window.addEventListener('scroll', async () => {
-    updatePayoutValue();
 })
 
 addButtonsToSummaries();        // New for curation info buttons
