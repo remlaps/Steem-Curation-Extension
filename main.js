@@ -257,12 +257,17 @@ function sceMutationObserver() {
 
 window.addEventListener('load', async () => {
     post_info = await loadPost({"author":null, "permlink":null}); // Call your function
+    updatePayoutValue();
 });
 
 window.addEventListener('click', async () => {
      // Call your function
      post_info = await loadPost(post_info);
 });
+
+window.addEventListener('scroll', async () => {
+    updatePayoutValue();
+})
 
 addButtonsToSummaries();        // New for curation info buttons
 sceMutationObserver();         // Mutation observer for new dropdown menu after login.
