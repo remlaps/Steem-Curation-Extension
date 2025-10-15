@@ -5,6 +5,8 @@ PAST_PAY_INDEX = -3
 const parseValue = (valString) => {
     let value = '';
     let decimalSymbol;
+    let currencySymbol;
+    let csPosition = "end";
     const decimalSymbols = [
         ".",   // Period — used in English-speaking countries (US, UK, etc.)
         ",",   // Comma — used in most of Europe and Latin America
@@ -16,18 +18,26 @@ const parseValue = (valString) => {
     ];
     for (let i = valString.length - 1; i>= 0; i--){
         let char = valString[i];
-        if (!isNaN(char)){ // Is character numeric?
+        if (/^[0-9]$/.test(char)){ // Is character numeric?
             value = char + value;
         } else if (decimalSymbols.includes(char)) { // Is character decimal?
             value = "." + value;
             decimalSymbol = char;
         } else { // Character is currency symbol
-            currencySymbol = char
-            return {
+            if (!currencySymbol){
+                currencySymbol = char
+            }
+            if (i ==valString.length - 1){
+                csPosition = "start"
+                continue
+            } else {
+                return {
                 "value":parseFloat(value), 
                 "decimalSymbol":decimalSymbol,
-                "currencySymbol":currencySymbol
+                "currencySymbol":currencySymbol,
+                "currencySymbolPosition":csPosition
             };
+            }
         };
     };
 }
@@ -64,26 +74,28 @@ const parseValueText = (valString) => {
     ];
     for (let i = valString.length - 1; i>= 0; i--){
         let char = valString[i];
-        if (!isNaN(char)){ // Is character numeric?
+        if (/^[0-9]$/.test(char)){ // Is character numeric?
             continue // Skip it
         } else if (decimalSymbols.includes(char)) { // Is character decimal?
             continue // Skip it
         } else {
-            return valString.slice(0, i + 1);
+            if (i < valString.length - 1){
+                return valString.slice(0, i);
+            }
         };
     };
 }
 
-const updatePaidPostTotalVal = (post, totalVal, decSymb) => {
+const updatePaidPostTotalVal = (post, curSymb, csPos, totalVal, decSymb) => {
     const vertMen = post.querySelectorAll('.VerticalMenu li');
     if (!vertMen.length){
-        return
-    }
+        return;
+    };
     parent = vertMen[0].parentNode;
     const existingPastPay = parent.querySelector('#past_payout');
     if (existingPastPay){
-        return
-    }
+        return;
+    };
     
     const totalValStr = totalVal.toString().split('.');
 
@@ -100,10 +112,14 @@ const updatePaidPostTotalVal = (post, totalVal, decSymb) => {
 
     vertMen[vertMen.length + PAST_PAY_INDEX].id = "past_payout"
     valueText = parseValueText(vertMen[vertMen.length + PAST_PAY_INDEX].innerText);
-    vertMen[vertMen.length + PAST_PAY_INDEX].innerText = valueText + integer + decSymb + decimal; 
+    if (csPos == "start"){
+        vertMen[vertMen.length + PAST_PAY_INDEX].innerHTML = "<span>" + valueText + curSymb + integer + decSymb + decimal + "</span>"; 
+    } else {
+        vertMen[vertMen.length + PAST_PAY_INDEX].innerHTML = "<span>" + valueText  + integer + decSymb + decimal + curSymb + "</span>"; 
+    }
 };
 
-const addBeneficiaryVal = (post, beneficiaryValue, currencySymb, decSymb) => {
+const addBeneficiaryVal = (post, beneficiaryValue, currencySymb, csPos, decSymb) => {
     const vertMen = post.querySelectorAll('.VerticalMenu li');
     if (!vertMen.length) return;
 
@@ -122,7 +138,11 @@ const addBeneficiaryVal = (post, beneficiaryValue, currencySymb, decSymb) => {
     if (decimal.length == 1){
         decimal = decimal + "0";
     };
-    beneficiarySpan.textContent = " - Beneficiaries " + currencySymb + integer + decSymb + decimal;
+    if (csPos == "start"){
+        beneficiarySpan.textContent = " - Beneficiaries " + currencySymb + integer + decSymb + decimal;
+    } else {
+        beneficiarySpan.textContent = " - Beneficiaries " + integer + decSymb + decimal + currencySymb;
+    }
     beneficiaryLi.appendChild(beneficiarySpan);
 
     const lastItem = vertMen[vertMen.length + CURATION_INDEX];
@@ -137,8 +157,9 @@ const updatePayoutValue = () => {
         curationReturns = getPaidPostCurationVal(post)
         if (curationReturns){
             curationValue = curationReturns.value;
-            decimalSymbol = curationReturns.decimalSymbol
-            currencySymbol = curationReturns.currencySymbol
+            decimalSymbol = curationReturns.decimalSymbol;
+            currencySymbol = curationReturns.currencySymbol;
+            csPosition = curationReturns.csPos;
             totalValue = 2 * curationValue;
         } else {
             return
@@ -160,8 +181,8 @@ const updatePayoutValue = () => {
             return
         }
 
-        updatePaidPostTotalVal(post, totalValue, decimalSymbol);
-        addBeneficiaryVal(post, beneficiaryValue, currencySymbol, decimalSymbol);
+        updatePaidPostTotalVal(post, currencySymbol, csPosition, totalValue, decimalSymbol);
+        addBeneficiaryVal(post, beneficiaryValue, currencySymbol, csPosition, decimalSymbol);
 
 
     })
