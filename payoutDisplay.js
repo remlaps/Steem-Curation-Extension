@@ -86,7 +86,7 @@ const parseValueText = (valString) => {
     };
 }
 
-const updatePaidPostTotalVal = (post, curSymb, csPos, totalVal, decSymb) => {
+const updatePaidPostTotalVal = withSilentMutations(function(post, curSymb, csPos, totalVal, decSymb) {
     const vertMen = post.querySelectorAll('.VerticalMenu li');
     if (!vertMen.length){
         return;
@@ -117,9 +117,9 @@ const updatePaidPostTotalVal = (post, curSymb, csPos, totalVal, decSymb) => {
     } else {
         vertMen[vertMen.length + PAST_PAY_INDEX].innerHTML = "<span>" + valueText  + integer + decSymb + decimal + curSymb + "</span>"; 
     }
-};
+});
 
-const addBeneficiaryVal = (post, beneficiaryValue, currencySymb, csPos, decSymb) => {
+const addBeneficiaryVal = withSilentMutations(function(post, beneficiaryValue, currencySymb, csPos, decSymb) {
     const vertMen = post.querySelectorAll('.VerticalMenu li');
     if (!vertMen.length) return;
 
@@ -153,9 +153,9 @@ const addBeneficiaryVal = (post, beneficiaryValue, currencySymb, csPos, decSymb)
 
     const lastItem = vertMen[vertMen.length + CURATION_INDEX];
     parent.insertBefore(beneficiaryLi, lastItem);
-};
+});
 
-const updatePayoutValue = () => {
+const updatePayoutValue = withSilentMutations(function() {
     let postsList = document.querySelectorAll('#posts_list li');
     let curationReturns;
     postsList.forEach(post => {
@@ -189,7 +189,5 @@ const updatePayoutValue = () => {
 
         updatePaidPostTotalVal(post, currencySymbol, csPosition, totalValue, decimalSymbol);
         addBeneficiaryVal(post, beneficiaryValue, currencySymbol, csPosition, decimalSymbol);
-
-
     })
-}
+})

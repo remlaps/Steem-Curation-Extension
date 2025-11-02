@@ -21,6 +21,9 @@ function checkAndUpdateAnchorColors() {
     }
 }
 
+// Prevent observer recursion when we update anchor colors
+checkAndUpdateAnchorColors = withSilentMutations(checkAndUpdateAnchorColors);
+
 async function showOverlay(postInfo, curatorOverlayAnchor) {
     // Clear any existing overlay first
     if (currentOverlay) {
@@ -188,6 +191,9 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
     return overlay;
 }
 
+// Wrap async overlay creation to silence mutations during its DOM work
+showOverlay = withSilentMutationsAsync(showOverlay);
+
 function clearAllOverlays() {
     // Remove all overlay panes, not just the tracked one
     const overlayElements = document.querySelectorAll('.custom-overlay-pane');
@@ -198,6 +204,9 @@ function clearAllOverlays() {
     });
     currentOverlay = null;
 }
+
+// Clearing overlays touches the DOM; silence mutations while doing so
+clearAllOverlays = withSilentMutations(clearAllOverlays);
 
 function addButtonsToSummaries() {
     const headers = document.querySelectorAll('div.articles__summary-header');
@@ -265,6 +274,8 @@ function addButtonsToSummaries() {
     });
     checkAndUpdateAnchorColors();
 }
+// Creating buttons/anchors modifies the page; wrap to avoid re-triggering observer
+addButtonsToSummaries = withSilentMutations(addButtonsToSummaries);
 
 function extractAuthorAndPermlink(url) {
     const regex = /\/@([^\/]+)\/([^\/]+)$/;

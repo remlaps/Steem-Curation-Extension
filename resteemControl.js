@@ -2,25 +2,9 @@
 // let bodyFontColor = getComputedStyle(document.body).color;
 let sceControlRowBackgroundColor = getComputedStyle(document.querySelector('.sce-control-row') || document.body).backgroundColor; // Initialize with body color if no sce-control-row is found
 
-function createResteemToggleControl() {
-    // Remove the Condenser toggle, since its behavior is overridden by this one.
-    try {
-        const oldCheckboxInput = document.getElementById('hideResteems');
-        if (oldCheckboxInput) {
-            // Find the parent div of the checkbox
-            const oldControlContainer = oldCheckboxInput.closest('div'); // Or oldCheckboxInput.parentElement;
-            if (oldControlContainer) {
-                oldControlContainer.style.display = 'none';
-                console.log("SCE: Hiding the pre-existing 'hideResteems' control.");
-            }
-        }
-    } catch (error) {
-        console.warn("SCE: Error trying to hide the old 'hideResteems' control:", error);
-    }
-
-    // Find the target container element
+function createResteemToggleControl() {    
+    removeCondenserResteemToggle();
     const targetContainer = document.querySelector('#content > div > div:nth-child(2) > div > div > header > nav > div.small-6.medium-8.large-7.columns.Header__buttons');
-
     if (!targetContainer) {
         console.warn("Target container not found!");
         return;
@@ -80,6 +64,28 @@ function createResteemToggleControl() {
     // Update colors
     updateColors();
 }
+// Silence mutations while creating the control to avoid observer recursion
+createResteemToggleControl = withSilentMutations(createResteemToggleControl);
+
+function removeCondenserResteemToggle() {
+    // Remove the Condenser toggle, since its behavior is overridden by this one.
+    try {
+        const oldCheckboxInput = document.getElementById('hideResteems');
+        if (oldCheckboxInput) {
+            // Find the parent div of the checkbox
+            const oldControlContainer = oldCheckboxInput.closest('div'); // Or oldCheckboxInput.parentElement;
+            if (oldControlContainer) {
+                oldControlContainer.style.display = 'none';
+                console.log("SCE: Hiding the pre-existing 'hideResteems' control.");
+            }
+        }
+    } catch (error) {
+        console.warn("SCE: Error trying to hide the old 'hideResteems' control:", error);
+    }
+}
+// Hiding the existing controls touches the DOM
+removeCondenserResteemToggle = withSilentMutations(removeCondenserResteemToggle);
+
 
 function updateColors() {
     const computedStyle = window.getComputedStyle(document.body);
@@ -97,6 +103,7 @@ function updateColors() {
         titleLink.style.fontFamily = computedStyle.fontFamily;
     }
 }
+updateColors = withSilentMutations(updateColors);
 
 function setControlBoxVisibility(visibility) {
     const controlBox = document.querySelector('.sce-control');
@@ -106,47 +113,54 @@ function setControlBoxVisibility(visibility) {
         console.warn("Control row element with class 'sce-control' not found!");
     }
 }
+setControlBoxVisibility = withSilentMutations(setControlBoxVisibility);
 
-function updateResteemVisibility(username) {
+async function updateResteemVisibility(username) {
     const checkbox = document.getElementById('resteem-toggle');
+    if (!checkbox) return;
 
-    if (checkbox) {
-        // Hide the checkbox control if we're not on a feed/blog link
-        if (!(window.location.pathname.match(/\/(feed|blog)$|\/\@[a-zA-Z0-9._-]+$/))) {
-            setControlBoxVisibility('none'); // Hides the control box
-            return;
-        }
-
-        const summaries = document.querySelectorAll('.articles__summary');
-        if (summaries.length > 200) {
-            setControlBoxVisibility('none'); // Hides the control box
-        } else {
-            setControlBoxVisibility('block'); // Shows the control box
-        }
-
-        const feedOwner = window.location.pathname.split('/')[1].replace('@', '');
-        const showState = checkbox.checked;
-        summaries.forEach(async summary => {
-            const hasResteem = summary.querySelector('.articles__resteem') !== null;
-            if (hasResteem) {
-                const targetElement = summary.querySelector
-                    ('#posts_list > ul > li > div > div.articles__summary-header > div.user > div.user__col.user__col--right > span.user__name > span > strong > a');
-                const resteemedAuthor = targetElement.textContent;
-                const isFollowed = await isFollowing(steemApi, feedOwner, resteemedAuthor);
-                // console.debug(`${feedOwner} following ${resteemedAuthor}: ${isFollowed}`);
-
-                const parentLi = summary.closest('li');
-                if (window.location.pathname.endsWith("/feed")) {
-                    if (parentLi && !isFollowed && resteemedAuthor !== feedOwner) {
-                        parentLi.style.display = showState ? 'block' : 'none';
-                    }
-                } else {
-                    parentLi.style.display = showState ? 'block' : 'none';
-                }
-            }
-        });
+    // Hide the checkbox control if we're not on a feed/blog link
+    if (!(window.location.pathname.match(/\/(feed|blog)$|\/\@[a-zA-Z0-9._-]+$/))) {
+        setControlBoxVisibility('none'); // Hides the control box
+        return;
     }
+
+    const summaries = Array.from(document.querySelectorAll('.articles__summary'));
+    if (summaries.length > 200) {
+        setControlBoxVisibility('none'); // Hides the control box
+    } else {
+        setControlBoxVisibility('block'); // Shows the control box
+    }
+
+    const feedOwner = window.location.pathname.split('/')[1].replace('@', '');
+    const showState = checkbox.checked;
+
+    const promises = summaries.map(async summary => {
+        const hasResteem = summary.querySelector('.articles__resteem') !== null;
+        if (!hasResteem) return;
+
+        const targetElement = summary.querySelector('#posts_list > ul > li > div > div.articles__summary-header > div.user > div.user__col.user__col--right > span.user__name > span > strong > a');
+        if (!targetElement) return;
+        const resteemedAuthor = targetElement.textContent;
+        const isFollowed = await isFollowing(steemApi, feedOwner, resteemedAuthor);
+
+        const parentLi = summary.closest('li');
+        if (!parentLi) return;
+
+        if (window.location.pathname.endsWith('/feed')) {
+            if (!isFollowed && resteemedAuthor !== feedOwner) {
+                parentLi.style.display = showState ? 'block' : 'none';
+            }
+        } else {
+            parentLi.style.display = showState ? 'block' : 'none';
+        }
+    });
+
+    await Promise.all(promises);
 }
+
+// Ensure we silence mutations while we toggle visibility (covers async inner work)
+updateResteemVisibility = withSilentMutationsAsync(updateResteemVisibility);
 
 const cacheExpiration = 30 * 60 * 1000; // 30 minutes in milliseconds
 let followingCache = null;
