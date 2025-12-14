@@ -337,6 +337,8 @@ const sceMutationObserver = () => {
 
         addUserVpRing_silent();
         maybeLoadPost();
+    } catch (error) {
+        console.error("Error in mutation observer handling:", error);
     } finally {
         SCE_SILENT--;
     }
