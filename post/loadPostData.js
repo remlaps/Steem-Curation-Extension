@@ -405,6 +405,7 @@ const displayPostResteemData = async (post, anchorClassSelector) => {
         console.warn(`Element with class "${anchorClassSelector}" not found.`);
         return;
     }
+
     const existingDropdown = anchorElement.querySelector('.sce-resteem-dropdown-container');
     if (existingDropdown) {
         console.log("SCE: Resteem dropdown already exists for this post (relative positioning).");
@@ -412,17 +413,20 @@ const displayPostResteemData = async (post, anchorClassSelector) => {
     }
 
     // Create the dropdown container
-    const dropdownContainer = document.createElement('div');
+    const dropdownContainer = document.createElement('span');
     dropdownContainer.className = 'DropdownMenu';
+    dropdownContainer.style.display = 'inline-block';
     // dropdownContainer.style.position = 'relative';
     // dropdownContainer.style.left = '55%'; // Adjust '335px' as needed (positive value moves right) - TODO: anchor location to resteem button.
     // dropdownContainer.style.top = '0';
-    dropdownContainer.style.marginLeft = 0;
+    // dropdownContainer.style.marginLeft = 0;
 
     // Create the dropdown trigger as an anchor element
     const dropdownTrigger = document.createElement('a');
     dropdownTrigger.href = '#'; // Set href to "#" to emulate an anchor
     dropdownTrigger.className = 'resteem-dropdown-trigger';
+    dropdownTrigger.style.display = 'flex';
+    dropdownTrigger.style.alignItems = 'center';
 
     // Add an event listener to the dropdown menu to prevent snap-back to the top
     dropdownTrigger.addEventListener('click', (event) => {
@@ -434,7 +438,7 @@ const displayPostResteemData = async (post, anchorClassSelector) => {
     const svgIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svgIcon.setAttribute("width", "16"); // Set the width of the icon
     svgIcon.setAttribute("height", "16"); // Set the height of the icon
-    svgIcon.setAttribute("viewBox", "0 0 512 512"); // Set the view box for the SVG
+    svgIcon.setAttribute("viewBox", "8 8 512 512"); // Set the view box for the SVG
     svgIcon.classList.add('triangle-icon'); // Add a class for styling
 
     // Create the polygon element for the triangle
@@ -459,7 +463,6 @@ const displayPostResteemData = async (post, anchorClassSelector) => {
     const isDarkMode = document.body.classList.contains('theme-dark');
     const resteemDropdownBgColor = isDarkMode ? '#1C252B' : '#F4F4F4';
     const dropdownMenu = document.createElement('ul');
-    // dropdownMenu.className = 'resteem-dropdown-menu';
     dropdownMenu.className = 'resteem-dropdown-menu';
     // Set the background color of the dropdown menu, depending on dark/light mode
     dropdownMenu.style.backgroundColor = resteemDropdownBgColor;
@@ -500,14 +503,25 @@ const displayPostResteemData = async (post, anchorClassSelector) => {
     });
 
     // Create a wrapper for the dropdown
-    const dropdownWrapper = document.createElement('div');
+    const dropdownWrapper = document.createElement('span');
+    dropdownWrapper.style.display = 'inline-block';
+    dropdownWrapper.style.marginLeft = '0px';
+    dropdownWrapper.style.verticalAlign = 'middle';
+    dropdownWrapper.style.marginBottom = '10px';
     dropdownWrapper.className = 'resteem-dropdown-wrapper';
 
     // Append the dropdown components to the wrapper
     dropdownContainer.appendChild(dropdownMenu);
     dropdownContainer.appendChild(dropdownTrigger);
-    dropdownWrapper.appendChild(dropdownContainer);
 
     // Append the dropdown container to the Reshare container element
-    anchorElement.appendChild(dropdownWrapper);
+    const targetElement = anchorElement.querySelector('.Reblog__button');
+    if (targetElement) {
+        targetElement.parentNode.insertBefore(dropdownWrapper, targetElement.nextSibling);
+        // const lineBreak = document.createElement('br');
+        // targetElement.parentNode.insertBefore(lineBreak, dropdownWrapper.nextSibling);
+    } else {
+        anchorElement.appendChild(dropdownWrapper);
+    }
+    dropdownWrapper.appendChild(dropdownContainer);
 }

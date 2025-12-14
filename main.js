@@ -333,10 +333,12 @@ const sceMutationObserver = () => {
         const newLang = detectUserLanguage();
         if (newLang && newLang !== USER_LANGUAGE) USER_LANGUAGE = newLang;
 
-        updatePayoutValue();
+        if (typeof updatePayoutValue === 'function') {
+            updatePayoutValue();
+        }
 
         addUserVpRing_silent();
-        maybeLoadPost();
+        // maybeLoadPost();
     } catch (error) {
         console.error("Error in mutation observer handling:", error);
     } finally {

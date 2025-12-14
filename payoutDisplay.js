@@ -86,7 +86,7 @@ const parseValueText = (valString) => {
     };
 }
 
-const updatePaidPostTotalVal = withSilentMutations(function(post, curSymb, csPos, totalVal, decSymb) {
+var updatePaidPostTotalVal = withSilentMutations(function(post, curSymb, csPos, totalVal, decSymb) {
     const vertMen = post.querySelectorAll('.VerticalMenu li');
     if (!vertMen.length){
         return;
@@ -119,7 +119,7 @@ const updatePaidPostTotalVal = withSilentMutations(function(post, curSymb, csPos
     }
 });
 
-const addBeneficiaryVal = withSilentMutations(function(post, beneficiaryValue, currencySymb, csPos, decSymb) {
+var addBeneficiaryVal = withSilentMutations(function(post, beneficiaryValue, currencySymb, csPos, decSymb) {
     const vertMen = post.querySelectorAll('.VerticalMenu li');
     if (!vertMen.length) return;
 
@@ -136,8 +136,11 @@ const addBeneficiaryVal = withSilentMutations(function(post, beneficiaryValue, c
     const integer = beneficiaryValStr[0];
     let decimal = beneficiaryValStr[1];
 
-    let ben_text = getBeneficiaryInLanguage(USER_LANGUAGE);
-    
+    let lang = 'en';
+    try {
+        if (typeof USER_LANGUAGE !== 'undefined') lang = USER_LANGUAGE;
+    } catch (e) {}
+    let ben_text = getBeneficiaryInLanguage(lang);
 
     if (decimal.length == 1){
         decimal = decimal + "0";
@@ -155,7 +158,7 @@ const addBeneficiaryVal = withSilentMutations(function(post, beneficiaryValue, c
     parent.insertBefore(beneficiaryLi, lastItem);
 });
 
-const updatePayoutValue = withSilentMutations(function() {
+var updatePayoutValue = withSilentMutations(function() {
     let postsList = document.querySelectorAll('#posts_list li');
     let curationReturns;
     postsList.forEach(post => {
@@ -191,3 +194,7 @@ const updatePayoutValue = withSilentMutations(function() {
         addBeneficiaryVal(post, beneficiaryValue, currencySymbol, csPosition, decimalSymbol);
     })
 })
+
+if (typeof updatePayoutValue === 'function') {
+    updatePayoutValue();
+}
