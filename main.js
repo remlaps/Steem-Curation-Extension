@@ -300,23 +300,20 @@ modifyUserElement = withSilentMutations(modifyUserElement);
 
 // Mutation observer to detect logout -> login and other page changes.
 const sceMutationObserver = () => {
-    // Prefer observing the documentElement (html) rather than `body`.
-    // Some single-page apps replace the <body> element during navigation which
-    // would detach an observer attached to the old body. Observing
-    // `document.documentElement` (the <html> node) ensures the observer
-    // remains attached across such replacements. Fallback to `body` if needed.
-    const root = document.documentElement || document.body;
-  const config = { childList: true, subtree: true }; // start: no attributes
+  const root = document.documentElement || document.body;
+  const config = { childList: true, subtree: true };
+  
+  let timeoutId = null;
 
   const observer = new MutationObserver(() => {
-    if (SCE_SILENT) return;
-
-    if (sceMutationObserver.__pending) return;
-    sceMutationObserver.__pending = true;
-    requestAnimationFrame(() => {
-        sceMutationObserver.__pending = false;
-        runOncePerBatch();
-    })
+    // Don't schedule a new run if one is already pending
+    if (timeoutId) return;
+    
+    // Debounce: wait a bit for mutations to settle, then run
+    timeoutId = setTimeout(() => {
+      timeoutId = null;
+      runOncePerBatch();
+    }, 50); // 50ms debounce - adjust as needed
   });
 
   observer.observe(root, config);
@@ -338,7 +335,6 @@ const sceMutationObserver = () => {
         }
 
         addUserVpRing_silent();
-        // maybeLoadPost();
     } catch (error) {
         console.error("Error in mutation observer handling:", error);
     } finally {
@@ -346,7 +342,6 @@ const sceMutationObserver = () => {
     }
   }
 }
-
 
 window.addEventListener('load', async () => {
     post_info = await loadPost({"author":null, "permlink":null}, USER_LANGUAGE); // Call your function
