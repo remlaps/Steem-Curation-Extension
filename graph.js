@@ -874,3 +874,147 @@ class EfficiencyScatter {
 
     }
 };
+
+const loadPostValueGraph = (post) => {
+    // Ensure the date strings are treated as UTC by appending 'Z'
+    const postCreationTime = new Date(post.details.created + 'Z');
+    const payoutEndTime = new Date(postCreationTime.getTime() + 7 * 24 * 60 * 60 * 1000); // Add 7 days to creation time
+
+    // Filter votes within the payout period, treating times as UTC
+    const activeVotes = sortVotesByTime(
+        post.details.active_votes.filter((vote) => new Date(vote.time + 'Z') <= payoutEndTime)
+    );
+
+    if (activeVotes.length === 0) {
+        console.log('SCE:No votes during the payout period to display.');
+        return;
+    }
+
+    // Determine the scaling range based on post age
+    const currentTime = new Date();
+    const latestVoteTime = new Date(activeVotes[activeVotes.length - 1].time + 'Z').getTime();
+    const maxElapsedMs = Math.min(latestVoteTime - postCreationTime.getTime(), currentTime - postCreationTime);
+
+    const numIntervals = 10; // Define the number of intervals for the X-axis
+    const intervalMs = maxElapsedMs / numIntervals; // Calculate the duration of each interval
+
+    const timeLabels = [];
+    const cumulativeTotalValues = new Array(numIntervals + 1).fill(0);
+    const cumulativeOrganicValues = new Array(numIntervals + 1).fill(0);
+    const cumulativeBurnValues = new Array(numIntervals + 1).fill(0);
+    let cumulativeTotal = 0;
+    let cumulativeOrganic = 0;
+    let cumulativeBurn = 0;
+
+    // Generate evenly spaced time labels
+    for (let i = 0; i <= numIntervals; i++) {
+        const elapsedMs = intervalMs * i;
+        timeLabels.push(formatScaledTimeLabel(elapsedMs, maxElapsedMs)); // Format elapsed time
+    }
+
+    // Assign cumulative values to intervals
+    activeVotes.forEach((vote) => {
+        const voteTime = new Date(vote.time + 'Z').getTime();
+        const elapsedMs = voteTime - postCreationTime.getTime();
+        const intervalIndex = Math.min(Math.floor(elapsedMs / intervalMs), numIntervals - 1);
+        cumulativeTotal += vote.value;
+        cumulativeTotalValues[intervalIndex] = cumulativeTotal;
+
+        cumulativeOrganicValues[intervalIndex] = vote.organic_value;
+        cumulativeOrganic += vote.organic_value;
+        cumulativeBurnValues[intervalIndex] = vote.burn_value;
+        cumulativeBurn += vote.burn_value;
+    });
+
+    // Fill in any gaps in the cumulative values
+    for (let i = 1; i < cumulativeTotalValues.length; i++) {
+        if (cumulativeTotalValues[i] === 0) cumulativeTotalValues[i] = cumulativeTotalValues[i - 1];
+        if (cumulativeOrganicValues[i] === 0) cumulativeOrganicValues[i] = cumulativeOrganicValues[i - 1];
+        if (cumulativeBurnValues[i] === 0) cumulativeBurnValues[i] = cumulativeBurnValues[i - 1];
+    }
+
+    const data = [];
+    if (cumulativeTotal === 0) {
+        console.log("SCE: Post has no value");
+        return;
+    }
+
+    data.push({ label: 'Total Value', data: cumulativeTotalValues, color: 'rgba(75, 192, 192, 1)' });
+
+    if (cumulativeOrganic > 0) {
+        data.push({ label: 'Organic Value', data: cumulativeOrganicValues, color: 'rgba(0, 200, 0, 1)' });
+    }
+
+    if (cumulativeBurn > 0) {
+        data.push({ label: 'Burn Value', data: cumulativeBurnValues, color: 'rgba(255, 0, 0, 1)' });
+    }
+
+    createLineGraph(
+        'c-sidebr-market',
+        'postValueGraph',
+        'Post Value Over Time ($)',
+        timeLabels,
+        data,
+        'Value ($)'
+    );
+};
+
+const loadPostVoteGraph = (post) => {
+    // Ensure the date strings are treated as UTC by appending 'Z'
+    const postCreationTime = new Date(post.details.created + 'Z');
+    const payoutEndTime = new Date(postCreationTime.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    // Filter and sort active votes within the payout period, treating times as UTC
+    const activeVotes = sortVotesByTime(
+        post.details.active_votes.filter(vote => new Date(vote.time + 'Z') <= payoutEndTime)
+    );
+
+    if (activeVotes.length === 0) {
+        console.log('SCE: No votes to display.');
+        return;
+    }
+
+    // Determine the scaling range based on post age
+    const currentTime = new Date();
+    const latestVoteTime = new Date(activeVotes[activeVotes.length - 1].time + 'Z').getTime();
+    const maxElapsedMs = Math.min(latestVoteTime - postCreationTime.getTime(), currentTime - postCreationTime);
+
+    const numIntervals = 10; // Define the number of intervals for the X-axis
+    const intervalMs = maxElapsedMs / numIntervals; // Calculate the duration of each interval
+
+    const timeLabels = [];
+    const cumulativeVoteCounts = new Array(numIntervals + 1).fill(0); // Pre-fill with zeros
+
+    // Generate evenly spaced time labels
+    for (let i = 0; i <= numIntervals; i++) {
+        const elapsedMs = intervalMs * i;
+        timeLabels.push(formatScaledTimeLabel(elapsedMs, maxElapsedMs)); // Format elapsed time
+    }
+
+    // Assign cumulative votes to intervals
+    let totalVotes = 0;
+    activeVotes.forEach(vote => {
+        const voteTime = new Date(vote.time + 'Z').getTime();
+        const elapsedMs = voteTime - postCreationTime.getTime();
+        const intervalIndex = Math.min(Math.floor(elapsedMs / intervalMs), numIntervals - 1);
+        totalVotes += 1;
+        cumulativeVoteCounts[intervalIndex] = totalVotes;
+    });
+
+    // Fill in any gaps in the cumulative counts
+    for (let i = 1; i < cumulativeVoteCounts.length; i++) {
+        if (cumulativeVoteCounts[i] === 0) {
+            cumulativeVoteCounts[i] = cumulativeVoteCounts[i - 1];
+        }
+    }
+
+    createLineGraph(
+        'c-sidebr-market',
+        'postVoteGraph',
+        'Total Votes Over Time',
+        timeLabels,
+        [{ label: 'Total Votes', data: cumulativeVoteCounts, color: 'rgba(75, 192, 192, 1)' }],
+        'Votes',
+        false
+    );
+};

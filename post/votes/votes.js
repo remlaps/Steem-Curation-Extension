@@ -55,6 +55,7 @@ const attachVoterHoverTooltips = (post, language, days = 7) => {
 
     let currentLi = null;
     let activeDownloadTip = null;
+    let downloadTimeout = null;
 
     votersUL.addEventListener('mouseover', (e) => {
         if (e.target.closest('.voter-tooltip')) return;
@@ -66,25 +67,35 @@ const attachVoterHoverTooltips = (post, language, days = 7) => {
         const tip = tipByLi.get(li);
         if (!tip) return;
         
+        // Clear any pending download timeout
+        if (downloadTimeout) {
+            clearTimeout(downloadTimeout);
+            downloadTimeout = null;
+        }
+        
         // If hovering over a different voter than the one currently downloading
         if (activeDownloadTip && activeDownloadTip !== tip) {
             // Cancel the previous download
             activeDownloadTip.cancelDownload();
         }
         
-        // Start download if this is a different tip, or if the current tip's download was cancelled
-        if (activeDownloadTip !== tip || (activeDownloadTip === tip && tip.isCancelled)) {
-            tip.resetCancellation();
-            // Start download (non-blocking - don't await)
-            tip.prefetchEfficiencyData().catch(err => {
-                console.error('Error downloading efficiency data:', err);
-            });
-            activeDownloadTip = tip;
-        }
-        
         if (currentLi) tipByLi.get(currentLi)?.hide();
         currentLi = li;
         tip.show();
+        
+        // Start download after 100ms delay (1/10 of a second)
+        // Start download if this is a different tip, or if the current tip's download was cancelled
+        if (activeDownloadTip !== tip || (activeDownloadTip === tip && tip.isCancelled)) {
+            tip.resetCancellation();
+            downloadTimeout = setTimeout(() => {
+                // Start download (non-blocking - don't await)
+                tip.prefetchEfficiencyData().catch(err => {
+                    console.error('Error downloading efficiency data:', err);
+                });
+                activeDownloadTip = tip;
+                downloadTimeout = null;
+            }, 100);
+        }
 
     });
 
@@ -98,6 +109,11 @@ const attachVoterHoverTooltips = (post, language, days = 7) => {
         if (!li || li !== currentLi) return;
         const toEl = e.relatedTarget;
         if (!toEl || !li.contains(toEl)) {
+            // Clear any pending download timeout if user moves away before delay completes
+            if (downloadTimeout) {
+                clearTimeout(downloadTimeout);
+                downloadTimeout = null;
+            }
             // Only hide the tooltip, don't cancel the download
             tipByLi.get(li)?.hide();
             currentLi = null;
@@ -143,5 +159,61 @@ const getHistoricCurationRewards = async (voter, post, days) => {
         console.error("Error fetching curation rewards:", error);
     return null;
   }
+}
+
+const loadPostVoteData = (post) => {
+    const votingClass = document.getElementsByClassName('Voting__voters_list');
+
+    if (votingClass.length > 0) {
+        // Access the first element with the class 'Voting__voters_list'
+        const votingElement = votingClass[0]; // Index may change in future updates!
+
+        // Find the <ul> with the specified classes inside the 'Voting' element
+        const voters_list = votingElement.querySelector('ul.VerticalMenu.menu.vertical');
+
+        if (voters_list) {
+            const listItems = voters_list.querySelectorAll('li');
+
+            if (listItems) {
+                listItems.forEach((item) => {
+
+                    // Extract the username from the textContent (assumes format "+ username")
+                    const username = item.textContent.split(' ')[1].trim()
+
+                    // Find the corresponding vote in the activeVotes list
+                    const vote = post.details.active_votes.find(v => v.voter === username);
+
+                    if (vote) {
+                        // Reformat the text content
+                        const first_digit = item.textContent.split(' ')[0];
+                        const percent = (vote.percent / 100).toFixed(0);
+
+                        // Add a custom class to style the list items
+                        item.classList.add('vote-item');
+
+                        // Format and update the text content with a clickable link for the username
+                        if (vote.value > 0) {
+                            item.innerHTML = `
+                                        <span class="vote-value">$${vote.value.toFixed(2)}</span>
+                                        <span class="vote-percentage">(${vote.percentage}%)</span>
+                                        <a href="/@${username}" class="vote-username">${username}</a>
+                                        <span class="vote-weight">(${percent}% weight)</span>
+                                    `;
+                        } else {
+                            item.innerHTML = `
+                                        <a href="/@${username}" class="vote-username">${username}</a>
+                                        <span class="vote-weight">(${percent}% weight)</span>
+                                    `;
+                        }
+
+                    }
+                });
+            }
+        } else {
+            console.log('SCE: Unordered list not found within votingClass element.');
+        }
+    } else {
+        console.log('SCE: Element with class "Voting__voters_list" not found.');
+    }
 }
 
