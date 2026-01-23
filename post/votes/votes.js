@@ -54,6 +54,7 @@ const attachVoterHoverTooltips = (post, language, days = 7) => {
     _sceVoterTipsBound = true;
 
     let currentLi = null;
+    let activeDownloadTip = null;
 
     votersUL.addEventListener('mouseover', (e) => {
         if (e.target.closest('.voter-tooltip')) return;
@@ -61,10 +62,29 @@ const attachVoterHoverTooltips = (post, language, days = 7) => {
 
         const li = e.target.closest('li.vote-item');
         if (!li || li === currentLi || !votersUL.contains(li)) return;
+        
+        const tip = tipByLi.get(li);
+        if (!tip) return;
+        
+        // If hovering over a different voter than the one currently downloading
+        if (activeDownloadTip && activeDownloadTip !== tip) {
+            // Cancel the previous download
+            activeDownloadTip.cancelDownload();
+        }
+        
+        // Start download if this is a different tip, or if the current tip's download was cancelled
+        if (activeDownloadTip !== tip || (activeDownloadTip === tip && tip.isCancelled)) {
+            tip.resetCancellation();
+            // Start download (non-blocking - don't await)
+            tip.prefetchEfficiencyData().catch(err => {
+                console.error('Error downloading efficiency data:', err);
+            });
+            activeDownloadTip = tip;
+        }
+        
         if (currentLi) tipByLi.get(currentLi)?.hide();
         currentLi = li;
-        const tip = tipByLi.get(li)
-        tip?.show();
+        tip.show();
 
     });
 
@@ -78,8 +98,9 @@ const attachVoterHoverTooltips = (post, language, days = 7) => {
         if (!li || li !== currentLi) return;
         const toEl = e.relatedTarget;
         if (!toEl || !li.contains(toEl)) {
-        tipByLi.get(li)?.hide();
-        currentLi = null;
+            // Only hide the tooltip, don't cancel the download
+            tipByLi.get(li)?.hide();
+            currentLi = null;
         }
     });
     return tips;

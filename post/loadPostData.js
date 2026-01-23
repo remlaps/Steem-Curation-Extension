@@ -23,7 +23,6 @@ const loadPost = async (p_info, language) => {
                 loadPostVoteData(post);
                 displayPostResteemData(post, ".RightShare__Menu");
                 tips = attachVoterHoverTooltips(post, language, 7);
-                getTipEfficiency(tips);
             } else {
                 return p_info
             }
