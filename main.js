@@ -305,7 +305,16 @@ const sceMutationObserver = () => {
   
   let timeoutId = null;
 
-  const observer = new MutationObserver(() => {
+  const observer = new MutationObserver((mutations) => {
+    // Ignore mutations caused by inserting points/updating content inside the voter tooltip.
+    // This prevents the VP ring (and other heavy routines) from re-running repeatedly during downloads.
+    const onlyVoterTooltip = mutations?.length > 0 && mutations.every((m) => {
+      const t = m.target;
+      const el = t && t.nodeType === 1 ? t : t?.parentElement; // Element or nearest parent Element
+      return !!(el && el.closest && el.closest('.voter-tooltip'));
+    });
+    if (onlyVoterTooltip) return;
+
     // Don't schedule a new run if one is already pending
     if (timeoutId) return;
     
