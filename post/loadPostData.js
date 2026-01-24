@@ -123,7 +123,7 @@ const loadAuthorWeeklyEarningsGraph = async (post) => {
     }
 
     // Prepare data for the graph
-    const timeLabels = payouts.map((_, index) => `Post ${index + 1}`); // Post 1, Post 2, etc.
+    const timeLabels = payouts.map((_, index) => `${index + 1}`); // Post 1, Post 2, etc.
     const payoutValues = payouts.map(payout => payout.details.total_payout_value); // Use total_value for Y-axis
     console.log(payoutValues)
 
@@ -170,16 +170,16 @@ const loadAuthorWeeklyEarningsBarGraph = (payouts) => {
 
     const xAxisLabels = ['Total Value'];
     const dataValues = [totalSum];
-    const colors = ['rgba(75, 192, 192, 0.7)']; // Blue for Total
+    const colors = ['rgba(22, 216, 174, 0.4)']; // Steemit green/cyan to match efficiency scatter
     if (organicSum > 0) {
         xAxisLabels.push('Organic Value');
         dataValues.push(organicSum);
-        colors.push('rgba(0, 255, 0, 0.7)') // Green for Organic
+        colors.push('rgba(34, 197, 94, 0.4)') // Vibrant green for organic plants
     }
     if (burnSum > 0) {
         xAxisLabels.push('Burn Value')
         dataValues.push(burnSum)
-        colors.push('rgba(255, 0, 0, 0.7)') // Red for Burn
+        colors.push('rgba(239, 68, 68, 0.4)') // Vibrant red for burning
     }
 
 

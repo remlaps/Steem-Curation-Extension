@@ -52,7 +52,7 @@ const formatTimeLabel = (elapsedMs, timeUnit) => {
 const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxisLabel, showDollarSign = true) => {
     const graphContainer = document.querySelector(`.${containerClass}`);
     const isDarkMode = document.body.classList.contains('theme-dark');
-    const textColor = isDarkMode ? '#FFFFFF' : '#333333';
+    const textColor = isDarkMode ? '#fcfcfc' : '#000000'; // Black for day mode
 
     if (graphContainer) {
         // Create a wrapper div for the graph
@@ -82,7 +82,7 @@ const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxi
                 datasets: datasets.map((dataset) => ({
                     label: dataset.label,
                     data: dataset.data,
-                    backgroundColor: dataset.color.replace('1)', '0.2)'), // Transparent fill
+                    backgroundColor: dataset.color.replace('1)', '0.4)'), // Transparent fill to match efficiency scatter
                     borderColor: dataset.color,
                     borderWidth: 2,
                     tension: 0.3,
@@ -92,13 +92,11 @@ const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxi
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: false,
+                animation: {duration: 200},
                 plugins: {
                     legend: {
-                        display: true,
-                        position: 'top',
-                        labels: {
-                            color: '#AAA',
-                        },
+                        display: false,
                     },
                     title: {
                         display: true,
@@ -124,26 +122,28 @@ const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxi
                         title: {
                             display: true,
                             text: 'Time',
+                            color: textColor,
                             font: {
                                 size: 14,
                                 weight: 'bold',
                             },
                         },
                         ticks: {
-                            color: '#AAA', // Neutral dark gray for tick marks
+                            color: '#c5c5c5', // Light gray to match efficiency graph
                         },
                     },
                     y: {
                         title: {
                             display: true,
                             text: yAxisLabel,
+                            color: textColor,
                             font: {
                                 size: 14,
                                 weight: 'bold',
                             },
                         },
                         ticks: {
-                            color: '#AAA', // Neutral dark gray for tick marks
+                            color: '#c5c5c5', // Light gray to match efficiency graph
                         },
                     },
                 },
@@ -193,7 +193,7 @@ const createLineGraphWithClickableDots = (containerClass, canvasId, title, label
     }
 
     const isDarkMode = document.body.classList.contains('theme-dark');
-    const textColor = isDarkMode ? '#FFFFFF' : '#333333';
+    const textColor = isDarkMode ? '#fcfcfc' : '#000000'; // Black for day mode // Match efficiency graph colors
 
     // Remove existing chart if it exists
     const existingCanvas = document.getElementById(canvasId);
@@ -228,8 +228,8 @@ const createLineGraphWithClickableDots = (containerClass, canvasId, title, label
                 {
                     label: title,
                     data: data,
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(22, 216, 174, 0.4)', // Steemit green/cyan to match efficiency scatter
+                    borderColor: 'rgba(22, 216, 174, 1)', // Steemit green/cyan to match efficiency scatter
                     borderWidth: 2,
                     tension: 0.3,
                     pointRadius: 5,
@@ -269,12 +269,14 @@ const createLineGraphWithClickableDots = (containerClass, canvasId, title, label
                     title: {
                         display: true,
                         text: 'Post Number',
+                        color: textColor,
                         font: {
                             size: 14,
                             weight: 'bold',
                         },
                     },
                     ticks: {
+                        color: '#c5c5c5', // Light gray to match efficiency graph
                         maxRotation: 45,
                         minRotation: 0,
                     },
@@ -283,10 +285,14 @@ const createLineGraphWithClickableDots = (containerClass, canvasId, title, label
                     title: {
                         display: true,
                         text: yAxisLabel,
+                        color: textColor,
                         font: {
                             size: 14,
                             weight: 'bold',
                         },
+                    },
+                    ticks: {
+                        color: '#c5c5c5', // Light gray to match efficiency graph
                     },
                 },
             },
@@ -370,7 +376,7 @@ const createBarGraph = (containerClass, canvasId, title, labels, data, yAxisLabe
     }
 
     const isDarkMode = document.body.classList.contains('theme-dark');
-    const textColor = isDarkMode ? '#FFFFFF' : '#333333';
+    const textColor = isDarkMode ? '#fcfcfc' : '#000000'; // Black for day mode // Match efficiency graph colors
 
     // Remove existing chart if it exists
     const existingCanvas = document.getElementById(canvasId);
@@ -433,26 +439,28 @@ const createBarGraph = (containerClass, canvasId, title, labels, data, yAxisLabe
                     title: {
                         display: true,
                         text: 'Category',
+                        color: textColor,
                         font: {
                             size: 14,
                             weight: 'bold',
                         },
                     },
                     ticks: {
-                        color: '#AAA',
+                        color: '#c5c5c5', // Light gray to match efficiency graph
                     },
                 },
                 y: {
                     title: {
                         display: true,
                         text: yAxisLabel,
+                        color: textColor,
                         font: {
                             size: 14,
                             weight: 'bold',
                         },
                     },
                     ticks: {
-                        color: '#AAA',
+                        color: '#c5c5c5', // Light gray to match efficiency graph
                     },
                 },
             },
@@ -511,7 +519,7 @@ class EfficiencyScatter {
 
         const ctx = this.canvas.getContext('2d');
         const isDark = document.body.classList.contains('theme-dark');
-        const textColor = isDark ? '#fcfcfc' : '#373737'; // Set text color based on dark mode
+        const textColor = isDark ? '#fcfcfc' : '#000000'; // Black for day mode
         const oneDayMs = 24 * 60 * 60 * 1000;
         const steemitGreen = 'rgba(22, 216, 174, 0.40)'; // main points
         const authorColor  = 'rgba(180, 53, 42, 0.75)'; // amber-ish for same-author posts
@@ -939,14 +947,14 @@ const loadPostValueGraph = (post) => {
         return;
     }
 
-    data.push({ label: 'Total Value', data: cumulativeTotalValues, color: 'rgba(75, 192, 192, 1)' });
+    data.push({ label: 'Total Value', data: cumulativeTotalValues, color: 'rgba(22, 216, 174, 1)' }); // Steemit green/cyan to match efficiency scatter
 
     if (cumulativeOrganic > 0) {
-        data.push({ label: 'Organic Value', data: cumulativeOrganicValues, color: 'rgba(0, 200, 0, 1)' });
+        data.push({ label: 'Organic Value', data: cumulativeOrganicValues, color: 'rgba(34, 197, 94, 1)' }); // Vibrant green for organic plants
     }
 
     if (cumulativeBurn > 0) {
-        data.push({ label: 'Burn Value', data: cumulativeBurnValues, color: 'rgba(255, 0, 0, 1)' });
+        data.push({ label: 'Burn Value', data: cumulativeBurnValues, color: 'rgba(239, 68, 68, 1)' }); // Vibrant red for burning
     }
 
     createLineGraph(
@@ -1013,7 +1021,7 @@ const loadPostVoteGraph = (post) => {
         'postVoteGraph',
         'Total Votes Over Time',
         timeLabels,
-        [{ label: 'Total Votes', data: cumulativeVoteCounts, color: 'rgba(75, 192, 192, 1)' }],
+        [{ label: 'Total Votes', data: cumulativeVoteCounts, color: 'rgba(22, 216, 174, 1)' }], // Steemit green/cyan to match efficiency scatter
         'Votes',
         false
     );
