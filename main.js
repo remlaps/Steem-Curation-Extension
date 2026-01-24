@@ -12,6 +12,10 @@ let post_info = {"author":null, "permlink":null}
 
 let USER_LANGUAGE;
 
+// Cache for voting power requests (5 minute TTL)
+const vpCache = new Map();
+const VP_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 /*
  *  The main logic is in highLight() and handleProfileDropdownClick()
  * o highlight()
@@ -265,12 +269,48 @@ const getUsername = () =>{
     }
 }
 
-// Function to get voting power
-async function getVotingPower(username) {
-    const urlRequestAccountFull = `${urlRequestAccount}${username}/null/upvote_mana_percent`;
-    const response = await fetch(urlRequestAccountFull);
-    const data = await response.json();
-    return data.result?.upvote_mana_percent;
+// Function to get voting power with retry logic and caching
+async function getVotingPower(username, maxRetries = 3) {
+    // Check cache first
+    const cached = vpCache.get(username);
+    if (cached && Date.now() - cached.timestamp < VP_CACHE_TTL) {
+        return cached.value;
+    }
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            const urlRequestAccountFull = `${urlRequestAccount}${username}/null/upvote_mana_percent`;
+            const response = await fetch(urlRequestAccountFull);
+            if (!response.ok) {
+                // For 503 (Service Unavailable), don't retry aggressively
+                if (response.status === 503) {
+                    console.warn(`API temporarily unavailable (503) for ${username}`);
+                    return null;
+                }
+                if (attempt < maxRetries - 1) {
+                    const delay = Math.pow(2, attempt) * 1000; // exponential backoff: 1s, 2s, 4s
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                }
+                console.warn(`Failed to fetch voting power for ${username}: ${response.statusText}`);
+                return null;
+            }
+            const data = await response.json();
+            const vpValue = data.result?.upvote_mana_percent;
+            
+            // Cache successful result
+            vpCache.set(username, { value: vpValue, timestamp: Date.now() });
+            return vpValue;
+        } catch (error) {
+            if (attempt < maxRetries - 1) {
+                const delay = Math.pow(2, attempt) * 1000; // exponential backoff: 1s, 2s, 4s
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+            }
+            console.warn(`Error fetching voting power for ${username}:`, error.message);
+            return null;
+        }
+    }
 }
 
 // Should this be repeated with a timer?
@@ -306,14 +346,14 @@ const sceMutationObserver = () => {
   let timeoutId = null;
 
   const observer = new MutationObserver((mutations) => {
-    // Ignore mutations caused by inserting points/updating content inside the voter tooltip.
-    // This prevents the VP ring (and other heavy routines) from re-running repeatedly during downloads.
-    const onlyVoterTooltip = mutations?.length > 0 && mutations.every((m) => {
+    // Ignore mutations caused by tooltips and similar transient UI elements.
+    // This prevents heavy routines from re-running repeatedly during hovers and interactions.
+    const onlyTransientUI = mutations?.length > 0 && mutations.every((m) => {
       const t = m.target;
       const el = t && t.nodeType === 1 ? t : t?.parentElement; // Element or nearest parent Element
-      return !!(el && el.closest && el.closest('.voter-tooltip'));
+      return !!(el && el.closest && (el.closest('.voter-tooltip') || el.closest('[role="tooltip"]') || el.closest('.tooltip')));
     });
-    if (onlyVoterTooltip) return;
+    if (onlyTransientUI) return;
 
     // Don't schedule a new run if one is already pending
     if (timeoutId) return;
