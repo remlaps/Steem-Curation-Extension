@@ -48,7 +48,6 @@ function highLight() {
 
             // Check for @null beneficiary
             if (liText.match('null: .*%')) {
-                console.log("Found #burnsteem25");
                 const nullPct = liText.substring(
                     liText.indexOf(" ") + 1,
                     liText.lastIndexOf("%")
@@ -58,7 +57,6 @@ function highLight() {
             }
             // Check for /promoted post promotion
             else if (liText.match(promotedCostStringRegex)) {
-                console.log("Found a /promoted post");
                 const indexEnd = (liText.indexOf("(") >= 0) ? liText.indexOf("(") - 1 : liText.length;
                 const promoAmount = liText.substring(
                     liText.indexOf("$") + 1,
@@ -206,8 +204,6 @@ function addText(listItem) {
     }
     if (added) {
         console.log("User added");
-    } else {
-        console.log("Adding User went wrong");  // else branch not needed(?)
     }
 }
 
@@ -282,11 +278,6 @@ async function getVotingPower(username, maxRetries = 3) {
             const urlRequestAccountFull = `${urlRequestAccount}${username}/null/upvote_mana_percent`;
             const response = await fetch(urlRequestAccountFull);
             if (!response.ok) {
-                // For 503 (Service Unavailable), don't retry aggressively
-                if (response.status === 503) {
-                    console.warn(`API temporarily unavailable (503) for ${username}`);
-                    return null;
-                }
                 if (attempt < maxRetries - 1) {
                     const delay = Math.pow(2, attempt) * 1000; // exponential backoff: 1s, 2s, 4s
                     await new Promise(resolve => setTimeout(resolve, delay));
