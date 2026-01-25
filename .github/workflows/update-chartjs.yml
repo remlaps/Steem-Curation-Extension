@@ -186,4 +186,3 @@ jobs:
             dependencies
             automated
           delete-branch: false
-          push-to-fork: false
