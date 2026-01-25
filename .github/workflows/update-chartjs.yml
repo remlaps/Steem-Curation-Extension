@@ -145,7 +145,7 @@ HEADER_EOF
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: update/chartjs-${{ steps.latest-version.outputs.latest_version }}
+          branch: update/chartjs-${{ steps.latest-version.outputs.latest_version }
           base: main
           title: 'chore: Update Chart.js to v${{ steps.latest-version.outputs.latest_version }}'
           body: |
