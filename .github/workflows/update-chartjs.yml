@@ -80,28 +80,65 @@ jobs:
         if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
         run: |
           LATEST="${{ steps.latest-version.outputs.latest_version }}"
-          echo "Downloading Chart.js v$LATEST..."
-          curl -L "https://cdn.jsdelivr.net/npm/chart.js@$LATEST/dist/chart.umd.js" -o libs/chart.min.js
+          CURRENT="${{ steps.current-version.outputs.current_version }}"
           
-          # Update the header comment to reflect the new version
-          sed -i "s|/npm/chart.js@[0-9]\+\.[0-9]\+\.[0-9]\+|/npm/chart.js@$LATEST|g" libs/chart.min.js
-          sed -i "s|Chart\.js v[0-9]\+\.[0-9]\+\.[0-9]\+|Chart.js v$LATEST|g" libs/chart.min.js
+          echo "Downloading Chart.js v$LATEST..."
+          
+          # Download the new version to a temp file
+          curl -L "https://cdn.jsdelivr.net/npm/chart.js@$LATEST/dist/chart.umd.js" -o libs/chart.min.js.tmp
+          
+          # Verify download succeeded
+          if [ ! -s libs/chart.min.js.tmp ]; then
+            echo "Error: Download failed or file is empty"
+            exit 1
+          fi
+          
+          # Create the file with the proper header format matching the original
+          cat > libs/chart.min.js << 'HEADER_EOF'
+/**
+ * Skipped minification because the original files appears to be already minified.
+ * Original file: /npm/chart.js@
+HEADER_EOF
+          echo "$LATEST/dist/chart.umd.js" >> libs/chart.min.js
+          cat >> libs/chart.min.js << 'HEADER_EOF'
+ *
+ * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files
+ */
+/*!
+ * Chart.js v
+HEADER_EOF
+          echo "$LATEST" >> libs/chart.min.js
+          cat >> libs/chart.min.js << 'HEADER_EOF'
+ * https://www.chartjs.org
+ * (c) 2025 Chart.js Contributors
+ * Released under the MIT License
+ */
+HEADER_EOF
+          
+          # Append the downloaded content (skip any existing header comments)
+          # The downloaded file might start with /*! or other comments, so we'll take everything
+          cat libs/chart.min.js.tmp >> libs/chart.min.js
+          rm libs/chart.min.js.tmp
           
           echo "Chart.js updated to v$LATEST"
+          echo "File size: $(wc -c < libs/chart.min.js) bytes"
 
-      - name: Create branch and commit
+      - name: Verify file was updated
         if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
         run: |
           LATEST="${{ steps.latest-version.outputs.latest_version }}"
-          BRANCH_NAME="update/chartjs-$LATEST"
+          if grep -q "chart.js@$LATEST" libs/chart.min.js; then
+            echo "✓ File header updated correctly"
+          else
+            echo "✗ Warning: File header may not have been updated correctly"
+          fi
           
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          git checkout -b "$BRANCH_NAME"
-          git add libs/chart.min.js
-          git commit -m "chore: Update Chart.js to v$LATEST"
-          git push origin "$BRANCH_NAME"
+          if [ -s libs/chart.min.js ]; then
+            echo "✓ File exists and is not empty"
+          else
+            echo "✗ Error: File is missing or empty"
+            exit 1
+          fi
 
       - name: Create Pull Request
         if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
@@ -129,6 +166,7 @@ jobs:
             ### Related Links
             - [Chart.js Releases](https://github.com/chartjs/Chart.js/releases)
             - [Chart.js Changelog](https://github.com/chartjs/Chart.js/blob/master/CHANGELOG.md)
+          commit-message: 'chore: Update Chart.js to v${{ steps.latest-version.outputs.latest_version }}'
           labels: |
             dependencies
             automated
