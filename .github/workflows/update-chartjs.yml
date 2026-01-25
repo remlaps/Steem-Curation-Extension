@@ -94,26 +94,20 @@ jobs:
           fi
           
           # Create the file with the proper header format matching the original
-          cat > libs/chart.min.js << 'HEADER_EOF'
-/**
- * Skipped minification because the original files appears to be already minified.
- * Original file: /npm/chart.js@
-HEADER_EOF
-          echo "$LATEST/dist/chart.umd.js" >> libs/chart.min.js
-          cat >> libs/chart.min.js << 'HEADER_EOF'
- *
- * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files
- */
-/*!
- * Chart.js v
-HEADER_EOF
-          echo "$LATEST" >> libs/chart.min.js
-          cat >> libs/chart.min.js << 'HEADER_EOF'
- * https://www.chartjs.org
- * (c) 2025 Chart.js Contributors
- * Released under the MIT License
- */
-HEADER_EOF
+          {
+            echo "/**"
+            echo " * Skipped minification because the original files appears to be already minified."
+            echo " * Original file: /npm/chart.js@$LATEST/dist/chart.umd.js"
+            echo " *"
+            echo " * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files"
+            echo " */"
+            echo "/*!"
+            echo " * Chart.js v$LATEST"
+            echo " * https://www.chartjs.org"
+            echo " * (c) 2025 Chart.js Contributors"
+            echo " * Released under the MIT License"
+            echo " */"
+          } > libs/chart.min.js
           
           # Append the downloaded content (skip any existing header comments)
           # The downloaded file might start with /*! or other comments, so we'll take everything
