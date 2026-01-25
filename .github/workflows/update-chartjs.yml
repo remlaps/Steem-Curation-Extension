@@ -156,16 +156,33 @@ jobs:
           fi
 
       - name: Create Pull Request
-  id: cpr
-  uses: peter-evans/create-pull-request@v5
-  with:
-    token: ${{ secrets.GITHUB_TOKEN }}
-    branch: update/chartjs-${{ steps.latest-version.outputs.latest_version }}
-    base: main
-    title: 'chore: Update Chart.js to v${{ steps.latest-version.outputs.latest_version }}'
-    commit-message: 'chore: Update Chart.js to v${{ steps.latest-version.outputs.latest_version }}'
-
-- name: PR result
-  run: |
-    echo "PR number: ${{ steps.cpr.outputs.pull-request-number }}"
-    echo "PR url:    ${{ steps.cpr.outputs.pull-request-url }}"
+        if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: update/chartjs-${{ steps.latest-version.outputs.latest_version }}
+          base: main
+          title: 'chore: Update Chart.js to v${{ steps.latest-version.outputs.latest_version }}'
+          body: |
+            ## Automated Chart.js Update
+            
+            This PR was automatically created by the [Update Chart.js](.github/workflows/update-chartjs.yml) workflow.
+            
+            ### Version Information
+            - **Previous version:** ${{ steps.current-version.outputs.current_version }}
+            - **New version:** ${{ steps.latest-version.outputs.latest_version }}
+            
+            ### Changes
+            - Updated `libs/chart.min.js` to the latest version from [jsdelivr CDN](https://cdn.jsdelivr.net/npm/chart.js@${{ steps.latest-version.outputs.latest_version }}/dist/chart.umd.js)
+            
+            ### Verification
+            Please verify that the extension still works correctly with this Chart.js version before merging.
+            
+            ### Related Links
+            - [Chart.js Releases](https://github.com/chartjs/Chart.js/releases)
+            - [Chart.js Changelog](https://github.com/chartjs/Chart.js/blob/master/CHANGELOG.md)
+          commit-message: 'chore: Update Chart.js to v${{ steps.latest-version.outputs.latest_version }}'
+          labels: |
+            dependencies
+            automated
+          delete-branch: false
