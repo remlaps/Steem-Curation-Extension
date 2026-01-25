@@ -187,7 +187,8 @@ jobs:
         id: create-pr
         if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use PAT if available, otherwise fall back to GITHUB_TOKEN
+          GITHUB_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
         run: |
           LATEST="${{ steps.latest-version.outputs.latest_version }}"
           CURRENT="${{ steps.current-version.outputs.current_version }}"
