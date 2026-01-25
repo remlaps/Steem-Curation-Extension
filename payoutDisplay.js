@@ -86,7 +86,7 @@ const parseValueText = (valString) => {
     };
 }
 
-const updatePaidPostTotalVal = (post, curSymb, csPos, totalVal, decSymb) => {
+var updatePaidPostTotalVal = withSilentMutations(function(post, curSymb, csPos, totalVal, decSymb) {
     const vertMen = post.querySelectorAll('.VerticalMenu li');
     if (!vertMen.length){
         return;
@@ -97,17 +97,18 @@ const updatePaidPostTotalVal = (post, curSymb, csPos, totalVal, decSymb) => {
         return;
     };
     
-    const totalValStr = totalVal.toString().split('.');
+    // Use fixed decimal formatting so the decimal part is never undefined
+    // (Number.toString() drops trailing ".00", which can cause crashes on `.length`)
+    const totalValStr = Number(totalVal).toFixed(2).split('.');
 
     const integer = totalValStr[0]; // update digits before decimal symbol
     const integer_class = post.querySelectorAll('.Voting__pane span.integer')[0];
+    if (!integer_class) return;
     integer_class.innerText = integer;
 
-    let decimal = totalValStr[1]; // update digits after decimal symbol
-    if (decimal.length == 1){
-        decimal = decimal + "0"; // add 0 if decimal not 2 places
-    };
+    const decimal = totalValStr[1]; // always 2 digits due to toFixed(2)
     const decimal_class = post.querySelectorAll('.Voting__pane span.decimal')[0];
+    if (!decimal_class) return;
     decimal_class.innerText = decSymb + decimal;
 
     vertMen[vertMen.length + PAST_PAY_INDEX].id = "past_payout"
@@ -117,9 +118,9 @@ const updatePaidPostTotalVal = (post, curSymb, csPos, totalVal, decSymb) => {
     } else {
         vertMen[vertMen.length + PAST_PAY_INDEX].innerHTML = "<span>" + valueText  + integer + decSymb + decimal + curSymb + "</span>"; 
     }
-};
+});
 
-const addBeneficiaryVal = (post, beneficiaryValue, currencySymb, csPos, decSymb) => {
+var addBeneficiaryVal = withSilentMutations(function(post, beneficiaryValue, currencySymb, csPos, decSymb) {
     const vertMen = post.querySelectorAll('.VerticalMenu li');
     if (!vertMen.length) return;
 
@@ -132,17 +133,17 @@ const addBeneficiaryVal = (post, beneficiaryValue, currencySymb, csPos, decSymb)
     const beneficiaryLi = document.createElement('li');
     beneficiaryLi.id = "beneficiary-item";
     const beneficiarySpan = document.createElement('span');
-    beneficiaryValStr = beneficiaryValue.toString().split('.');
+    // Use fixed decimal formatting so the decimal part is never undefined
+    const beneficiaryValStr = Number(beneficiaryValue).toFixed(2).split('.');
     const integer = beneficiaryValStr[0];
-    let decimal = beneficiaryValStr[1];
+    const decimal = beneficiaryValStr[1];
 
-    let ben_text = getBeneficiaryInLanguage(USER_LANGUAGE);
-    
+    let lang = 'en';
+    try {
+        if (typeof USER_LANGUAGE !== 'undefined') lang = USER_LANGUAGE;
+    } catch (e) {}
+    let ben_text = getBeneficiaryInLanguage(lang);
 
-    if (decimal.length == 1){
-        decimal = decimal + "0";
-    };
-    
     console.log(csPos)
     if (csPos == "start"){
         beneficiarySpan.textContent = ben_text + currencySymb + integer + decSymb + decimal;
@@ -153,9 +154,9 @@ const addBeneficiaryVal = (post, beneficiaryValue, currencySymb, csPos, decSymb)
 
     const lastItem = vertMen[vertMen.length + CURATION_INDEX];
     parent.insertBefore(beneficiaryLi, lastItem);
-};
+});
 
-const updatePayoutValue = () => {
+var updatePayoutValue = withSilentMutations(function() {
     let postsList = document.querySelectorAll('#posts_list li');
     let curationReturns;
     postsList.forEach(post => {
@@ -189,7 +190,9 @@ const updatePayoutValue = () => {
 
         updatePaidPostTotalVal(post, currencySymbol, csPosition, totalValue, decimalSymbol);
         addBeneficiaryVal(post, beneficiaryValue, currencySymbol, csPosition, decimalSymbol);
-
-
     })
+})
+
+if (typeof updatePayoutValue === 'function') {
+    updatePayoutValue();
 }

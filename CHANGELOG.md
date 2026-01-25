@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3-beta] - 2026-01-25
+- Added voter efficiency graphs and stats in the voter dropdown list of a post.
+- Refactored vote-related functions into votes.js file.
+- Add footer highlighting inside of posts for burnposts & promoted posts.
+- Updated total value display to include beneficiary rewards after payout.
+- Changed output to display some text based on language settings.
+
+## [0.5.2-beta] - 2025-10-17
+- Updated payout display to include beneficiary payouts
+- Added circle display around profile picture representing user current voting power
+- Added mutation safeguard to avoid recursive loop from vp display updates to interface
+
 ## [0.5.1-beta] - 2025-04-25]
 ### Added
 
