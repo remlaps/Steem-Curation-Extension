@@ -186,3 +186,8 @@ jobs:
             dependencies
             automated
           delete-branch: false
+      - name: PR result
+        if: steps.compare.outputs.is_newer == 'true'
+        run: |
+          echo "PR number: ${{ steps.create-pr.outputs.pull-request-number }}"
+          echo "PR url:    ${{ steps.create-pr.outputs.pull-request-url }}" 
