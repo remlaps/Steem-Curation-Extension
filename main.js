@@ -12,27 +12,9 @@ let post_info = {"author":null, "permlink":null}
 
 let USER_LANGUAGE;
 
-// ---- 1) global guard
-let SCE_SILENT = 0;
-
-// Wrap sync code
-function withSilentMutations(fn) {
-  return function (...args) {
-    SCE_SILENT++;
-    try { return fn.apply(this, args); }
-    finally { SCE_SILENT--; }
-  };
-}
-
-// Wrap async code
-function withSilentMutationsAsync(fn) {
-  return async function (...args) {
-    SCE_SILENT++;
-    try { return await fn.apply(this, args); }
-    finally { SCE_SILENT--; }
-  };
-}
-
+// Cache for voting power requests (5 minute TTL)
+const vpCache = new Map();
+const VP_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /*
  *  The main logic is in highLight() and handleProfileDropdownClick()
@@ -44,54 +26,81 @@ function withSilentMutationsAsync(fn) {
  * - Display the voting power of the logged in account when the dropdown menu is clicked.
  *
  */
-const highLight = () => {
-    var curatorBackgroundColor;
-    const listItem = document.querySelectorAll('li');
+function highLight() {
+    const votingPanes = document.querySelectorAll('.Voting__pane');
 
-    // Working from high to low (for outside to inside in document nesting)
-    for (let i = listItem.length - 1; i >= 0; i--) {
-        if (listItem[i].textContent.match(curatorStringRegex)) {
-            // Don't highlight promoted posts that already paid out.
-            listItem[i].style['background-color'] = "initial";
-            continue;
+    votingPanes.forEach(pane => {
+        const text = pane.textContent;
+        const postContainerInFeed = pane.closest('li'); // For feed view
+        const articleContainer = pane.closest('.article'); // For post view
+        const postFullFooter = pane.closest('.PostFull__footer'); // For post view
+
+        if (text.match(curatorStringRegex)) {
+            return; // This is a paid-out post, so we skip it entirely.
         }
 
-        // Check for @null beneficiary and /promoted post promotion.
-        if (listItem[i].textContent.match('null: .*%') && listItem[i].textContent.match(promotedCostStringRegex)) {
-            console.log("Found a /promoted post in #burnsteem25 (outer block)");
-            curatorBackgroundColor = '#1E90FF';
-            listItem[i].style['background-color'] = curatorBackgroundColor;
+        const listItems = pane.querySelectorAll('ul > li');
+        let burnColor = "initial";
+        let promoColor = "initial";
 
-        // Check for just @null beneficiary
-        } else if (listItem[i].textContent.match('null: .*%')) {
-            console.log("Found #burnsteem25");
-            var str = listItem[i].textContent;
-            var nullPct = str.substring(
-                str.indexOf(" ") + 1,
-                str.lastIndexOf("%")
-            );
-            curatorBackgroundColor = getColorBurnPost(nullPct);
-            listItem[i].style['background-color'] = curatorBackgroundColor;
+        listItems.forEach(li => {
+            const liText = li.textContent;
 
-        // Check for just /promoted post promotion
-        } else if (listItem[i].textContent.match(promotedCostStringRegex)) {
-            console.log("Found a /promoted post");
-            var str = listItem[i].textContent;
-            var indexEnd = (str.indexOf("(") >= 0) ? str.indexOf("(") - 1 : str.length;
-            var promoAmount = str.substring(
-                str.indexOf("$") + 1,
-                indexEnd
-            );
-            curatorBackgroundColor = getColorPromotedPost(promoAmount);
+            // Check for @null beneficiary
+            if (liText.match('null: .*%')) {
+                const nullPct = liText.substring(
+                    liText.indexOf(" ") + 1,
+                    liText.lastIndexOf("%")
+                );
+                burnColor = getColorBurnPost(nullPct);
+                li.style.backgroundColor = burnColor;
+            }
+            // Check for /promoted post promotion
+            else if (liText.match(promotedCostStringRegex)) {
+                const indexEnd = (liText.indexOf("(") >= 0) ? liText.indexOf("(") - 1 : liText.length;
+                const promoAmount = liText.substring(
+                    liText.indexOf("$") + 1,
+                    indexEnd
+                );
+                promoColor = getColorPromotedPost(promoAmount);
+                li.style.backgroundColor = promoColor;
+                addText(li);
+            } else {
+                li.style.backgroundColor = "initial";
+            }
+        });
 
-            // now edit the textContent
-            addText(listItem[i]);
-            listItem[i].style['background-color'] = curatorBackgroundColor;
+        // Apply highlighting to the main post container in feed view
+        if (postContainerInFeed && !articleContainer) { // Make sure we are in a feed view
+            if (burnColor !== "initial" && promoColor !== "initial") {
+                postContainerInFeed.style.backgroundColor = '#1E90FF'; // Both are present
+            } else if (burnColor !== "initial") {
+                postContainerInFeed.style.backgroundColor = burnColor;
+            } else if (promoColor !== "initial") {
+                postContainerInFeed.style.backgroundColor = promoColor;
+            } else {
+                postContainerInFeed.style.backgroundColor = "initial";
+            }
+        } else if (postFullFooter) {
+            if (postFullFooter) {
+                if (burnColor !== "initial" && promoColor !== "initial") {
+                    postFullFooter.style.backgroundColor = hexToRgba('#1E90FF', 0.15); // Both are present
+                } else if (burnColor !== "initial") {
+                    postFullFooter.style.backgroundColor = hexToRgba(burnColor, 0.15);
+                } else if (promoColor !== "initial") {
+                    postFullFooter.style.backgroundColor = hexToRgba(promoColor, 0.15);
+                } else {
+                    postFullFooter.style.backgroundColor = "initial";
+                }
+            }
         } else {
-            listItem[i].style['background-color'] = "initial";
+            pane.style.backgroundColor = "initial";
         }
-    }
-}
+    });
+};
+
+// Ensure extension-made DOM changes don't re-trigger mutation handling
+highLight = withSilentMutations(highLight);
 
 async function handleProfileDropdownClick(event) {
     const titleElements = document.querySelectorAll('li.title');
@@ -113,6 +122,7 @@ async function handleProfileDropdownClick(event) {
 /*
  * helper functions
  */
+
 function getColorBurnPost(nullPct) {
     if (nullPct > 0 && nullPct < 25) {
         curatorBackgroundColor = "coral";
@@ -194,10 +204,11 @@ function addText(listItem) {
     }
     if (added) {
         console.log("User added");
-    } else {
-        console.log("Adding User went wrong");  // else branch not needed(?)
     }
 }
+
+// Wrap DOM-modifying helper to avoid retriggering the mutation observer
+addText = withSilentMutations(addText);
 
 function getPost(address) {
     const objMatch = regexMatch(false, address);
@@ -236,16 +247,61 @@ const getUsername = () =>{
     if (accountElement) {
         let elementText = accountElement.textContent.trim();
         const username = elementText.split(" ")[0]
-        return username 
+        return username;
+    }
+
+    // Selector for the user's profile link in the dropdown menu
+    let userLink = document.querySelector('.Header__usermenu ul a[href^="/@"]');
+    if (userLink) {
+        // Extract username from the href attribute
+        const href = userLink.getAttribute('href');
+        const username = href.substring(2); // Remove '/@'
+        return username;
+    }
+    // Fallback for older structures if needed
+    const legacyUser = document.querySelector('.Header__user-link .Header__user-name');
+    if (legacyUser) {
+        return legacyUser.textContent.trim();
     }
 }
 
-// Function to get voting power
-async function getVotingPower(username) {
-    const urlRequestAccountFull = `${urlRequestAccount}${username}/null/upvote_mana_percent`;
-    const response = await fetch(urlRequestAccountFull);
-    const data = await response.json();
-    return data.result?.upvote_mana_percent;
+// Function to get voting power with retry logic and caching
+async function getVotingPower(username, maxRetries = 3) {
+    // Check cache first
+    const cached = vpCache.get(username);
+    if (cached && Date.now() - cached.timestamp < VP_CACHE_TTL) {
+        return cached.value;
+    }
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            const urlRequestAccountFull = `${urlRequestAccount}${username}/null/upvote_mana_percent`;
+            const response = await fetch(urlRequestAccountFull);
+            if (!response.ok) {
+                if (attempt < maxRetries - 1) {
+                    const delay = Math.pow(2, attempt) * 1000; // exponential backoff: 1s, 2s, 4s
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                }
+                console.warn(`Failed to fetch voting power for ${username}: ${response.statusText}`);
+                return null;
+            }
+            const data = await response.json();
+            const vpValue = data.result?.upvote_mana_percent;
+            
+            // Cache successful result
+            vpCache.set(username, { value: vpValue, timestamp: Date.now() });
+            return vpValue;
+        } catch (error) {
+            if (attempt < maxRetries - 1) {
+                const delay = Math.pow(2, attempt) * 1000; // exponential backoff: 1s, 2s, 4s
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+            }
+            console.warn(`Error fetching voting power for ${username}:`, error.message);
+            return null;
+        }
+    }
 }
 
 // Should this be repeated with a timer?
@@ -270,20 +326,34 @@ function modifyUserElement() {
     }
 }
 
+// Wrapping the event handler that adds elements/listeners
+modifyUserElement = withSilentMutations(modifyUserElement);
+
 // Mutation observer to detect logout -> login and other page changes.
 const sceMutationObserver = () => {
-  const root = document.body; // narrower than `document`
-  const config = { childList: true, subtree: true }; // start: no attributes
+  const root = document.documentElement || document.body;
+  const config = { childList: true, subtree: true };
+  
+  let timeoutId = null;
 
-  const observer = new MutationObserver(() => {
-    if (SCE_SILENT) return;
+  const observer = new MutationObserver((mutations) => {
+    // Ignore mutations caused by tooltips and similar transient UI elements.
+    // This prevents heavy routines from re-running repeatedly during hovers and interactions.
+    const onlyTransientUI = mutations?.length > 0 && mutations.every((m) => {
+      const t = m.target;
+      const el = t && t.nodeType === 1 ? t : t?.parentElement; // Element or nearest parent Element
+      return !!(el && el.closest && (el.closest('.voter-tooltip') || el.closest('[role="tooltip"]') || el.closest('.tooltip')));
+    });
+    if (onlyTransientUI) return;
 
-    if (sceMutationObserver.__pending) return;
-    sceMutationObserver.__pending = true;
-    requestAnimationFrame(() => {
-        sceMutationObserver.__pending = false;
-        runOncePerBatch();
-    })
+    // Don't schedule a new run if one is already pending
+    if (timeoutId) return;
+    
+    // Debounce: wait a bit for mutations to settle, then run
+    timeoutId = setTimeout(() => {
+      timeoutId = null;
+      runOncePerBatch();
+    }, 50); // 50ms debounce - adjust as needed
   });
 
   observer.observe(root, config);
@@ -294,21 +364,24 @@ const sceMutationObserver = () => {
         addButtonsToSummaries();
         modifyUserElement();
         highLight();
+        removeCondenserResteemToggle();
         updateResteemVisibility();
 
         const newLang = detectUserLanguage();
         if (newLang && newLang !== USER_LANGUAGE) USER_LANGUAGE = newLang;
 
-        updatePayoutValue();
+        if (typeof updatePayoutValue === 'function') {
+            updatePayoutValue();
+        }
 
         addUserVpRing_silent();
-        maybeLoadPost();
+    } catch (error) {
+        console.error("Error in mutation observer handling:", error);
     } finally {
         SCE_SILENT--;
     }
   }
 }
-
 
 window.addEventListener('load', async () => {
     post_info = await loadPost({"author":null, "permlink":null}, USER_LANGUAGE); // Call your function
@@ -324,7 +397,7 @@ window.addEventListener('scroll', async () => {
 })
 
 addButtonsToSummaries();        // New for curation info buttons
-sceMutationObserver();         // Mutation observer for new dropdown menu after login.
-createResteemToggleControl();         // Resteem checkbox
+sceMutationObserver();          // Mutation observer for new dropdown menu after login.
+createResteemToggleControl();   // Resteem checkbox
 
 console.log("The extension is done.");

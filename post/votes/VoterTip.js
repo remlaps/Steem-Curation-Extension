@@ -28,6 +28,11 @@ class VoterTip {
         this.totalCurationRew = 0.00;
         this.contributedValue = 0.00;
         this.totAuthor = 0;
+        this.isCancelled = false;
+        this.downloadStarted = false;
+        this.downloadComplete = false;
+        this.downloadPromise = null;
+        this.lastProcessedIndex = -1;
 
         // ensure row can anchor absolutely-positioned tooltip
 
@@ -71,90 +76,126 @@ class VoterTip {
     }
     async prefetchEfficiencyData() {
         if (!this.scatter) return;
+        if (this.downloadComplete) return;
+        // Only prevent starting if there's an active non-cancelled download
+        if (this.downloadStarted && !this.isCancelled) return;
         
-        const res = await getHistoricCurationRewards(this.user, this.post, this.days);
-        const rows = res?.rows ?? [];
-        const cols = res?.cols ?? {};
-        const tIdx = cols.time, aIdx = cols.author, pIdx = cols.permlink, vIdx = cols.vests;
-
-        for (const reward of rows) {
-            const timeSec = reward[tIdx];
-
-            if (!timeSec) continue;
-
-            // fetch historic post (potentially cached)
-            let histPost;
-            for (let i = 0; i < 5; i++){
-                try{
-                    histPost = await this.getPostCached(reward[aIdx], reward[pIdx], timeSec);
-                } catch (err){
-                    if (
-                        err?.message?.includes("503") ||
-                        err?.status === 503 ||
-                        err?.code === 503
-                    ){
-                        sleep(100)
-                    } else {
-                        console.error(`Failed after ${i+1} retries`, error);
-                    };
-                };  
-            };
-            
-            if (!histPost) continue;
-            let sameAuthor = false;
-
-            if (histPost.author === this.post.author){
-                this.totAuthor += 1
-                sameAuthor = true;
-            };
-
-            const voterVests = Number(reward[vIdx]) || 0;
-            const totalVests   = Number(histPost.details.total_vests ?? histPost.details.totalVests ?? 0);
-            const totalRshares = Number(histPost.details.total_rshares ?? histPost.details.totalRshares ?? 0);
+        // Reset progress tracking only for truly fresh downloads (not restarts)
+        // If lastProcessedIndex is -1, it's a fresh start; if >= 0, we're resuming
+        if (this.lastProcessedIndex === -1) {
+            // Fresh start - ensure we start from the beginning
+            this.lastProcessedIndex = -1;
+        }
+        // Otherwise, preserve lastProcessedIndex to resume from where we left off
         
-            const voterRshares = this.vote.rshares / 1000000;
-
-            if (totalVests <= 0 || totalRshares <= 0 || voterRshares <= 0 || voterVests <= 0) continue;
+        this.downloadStarted = true;
+        this.isCancelled = false;
+        
+        this.downloadPromise = (async () => {
+            const res = await getHistoricCurationRewards(this.user, this.post, this.days);
             
-            const pctContributed = voterRshares / totalRshares;
-            const pctReceived = voterVests / totalVests;
-            if (pctContributed <= 0) continue;
+            if (this.isCancelled) return;
+            
+            const rows = res?.rows ?? [];
+            const cols = res?.cols ?? {};
+            const tIdx = cols.time, aIdx = cols.author, pIdx = cols.permlink, vIdx = cols.vests;
 
-            const efficiency = Math.round((pctReceived / pctContributed) * 100);
+            // Start from lastProcessedIndex + 1 to resume where we left off
+            for (let i = this.lastProcessedIndex + 1; i < rows.length; i++) {
+                const reward = rows[i];
+                if (this.isCancelled) return;
+                
+                const timeSec = reward[tIdx];
 
-            const voteWeight = this.vote.percent / 10000;
+                if (!timeSec) continue;
 
-            const weightedEfficiency = Math.round(efficiency * voteWeight);
+                // fetch historic post (potentially cached)
+                let histPost;
+                for (let i = 0; i < 5; i++){
+                    if (this.isCancelled) return;
+                    
+                    try{
+                        histPost = await this.getPostCached(reward[aIdx], reward[pIdx], timeSec);
+                    } catch (err){
+                        if (
+                            err?.message?.includes("503") ||
+                            err?.status === 503 ||
+                            err?.code === 503
+                        ){
+                            await sleep(100)
+                        } else {
+                            console.error(`Failed after ${i+1} retries`, err);
+                        };
+                    };  
+                };
+                
+                if (this.isCancelled) return;
+                if (!histPost) continue;
+                
+                let sameAuthor = false;
 
-            const tsMs = timeSec * 1000;
+                if (histPost.author === this.post.author){
+                    this.totAuthor += 1
+                    sameAuthor = true;
+                };
 
-            const totalValue = Number(histPost.details.total_payout_value.toFixed(2));
-            const voterRewardValue = Number(((voterVests / totalVests) * totalValue).toFixed(2));
-            const voterContributedValue = Number(((voterRshares / totalRshares) * totalValue).toFixed(2));
-            this.contributedValue += voterContributedValue;
+                const voterVests = Number(reward[vIdx]) || 0;
+                const totalVests   = Number(histPost.details.total_vests ?? histPost.details.totalVests ?? 0);
+                const totalRshares = Number(histPost.details.total_rshares ?? histPost.details.totalRshares ?? 0);
+            
+                const voterRshares = this.vote.rshares / 1000000;
 
-            this.totalCurationRew += voterRewardValue;
+                if (totalVests <= 0 || totalRshares <= 0 || voterRshares <= 0 || voterVests <= 0) continue;
+                
+                const pctContributed = voterRshares / totalRshares;
+                const pctReceived = voterVests / totalVests;
+                if (pctContributed <= 0) continue;
 
-            const point = {
-                tsMs: tsMs,
-                efficiency: efficiency,
-                weightedEff: weightedEfficiency,
-                voterRewardValue: voterRewardValue,
-                totalValue: totalValue,
-                sameAuthor: sameAuthor
+                const efficiency = Math.round((pctReceived / pctContributed) * 100);
+
+                const voteWeight = this.vote.percent / 10000;
+
+                const weightedEfficiency = Math.round(efficiency * voteWeight);
+
+                const tsMs = timeSec * 1000;
+
+                const totalValue = Number(histPost.details.total_payout_value.toFixed(2));
+                const voterRewardValue = Number(((voterVests / totalVests) * totalValue).toFixed(2));
+                const voterContributedValue = Number(((voterRshares / totalRshares) * totalValue).toFixed(2));
+                this.contributedValue += voterContributedValue;
+
+                this.totalCurationRew += voterRewardValue;
+
+                const point = {
+                    tsMs: tsMs,
+                    efficiency: efficiency,
+                    weightedEff: weightedEfficiency,
+                    voterRewardValue: voterRewardValue,
+                    totalValue: totalValue,
+                    sameAuthor: sameAuthor
+                }
+
+                this.efficiencyData.push(point);
+                this.scatter.pushPoint(point);
+
+                this.updateMetrics();
+
+                // Update progress tracking after successfully processing the reward
+                this.lastProcessedIndex = i;
+
+                await sleep(50);
+                
+                if (this.isCancelled) return;
             }
 
-            this.efficiencyData.push(point);
-            this.scatter.pushPoint(point);
-
-            this.updateMetrics();
-
-            await sleep(50);
-
-        }
-
-        this.scatter.finalize();
-        this.scatter.addStatsLines();
+            if (this.isCancelled) return;
+            
+            this.scatter.finalize();
+            this.scatter.addStatsLines();
+            this.downloadComplete = true;
+        })();
+        
+        await this.downloadPromise;
     }
 
     addChart() {
@@ -203,6 +244,18 @@ class VoterTip {
     }
     hide() {
         this.tip.classList.remove('visible');
+    }
+
+    cancelDownload() {
+        this.isCancelled = true;
+    }
+
+    resetCancellation() {
+        // If the download was cancelled, reset downloadStarted to allow restart
+        if (this.isCancelled && this.downloadStarted) {
+            this.downloadStarted = false;
+        }
+        this.isCancelled = false;
     }
 };
 

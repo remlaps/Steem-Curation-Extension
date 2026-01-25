@@ -23,7 +23,6 @@ const loadPost = async (p_info, language) => {
                 loadPostVoteData(post);
                 displayPostResteemData(post, ".RightShare__Menu");
                 tips = attachVoterHoverTooltips(post, language, 7);
-                getTipEfficiency(tips);
             } else {
                 return p_info
             }
@@ -106,150 +105,6 @@ const displayWordCountAndReadingTime = (containerClass, wordCount, readingTimeMi
     container.appendChild(infoWrapper);
 };
 
-const loadPostValueGraph = (post) => {
-    // Ensure the date strings are treated as UTC by appending 'Z'
-    const postCreationTime = new Date(post.details.created + 'Z');
-    const payoutEndTime = new Date(postCreationTime.getTime() + 7 * 24 * 60 * 60 * 1000); // Add 7 days to creation time
-
-    // Filter votes within the payout period, treating times as UTC
-    const activeVotes = sortVotesByTime(
-        post.details.active_votes.filter((vote) => new Date(vote.time + 'Z') <= payoutEndTime)
-    );
-
-    if (activeVotes.length === 0) {
-        console.log('SCE:No votes during the payout period to display.');
-        return;
-    }
-
-    // Determine the scaling range based on post age
-    const currentTime = new Date();
-    const latestVoteTime = new Date(activeVotes[activeVotes.length - 1].time + 'Z').getTime();
-    const maxElapsedMs = Math.min(latestVoteTime - postCreationTime.getTime(), currentTime - postCreationTime);
-
-    const numIntervals = 10; // Define the number of intervals for the X-axis
-    const intervalMs = maxElapsedMs / numIntervals; // Calculate the duration of each interval
-
-    const timeLabels = [];
-    const cumulativeTotalValues = new Array(numIntervals + 1).fill(0);
-    const cumulativeOrganicValues = new Array(numIntervals + 1).fill(0);
-    const cumulativeBurnValues = new Array(numIntervals + 1).fill(0);
-    let cumulativeTotal = 0;
-    let cumulativeOrganic = 0;
-    let cumulativeBurn = 0;
-
-    // Generate evenly spaced time labels
-    for (let i = 0; i <= numIntervals; i++) {
-        const elapsedMs = intervalMs * i;
-        timeLabels.push(formatScaledTimeLabel(elapsedMs, maxElapsedMs)); // Format elapsed time
-    }
-
-    // Assign cumulative values to intervals
-    activeVotes.forEach((vote) => {
-        const voteTime = new Date(vote.time + 'Z').getTime();
-        const elapsedMs = voteTime - postCreationTime.getTime();
-        const intervalIndex = Math.min(Math.floor(elapsedMs / intervalMs), numIntervals - 1);
-        cumulativeTotal += vote.value;
-        cumulativeTotalValues[intervalIndex] = cumulativeTotal;
-
-        cumulativeOrganicValues[intervalIndex] = vote.organic_value;
-        cumulativeOrganic += vote.organic_value;
-        cumulativeBurnValues[intervalIndex] = vote.burn_value;
-        cumulativeBurn += vote.burn_value;
-    });
-
-    // Fill in any gaps in the cumulative values
-    for (let i = 1; i < cumulativeTotalValues.length; i++) {
-        if (cumulativeTotalValues[i] === 0) cumulativeTotalValues[i] = cumulativeTotalValues[i - 1];
-        if (cumulativeOrganicValues[i] === 0) cumulativeOrganicValues[i] = cumulativeOrganicValues[i - 1];
-        if (cumulativeBurnValues[i] === 0) cumulativeBurnValues[i] = cumulativeBurnValues[i - 1];
-    }
-
-    const data = [];
-    if (cumulativeTotal === 0) {
-        console.log("SCE: Post has no value");
-        return;
-    }
-
-    data.push({ label: 'Total Value', data: cumulativeTotalValues, color: 'rgba(75, 192, 192, 1)' });
-
-    if (cumulativeOrganic > 0) {
-        data.push({ label: 'Organic Value', data: cumulativeOrganicValues, color: 'rgba(0, 200, 0, 1)' });
-    }
-
-    if (cumulativeBurn > 0) {
-        data.push({ label: 'Burn Value', data: cumulativeBurnValues, color: 'rgba(255, 0, 0, 1)' });
-    }
-
-    createLineGraph(
-        'c-sidebr-market',
-        'postValueGraph',
-        'Post Value Over Time ($)',
-        timeLabels,
-        data,
-        'Value ($)'
-    );
-};
-
-
-const loadPostVoteGraph = (post) => {
-    // Ensure the date strings are treated as UTC by appending 'Z'
-    const postCreationTime = new Date(post.details.created + 'Z');
-    const payoutEndTime = new Date(postCreationTime.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-    // Filter and sort active votes within the payout period, treating times as UTC
-    const activeVotes = sortVotesByTime(
-        post.details.active_votes.filter(vote => new Date(vote.time + 'Z') <= payoutEndTime)
-    );
-
-    if (activeVotes.length === 0) {
-        console.log('SCE: No votes to display.');
-        return;
-    }
-
-    // Determine the scaling range based on post age
-    const currentTime = new Date();
-    const latestVoteTime = new Date(activeVotes[activeVotes.length - 1].time + 'Z').getTime();
-    const maxElapsedMs = Math.min(latestVoteTime - postCreationTime.getTime(), currentTime - postCreationTime);
-
-    const numIntervals = 10; // Define the number of intervals for the X-axis
-    const intervalMs = maxElapsedMs / numIntervals; // Calculate the duration of each interval
-
-    const timeLabels = [];
-    const cumulativeVoteCounts = new Array(numIntervals + 1).fill(0); // Pre-fill with zeros
-
-    // Generate evenly spaced time labels
-    for (let i = 0; i <= numIntervals; i++) {
-        const elapsedMs = intervalMs * i;
-        timeLabels.push(formatScaledTimeLabel(elapsedMs, maxElapsedMs)); // Format elapsed time
-    }
-
-    // Assign cumulative votes to intervals
-    let totalVotes = 0;
-    activeVotes.forEach(vote => {
-        const voteTime = new Date(vote.time + 'Z').getTime();
-        const elapsedMs = voteTime - postCreationTime.getTime();
-        const intervalIndex = Math.min(Math.floor(elapsedMs / intervalMs), numIntervals - 1);
-        totalVotes += 1;
-        cumulativeVoteCounts[intervalIndex] = totalVotes;
-    });
-
-    // Fill in any gaps in the cumulative counts
-    for (let i = 1; i < cumulativeVoteCounts.length; i++) {
-        if (cumulativeVoteCounts[i] === 0) {
-            cumulativeVoteCounts[i] = cumulativeVoteCounts[i - 1];
-        }
-    }
-
-    createLineGraph(
-        'c-sidebr-market',
-        'postVoteGraph',
-        'Total Votes Over Time',
-        timeLabels,
-        [{ label: 'Total Votes', data: cumulativeVoteCounts, color: 'rgba(75, 192, 192, 1)' }],
-        'Votes',
-        false
-    );
-};
 
 /**
  * Load a graph displaying total payouts with post numbers on the X-axis.
@@ -268,7 +123,7 @@ const loadAuthorWeeklyEarningsGraph = async (post) => {
     }
 
     // Prepare data for the graph
-    const timeLabels = payouts.map((_, index) => `Post ${index + 1}`); // Post 1, Post 2, etc.
+    const timeLabels = payouts.map((_, index) => `${index + 1}`); // Post 1, Post 2, etc.
     const payoutValues = payouts.map(payout => payout.details.total_payout_value); // Use total_value for Y-axis
     console.log(payoutValues)
 
@@ -315,16 +170,16 @@ const loadAuthorWeeklyEarningsBarGraph = (payouts) => {
 
     const xAxisLabels = ['Total Value'];
     const dataValues = [totalSum];
-    const colors = ['rgba(75, 192, 192, 0.7)']; // Blue for Total
+    const colors = ['rgba(22, 216, 174, 0.4)']; // Steemit green/cyan to match efficiency scatter
     if (organicSum > 0) {
         xAxisLabels.push('Organic Value');
         dataValues.push(organicSum);
-        colors.push('rgba(0, 255, 0, 0.7)') // Green for Organic
+        colors.push('rgba(34, 197, 94, 0.4)') // Vibrant green for organic plants
     }
     if (burnSum > 0) {
         xAxisLabels.push('Burn Value')
         dataValues.push(burnSum)
-        colors.push('rgba(255, 0, 0, 0.7)') // Red for Burn
+        colors.push('rgba(239, 68, 68, 0.4)') // Vibrant red for burning
     }
 
 
@@ -337,61 +192,6 @@ const loadAuthorWeeklyEarningsBarGraph = (payouts) => {
     createBarGraph(graphContainerClass, canvasId, graphTitle, xAxisLabels, dataValues, yAxisLabel, colors);
 };
 
-const loadPostVoteData = (post) => {
-    const votingClass = document.getElementsByClassName('Voting__voters_list');
-
-    if (votingClass.length > 0) {
-        // Access the first element with the class 'Voting__voters_list'
-        const votingElement = votingClass[0]; // Index may change in future updates!
-
-        // Find the <ul> with the specified classes inside the 'Voting' element
-        const voters_list = votingElement.querySelector('ul.VerticalMenu.menu.vertical');
-
-        if (voters_list) {
-            const listItems = voters_list.querySelectorAll('li');
-
-            if (listItems) {
-                listItems.forEach((item) => {
-
-                    // Extract the username from the textContent (assumes format "+ username")
-                    const username = item.textContent.split(' ')[1].trim()
-
-                    // Find the corresponding vote in the activeVotes list
-                    const vote = post.details.active_votes.find(v => v.voter === username);
-
-                    if (vote) {
-                        // Reformat the text content
-                        const first_digit = item.textContent.split(' ')[0];
-                        const percent = (vote.percent / 100).toFixed(0);
-
-                        // Add a custom class to style the list items
-                        item.classList.add('vote-item');
-
-                        // Format and update the text content with a clickable link for the username
-                        if (vote.value > 0) {
-                            item.innerHTML = `
-                                        <span class="vote-value">$${vote.value.toFixed(2)}</span>
-                                        <span class="vote-percentage">(${vote.percentage}%)</span>
-                                        <a href="/@${username}" class="vote-username">${username}</a>
-                                        <span class="vote-weight">(${percent}% weight)</span>
-                                    `;
-                        } else {
-                            item.innerHTML = `
-                                        <a href="/@${username}" class="vote-username">${username}</a>
-                                        <span class="vote-weight">(${percent}% weight)</span>
-                                    `;
-                        }
-
-                    }
-                });
-            }
-        } else {
-            console.log('SCE: Unordered list not found within votingClass element.');
-        }
-    } else {
-        console.log('SCE: Element with class "Voting__voters_list" not found.');
-    }
-}
 
 const displayPostResteemData = async (post, anchorClassSelector) => {
     const res = await getResteems(post.author, post.permlink)
@@ -405,6 +205,7 @@ const displayPostResteemData = async (post, anchorClassSelector) => {
         console.warn(`Element with class "${anchorClassSelector}" not found.`);
         return;
     }
+
     const existingDropdown = anchorElement.querySelector('.sce-resteem-dropdown-container');
     if (existingDropdown) {
         console.log("SCE: Resteem dropdown already exists for this post (relative positioning).");
@@ -412,17 +213,20 @@ const displayPostResteemData = async (post, anchorClassSelector) => {
     }
 
     // Create the dropdown container
-    const dropdownContainer = document.createElement('div');
+    const dropdownContainer = document.createElement('span');
     dropdownContainer.className = 'DropdownMenu';
+    dropdownContainer.style.display = 'inline-block';
     // dropdownContainer.style.position = 'relative';
     // dropdownContainer.style.left = '55%'; // Adjust '335px' as needed (positive value moves right) - TODO: anchor location to resteem button.
     // dropdownContainer.style.top = '0';
-    dropdownContainer.style.marginLeft = 0;
+    // dropdownContainer.style.marginLeft = 0;
 
     // Create the dropdown trigger as an anchor element
     const dropdownTrigger = document.createElement('a');
     dropdownTrigger.href = '#'; // Set href to "#" to emulate an anchor
     dropdownTrigger.className = 'resteem-dropdown-trigger';
+    dropdownTrigger.style.display = 'flex';
+    dropdownTrigger.style.alignItems = 'center';
 
     // Add an event listener to the dropdown menu to prevent snap-back to the top
     dropdownTrigger.addEventListener('click', (event) => {
@@ -434,7 +238,7 @@ const displayPostResteemData = async (post, anchorClassSelector) => {
     const svgIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svgIcon.setAttribute("width", "16"); // Set the width of the icon
     svgIcon.setAttribute("height", "16"); // Set the height of the icon
-    svgIcon.setAttribute("viewBox", "0 0 512 512"); // Set the view box for the SVG
+    svgIcon.setAttribute("viewBox", "8 8 512 512"); // Set the view box for the SVG
     svgIcon.classList.add('triangle-icon'); // Add a class for styling
 
     // Create the polygon element for the triangle
@@ -459,7 +263,6 @@ const displayPostResteemData = async (post, anchorClassSelector) => {
     const isDarkMode = document.body.classList.contains('theme-dark');
     const resteemDropdownBgColor = isDarkMode ? '#1C252B' : '#F4F4F4';
     const dropdownMenu = document.createElement('ul');
-    // dropdownMenu.className = 'resteem-dropdown-menu';
     dropdownMenu.className = 'resteem-dropdown-menu';
     // Set the background color of the dropdown menu, depending on dark/light mode
     dropdownMenu.style.backgroundColor = resteemDropdownBgColor;
@@ -500,14 +303,25 @@ const displayPostResteemData = async (post, anchorClassSelector) => {
     });
 
     // Create a wrapper for the dropdown
-    const dropdownWrapper = document.createElement('div');
+    const dropdownWrapper = document.createElement('span');
+    dropdownWrapper.style.display = 'inline-block';
+    dropdownWrapper.style.marginLeft = '0px';
+    dropdownWrapper.style.verticalAlign = 'middle';
+    dropdownWrapper.style.marginBottom = '10px';
     dropdownWrapper.className = 'resteem-dropdown-wrapper';
 
     // Append the dropdown components to the wrapper
     dropdownContainer.appendChild(dropdownMenu);
     dropdownContainer.appendChild(dropdownTrigger);
-    dropdownWrapper.appendChild(dropdownContainer);
 
     // Append the dropdown container to the Reshare container element
-    anchorElement.appendChild(dropdownWrapper);
+    const targetElement = anchorElement.querySelector('.Reblog__button');
+    if (targetElement) {
+        targetElement.parentNode.insertBefore(dropdownWrapper, targetElement.nextSibling);
+        // const lineBreak = document.createElement('br');
+        // targetElement.parentNode.insertBefore(lineBreak, dropdownWrapper.nextSibling);
+    } else {
+        anchorElement.appendChild(dropdownWrapper);
+    }
+    dropdownWrapper.appendChild(dropdownContainer);
 }

@@ -102,6 +102,12 @@ const getEfficiencyMetricsInLang = (user_lang) => {
 }
 
 const formatValueLanguage = (currencySymbol = "$", value, user_lang) => {
+    // If value is already a formatted string (e.g., "1.0k", "123k", "1.2M"), use it directly
+    if (typeof value === 'string') {
+        if(['fr', 'pl', 'ru', 'uk'].includes(user_lang)) return `${value} ${currencySymbol}`;
+        else return `${currencySymbol}${value}`;
+    }
+    // For numeric values, check if finite
     if (!isFinite(value)) return;
     if(['fr', 'pl', 'ru', 'uk'].includes(user_lang)) return `${value} ${currencySymbol}`;
     else return `${currencySymbol}${value}`;
