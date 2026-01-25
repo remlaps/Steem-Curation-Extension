@@ -215,18 +215,16 @@ jobs:
           EOF
           )
           
-          # Create the PR
-          PR_OUTPUT=$(gh pr create \
+          # Create the PR (outputs the PR URL)
+          PR_URL=$(gh pr create \
             --base main \
             --head "$BRANCH_NAME" \
             --title "chore: Update Chart.js to v$LATEST" \
             --body "$PR_BODY" \
-            --label "dependencies,automated" \
-            --json number,url)
+            --label "dependencies,automated")
           
-          # Extract PR number and URL
-          PR_NUMBER=$(echo "$PR_OUTPUT" | jq -r '.number')
-          PR_URL=$(echo "$PR_OUTPUT" | jq -r '.url')
+          # Extract PR number from URL (format: https://github.com/owner/repo/pull/123)
+          PR_NUMBER=$(echo "$PR_URL" | grep -oP '/pull/\K[0-9]+')
           
           echo "pull-request-number=$PR_NUMBER" >> $GITHUB_OUTPUT
           echo "pull-request-url=$PR_URL" >> $GITHUB_OUTPUT
