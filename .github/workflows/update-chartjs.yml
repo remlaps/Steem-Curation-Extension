@@ -17,7 +17,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
           persist-credentials: true
 
@@ -150,44 +149,92 @@ jobs:
             echo "⚠ Warning: Git reports no changes to libs/chart.min.js"
             echo "File size: $(wc -c < libs/chart.min.js) bytes"
             echo "First 100 chars: $(head -c 100 libs/chart.min.js)"
+            echo "This might cause the PR creation to fail."
+            exit 1
           else
             echo "✓ Git detects changes in libs/chart.min.js"
             git diff --stat libs/chart.min.js | head -5
           fi
 
-      - name: Create Pull Request
+      - name: Create branch, commit, and push
         if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: update/chartjs-${{ steps.latest-version.outputs.latest_version }}
-          base: main
-          title: 'chore: Update Chart.js to v${{ steps.latest-version.outputs.latest_version }}'
-          body: |
-            ## Automated Chart.js Update
-            
-            This PR was automatically created by the [Update Chart.js](.github/workflows/update-chartjs.yml) workflow.
-            
-            ### Version Information
-            - **Previous version:** ${{ steps.current-version.outputs.current_version }}
-            - **New version:** ${{ steps.latest-version.outputs.latest_version }}
-            
-            ### Changes
-            - Updated `libs/chart.min.js` to the latest version from [jsdelivr CDN](https://cdn.jsdelivr.net/npm/chart.js@${{ steps.latest-version.outputs.latest_version }}/dist/chart.umd.js)
-            
-            ### Verification
-            Please verify that the extension still works correctly with this Chart.js version before merging.
-            
-            ### Related Links
-            - [Chart.js Releases](https://github.com/chartjs/Chart.js/releases)
-            - [Chart.js Changelog](https://github.com/chartjs/Chart.js/blob/master/CHANGELOG.md)
-          commit-message: 'chore: Update Chart.js to v${{ steps.latest-version.outputs.latest_version }}'
-          labels: |
-            dependencies
-            automated
-          delete-branch: false
+        run: |
+          LATEST="${{ steps.latest-version.outputs.latest_version }}"
+          CURRENT="${{ steps.current-version.outputs.current_version }}"
+          BRANCH_NAME="update/chartjs-$LATEST"
+          
+          # Create and checkout new branch
+          git checkout -b "$BRANCH_NAME"
+          
+          # Stage the changed file
+          git add libs/chart.min.js
+          
+          # Verify something is staged
+          if git diff --cached --quiet; then
+            echo "Error: No changes staged. Aborting."
+            exit 1
+          fi
+          
+          # Commit the changes
+          git commit -m "chore: Update Chart.js to v$LATEST"
+          
+          # Push the branch
+          git push origin "$BRANCH_NAME"
+          
+          echo "Branch $BRANCH_NAME created and pushed successfully"
+
+      - name: Create Pull Request using GitHub CLI
+        id: create-pr
+        if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST="${{ steps.latest-version.outputs.latest_version }}"
+          CURRENT="${{ steps.current-version.outputs.current_version }}"
+          BRANCH_NAME="update/chartjs-$LATEST"
+          
+          # Create PR using GitHub CLI
+          PR_BODY=$(cat <<EOF
+          ## Automated Chart.js Update
+          
+          This PR was automatically created by the [Update Chart.js](.github/workflows/update-chartjs.yml) workflow.
+          
+          ### Version Information
+          - **Previous version:** $CURRENT
+          - **New version:** $LATEST
+          
+          ### Changes
+          - Updated \`libs/chart.min.js\` to the latest version from [jsdelivr CDN](https://cdn.jsdelivr.net/npm/chart.js@$LATEST/dist/chart.umd.js)
+          
+          ### Verification
+          Please verify that the extension still works correctly with this Chart.js version before merging.
+          
+          ### Related Links
+          - [Chart.js Releases](https://github.com/chartjs/Chart.js/releases)
+          - [Chart.js Changelog](https://github.com/chartjs/Chart.js/blob/master/CHANGELOG.md)
+          EOF
+          )
+          
+          # Create the PR
+          PR_OUTPUT=$(gh pr create \
+            --base main \
+            --head "$BRANCH_NAME" \
+            --title "chore: Update Chart.js to v$LATEST" \
+            --body "$PR_BODY" \
+            --label "dependencies,automated" \
+            --json number,url)
+          
+          # Extract PR number and URL
+          PR_NUMBER=$(echo "$PR_OUTPUT" | jq -r '.number')
+          PR_URL=$(echo "$PR_OUTPUT" | jq -r '.url')
+          
+          echo "pull-request-number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "pull-request-url=$PR_URL" >> $GITHUB_OUTPUT
+          
+          echo "✓ Pull request created: $PR_URL"
+          
       - name: PR result
-        if: steps.compare.outputs.is_newer == 'true'
+        if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
         run: |
           echo "PR number: ${{ steps.create-pr.outputs.pull-request-number }}"
           echo "PR url:    ${{ steps.create-pr.outputs.pull-request-url }}" 
