@@ -91,7 +91,7 @@ class VoterTip {
         this.downloadStarted = true;
         this.isCancelled = false;
         
-        this.downloadPromise = (async () => {
+        this.downloadPromise = (asyn () => {
             const res = await getHistoricCurationRewards(this.user, this.post, this.days);
             
             if (this.isCancelled) return;
@@ -141,27 +141,37 @@ class VoterTip {
 
                 const voterVests = Number(reward[vIdx]) || 0;
                 const totalVests   = Number(histPost.details.total_vests ?? histPost.details.totalVests ?? 0);
-                const totalRshares = Number(histPost.details.total_rshares ?? histPost.details.totalRshares ?? 0);
+                // Use totalRshares (calculated in getVoteData, already divided by 1000000) 
+                // rather than total_rshares (raw API value, might be in different units)
+                const totalRshares = Number(histPost.details.totalRshares ?? 0);
             
-                const voterRshares = this.vote.rshares / 1000000;
+                // Find the voter's vote in the historic post to get their rshares
+                const histVote = histPost.details.active_votes?.find(v => v.voter === this.user);
+                
+                // If the vote doesn't exist in the historic post, skip this entry
+                // (shouldn't happen if they received a curation reward, but safety check)
+                if (!histVote) continue;
+                
+                const voterRshares = histVote.rshares / 1000000;
 
                 if (totalVests <= 0 || totalRshares <= 0 || voterRshares <= 0 || voterVests <= 0) continue;
                 
                 const pctContributed = voterRshares / totalRshares;
                 const pctReceived = voterVests / totalVests;
-                if (pctContributed <= 0) continue;
+                if (pctContributed <= 0 || pctReceived <= 0) continue;
 
                 const efficiency = Math.round((pctReceived / pctContributed) * 100);
 
-                const voteWeight = this.vote.percent / 10000;
+                // Use the historic vote's percent for weighted efficiency, not the current post's vote
+                const voteWeight = histVote.percent / 10000;
 
                 const weightedEfficiency = Math.round(efficiency * voteWeight);
 
                 const tsMs = timeSec * 1000;
 
                 const totalValue = Number(histPost.details.total_payout_value.toFixed(2));
-                const voterRewardValue = Number(((voterVests / totalVests) * totalValue).toFixed(2));
-                const voterContributedValue = Number(((voterRshares / totalRshares) * totalValue).toFixed(2));
+                const voterRewardValue = Number((pctReceived * totalValue).toFixed(2));
+                const voterContributedValue = Number((pctContributed * totalValue).toFixed(2));
                 this.contributedValue += voterContributedValue;
 
                 this.totalCurationRew += voterRewardValue;
