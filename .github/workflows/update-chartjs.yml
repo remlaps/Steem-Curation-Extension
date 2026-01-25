@@ -1,0 +1,134 @@
+name: Update Chart.js
+
+on:
+  schedule:
+    # Run every Monday at 2 AM UTC (weekly check)
+    - cron: '0 2 * * 1'
+  workflow_dispatch: # Allow manual trigger from GitHub Actions tab
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Extract current Chart.js version
+        id: current-version
+        run: |
+          CURRENT_VERSION=$(grep -oP 'Chart\.js v\K[0-9]+\.[0-9]+\.[0-9]+' libs/chart.min.js | head -1)
+          if [ -z "$CURRENT_VERSION" ]; then
+            # Fallback: try to extract from the comment line
+            CURRENT_VERSION=$(grep -oP '/npm/chart\.js@\K[0-9]+\.[0-9]+\.[0-9]+' libs/chart.min.js | head -1)
+          fi
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current Chart.js version: $CURRENT_VERSION"
+
+      - name: Get latest Chart.js version from npm
+        id: latest-version
+        run: |
+          LATEST_VERSION=$(curl -s https://registry.npmjs.org/chart.js | jq -r '.["dist-tags"].latest')
+          echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          echo "Latest Chart.js version: $LATEST_VERSION"
+
+      - name: Compare versions
+        id: compare
+        run: |
+          CURRENT="${{ steps.current-version.outputs.current_version }}"
+          LATEST="${{ steps.latest-version.outputs.latest_version }}"
+          
+          if [ "$CURRENT" = "$LATEST" ]; then
+            echo "is_newer=false" >> $GITHUB_OUTPUT
+            echo "Versions match. No update needed."
+            exit 0
+          fi
+          
+          # Simple semver comparison using sort -V (version sort)
+          # If latest sorts after current, it's newer
+          if printf '%s\n%s\n' "$CURRENT" "$LATEST" | sort -V | head -1 | grep -q "^$CURRENT$"; then
+            echo "is_newer=true" >> $GITHUB_OUTPUT
+            echo "New version available: $LATEST (current: $CURRENT)"
+          else
+            echo "is_newer=false" >> $GITHUB_OUTPUT
+            echo "Current version is newer or equal. No update needed."
+          fi
+
+      - name: Check for existing PR
+        id: check-pr
+        if: steps.compare.outputs.is_newer == 'true'
+        run: |
+          LATEST="${{ steps.latest-version.outputs.latest_version }}"
+          BRANCH_NAME="update/chartjs-$LATEST"
+          
+          # Check if branch already exists
+          if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
+            echo "pr_exists=true" >> $GITHUB_OUTPUT
+            echo "Branch $BRANCH_NAME already exists. Skipping update."
+          else
+            echo "pr_exists=false" >> $GITHUB_OUTPUT
+            echo "No existing PR found. Proceeding with update."
+          fi
+
+      - name: Download latest Chart.js
+        if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
+        run: |
+          LATEST="${{ steps.latest-version.outputs.latest_version }}"
+          echo "Downloading Chart.js v$LATEST..."
+          curl -L "https://cdn.jsdelivr.net/npm/chart.js@$LATEST/dist/chart.umd.js" -o libs/chart.min.js
+          
+          # Update the header comment to reflect the new version
+          sed -i "s|/npm/chart.js@[0-9]\+\.[0-9]\+\.[0-9]\+|/npm/chart.js@$LATEST|g" libs/chart.min.js
+          sed -i "s|Chart\.js v[0-9]\+\.[0-9]\+\.[0-9]\+|Chart.js v$LATEST|g" libs/chart.min.js
+          
+          echo "Chart.js updated to v$LATEST"
+
+      - name: Create branch and commit
+        if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
+        run: |
+          LATEST="${{ steps.latest-version.outputs.latest_version }}"
+          BRANCH_NAME="update/chartjs-$LATEST"
+          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git checkout -b "$BRANCH_NAME"
+          git add libs/chart.min.js
+          git commit -m "chore: Update Chart.js to v$LATEST"
+          git push origin "$BRANCH_NAME"
+
+      - name: Create Pull Request
+        if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: update/chartjs-${{ steps.latest-version.outputs.latest_version }}
+          base: main
+          title: 'chore: Update Chart.js to v${{ steps.latest-version.outputs.latest_version }}'
+          body: |
+            ## Automated Chart.js Update
+            
+            This PR was automatically created by the [Update Chart.js](.github/workflows/update-chartjs.yml) workflow.
+            
+            ### Version Information
+            - **Previous version:** ${{ steps.current-version.outputs.current_version }}
+            - **New version:** ${{ steps.latest-version.outputs.latest_version }}
+            
+            ### Changes
+            - Updated `libs/chart.min.js` to the latest version from [jsdelivr CDN](https://cdn.jsdelivr.net/npm/chart.js@${{ steps.latest-version.outputs.latest_version }}/dist/chart.umd.js)
+            
+            ### Verification
+            Please verify that the extension still works correctly with this Chart.js version before merging.
+            
+            ### Related Links
+            - [Chart.js Releases](https://github.com/chartjs/Chart.js/releases)
+            - [Chart.js Changelog](https://github.com/chartjs/Chart.js/blob/master/CHANGELOG.md)
+          labels: |
+            dependencies
+            automated
