@@ -9,16 +9,20 @@ const loadPost = async (p_info, language) => {
         const post = await Post.create(author, permlink);
 
         if (post) {
-            const samePost = (p_info.author === author && p_info.permlink === permlink);
+            const samePost = (p_info && p_info.author === author && p_info.permlink === permlink);
+            
+            // Check if extension elements exist (they might have been removed by React re-render)
+            const wordCountInfo = document.querySelector('.word-count-info');
+            const needsReinit = !samePost || !wordCountInfo;
 
-            if (!samePost) {
+            if (needsReinit) {
                 _sceVoterTipsBound = false;
-                displayWordCountAndReadingTime("PostFull__time_author_category_large", post.details.wordCount, post.details.readingTimeMinutes)
-                loadPostValueGraph(post);
-                loadPostVoteGraph(post);
-                const payouts = await loadAuthorWeeklyEarningsGraph(post);
+                displayWordCountAndReadingTime("PostFull__time_author_category_large", post.details.wordCount, post.details.readingTimeMinutes, language)
+                loadPostValueGraph(post, language);
+                loadPostVoteGraph(post, language);
+                const payouts = await loadAuthorWeeklyEarningsGraph(post, language);
                 if (payouts) {
-                    loadAuthorWeeklyEarningsBarGraph(payouts);
+                    loadAuthorWeeklyEarningsBarGraph(payouts, language);
                 }
                 loadPostVoteData(post);
                 displayPostResteemData(post, ".RightShare__Menu");
@@ -40,8 +44,10 @@ const loadPost = async (p_info, language) => {
  * Display word count and reading time in the specified container.
  * @param {string} containerClass - The class where the info will be appended.
  * @param {number} wordCount - The total word count of the content.
+ * @param {number} readingTimeMinutes - The reading time in minutes.
+ * @param {string} user_lang - The user's language code.
  */
-const displayWordCountAndReadingTime = (containerClass, wordCount, readingTimeMinutes) => {
+const displayWordCountAndReadingTime = (containerClass, wordCount, readingTimeMinutes, user_lang = 'en') => {
     console.log("entered function");
     const container = document.querySelector(`.${containerClass}`);
     if (!container) {
@@ -54,6 +60,8 @@ const displayWordCountAndReadingTime = (containerClass, wordCount, readingTimeMi
     if (existingInfo) {
         existingInfo.remove();
     }
+
+    const timeMetrics = getWordTimeMetricsInLang(user_lang);
 
     // Create a wrapper for the info
     const infoWrapper = document.createElement('div');
@@ -74,7 +82,7 @@ const displayWordCountAndReadingTime = (containerClass, wordCount, readingTimeMi
     wordIcon.style.fontSize = '14px'; // Slightly smaller icon size
 
     const wordCountText = document.createElement('span');
-    wordCountText.textContent = `${wordCount.toLocaleString()} words`;
+    wordCountText.textContent = `${wordCount.toLocaleString()} ${timeMetrics.words}`;
     wordCountText.style.fontSize = '12px'; // Reduce font size for better fit
 
     wordCountSection.appendChild(wordIcon);
@@ -91,7 +99,7 @@ const displayWordCountAndReadingTime = (containerClass, wordCount, readingTimeMi
     clockIcon.style.fontSize = '14px'; // Slightly smaller icon size
 
     const readingTimeText = document.createElement('span');
-    readingTimeText.textContent = `${readingTimeMinutes} min read`;
+    readingTimeText.textContent = `${readingTimeMinutes} ${timeMetrics.minRead}`;
     readingTimeText.style.fontSize = '12px'; // Reduce font size for better fit
 
     readingTimeSection.appendChild(clockIcon);
@@ -110,8 +118,9 @@ const displayWordCountAndReadingTime = (containerClass, wordCount, readingTimeMi
  * Load a graph displaying total payouts with post numbers on the X-axis.
  * Clicking a dot navigates to the corresponding post.
  * @param {Array} payouts - Array of Post class objects, already sorted from oldest to newest.
+ * @param {string} user_lang - The user's language code.
  */
-const loadAuthorWeeklyEarningsGraph = async (post) => {
+const loadAuthorWeeklyEarningsGraph = async (post, user_lang = 'en') => {
     console.log(`Fetching payouts for ${post.details.author}`);
     const payouts = await getAuthorPayoutsInWeekBefore(post.details.author, post.details.created);
 
@@ -130,8 +139,10 @@ const loadAuthorWeeklyEarningsGraph = async (post) => {
     // Create the graph
     const graphContainerClass = 'c-sidebr-market';
     const canvasId = 'authorPayoutGraph';
-    const graphTitle = 'Previous Week Payouts';
-    const yAxisLabel = 'Payout ($)';
+    const graphTitles = getGraphTitlesInLang(user_lang);
+    const graphLabels = getGraphLabelsInLang(user_lang);
+    const graphTitle = graphTitles.previousWeekPayouts;
+    const yAxisLabel = `${graphLabels.payout} ($)`;
 
     createLineGraphWithClickableDots(
         graphContainerClass,
@@ -140,7 +151,8 @@ const loadAuthorWeeklyEarningsGraph = async (post) => {
         timeLabels,
         payoutValues,
         yAxisLabel,
-        payouts
+        payouts,
+        user_lang
     );
 
     return payouts
@@ -149,8 +161,9 @@ const loadAuthorWeeklyEarningsGraph = async (post) => {
 /**
  * Load a bar graph displaying the sums of total, organic, and burn values for the last week.
  * @param {Array} payouts - Array of Post class objects with `total_value`, `organic_payout_value`, and `burn_payout_value`.
+ * @param {string} user_lang - The user's language code.
  */
-const loadAuthorWeeklyEarningsBarGraph = (payouts) => {
+const loadAuthorWeeklyEarningsBarGraph = (payouts, user_lang = 'en') => {
     if (payouts.length === 0) {
         console.warn("No payouts to display in the bar graph.");
         return;
@@ -168,16 +181,19 @@ const loadAuthorWeeklyEarningsBarGraph = (payouts) => {
         return
     }
 
-    const xAxisLabels = ['Total Value'];
+    const graphTitles = getGraphTitlesInLang(user_lang);
+    const graphLabels = getGraphLabelsInLang(user_lang);
+
+    const xAxisLabels = [graphTitles.totalValue];
     const dataValues = [totalSum];
     const colors = ['rgba(22, 216, 174, 0.4)']; // Steemit green/cyan to match efficiency scatter
     if (organicSum > 0) {
-        xAxisLabels.push('Organic Value');
+        xAxisLabels.push(graphTitles.organicValue);
         dataValues.push(organicSum);
         colors.push('rgba(34, 197, 94, 0.4)') // Vibrant green for organic plants
     }
     if (burnSum > 0) {
-        xAxisLabels.push('Burn Value')
+        xAxisLabels.push(graphTitles.burnValue)
         dataValues.push(burnSum)
         colors.push('rgba(239, 68, 68, 0.4)') // Vibrant red for burning
     }
@@ -186,10 +202,10 @@ const loadAuthorWeeklyEarningsBarGraph = (payouts) => {
     // Create the graph
     const graphContainerClass = 'c-sidebr-market';
     const canvasId = 'weeklyEarningsBarGraph';
-    const graphTitle = 'Week Payout Summary';
-    const yAxisLabel = 'Payout ($)';
+    const graphTitle = graphTitles.weekPayoutSummary;
+    const yAxisLabel = `${graphLabels.payout} ($)`;
 
-    createBarGraph(graphContainerClass, canvasId, graphTitle, xAxisLabels, dataValues, yAxisLabel, colors);
+    createBarGraph(graphContainerClass, canvasId, graphTitle, xAxisLabels, dataValues, yAxisLabel, colors, user_lang);
 };
 
 

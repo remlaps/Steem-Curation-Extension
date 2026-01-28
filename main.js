@@ -375,6 +375,19 @@ const sceMutationObserver = () => {
         }
 
         addUserVpRing_silent();
+
+        // Re-initialize post features when on a post page (handles React re-renders from language/theme changes)
+        const postClass = document.querySelector('.Post');
+        if (postClass && typeof loadPost === 'function') {
+            // Use async IIFE to handle async loadPost without blocking
+            (async () => {
+                try {
+                    post_info = await loadPost(post_info, USER_LANGUAGE || detectUserLanguage() || 'en');
+                } catch (error) {
+                    console.error("Error loading post data in mutation observer:", error);
+                }
+            })();
+        }
     } catch (error) {
         console.error("Error in mutation observer handling:", error);
     } finally {
