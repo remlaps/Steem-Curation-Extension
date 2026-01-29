@@ -222,9 +222,8 @@ const displayPostResteemData = async (post, anchorClassSelector) => {
         return;
     }
 
-    const existingDropdown = anchorElement.querySelector('.sce-resteem-dropdown-container');
+    const existingDropdown = anchorElement.querySelector('.resteem-dropdown-wrapper');
     if (existingDropdown) {
-        console.log("SCE: Resteem dropdown already exists for this post (relative positioning).");
         return;
     }
 
