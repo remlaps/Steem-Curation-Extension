@@ -91,7 +91,7 @@ class VoterTip {
         this.downloadStarted = true;
         this.isCancelled = false;
         
-        this.downloadPromise = (asyn () => {
+        this.downloadPromise = (async () => {
             const res = await getHistoricCurationRewards(this.user, this.post, this.days);
             
             if (this.isCancelled) return;
