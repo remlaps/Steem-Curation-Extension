@@ -9,6 +9,7 @@ const curatorStringRegex = /(Curators|Curador|Curateurs|Curatori|キュレータ
 const promotedCostStringRegex = /(?:Promotion Cost|Coste de promoción|Cout de la promotion|Costo della Promozione|プロモーションコスト|홍보 비용|Koszty promocji|Цена продвижения|Вартість просування|推广费)(?::)?\s*.*?\$.*/
 
 let post_info = {"author":null, "permlink":null}
+let isPostLoading = false;
 
 let USER_LANGUAGE;
 
@@ -329,36 +330,10 @@ function modifyUserElement() {
 // Wrapping the event handler that adds elements/listeners
 modifyUserElement = withSilentMutations(modifyUserElement);
 
-// Mutation observer to detect logout -> login and other page changes.
-const sceMutationObserver = () => {
-  const root = document.documentElement || document.body;
-  const config = { childList: true, subtree: true };
-  
-  let timeoutId = null;
+const runOncePerBatch = () => {
+    // Bail out if we are in the post editor to prevent memory leaks and unnecessary processing
+    if (window.location.pathname.includes('/edit') || document.querySelector('[class*="ReplyEditor"]')) return;
 
-  const observer = new MutationObserver((mutations) => {
-    // Ignore mutations caused by tooltips and similar transient UI elements.
-    // This prevents heavy routines from re-running repeatedly during hovers and interactions.
-    const onlyTransientUI = mutations?.length > 0 && mutations.every((m) => {
-      const t = m.target;
-      const el = t && t.nodeType === 1 ? t : t?.parentElement; // Element or nearest parent Element
-      return !!(el && el.closest && (el.closest('.voter-tooltip') || el.closest('[role="tooltip"]') || el.closest('.tooltip')));
-    });
-    if (onlyTransientUI) return;
-
-    // Don't schedule a new run if one is already pending
-    if (timeoutId) return;
-    
-    // Debounce: wait a bit for mutations to settle, then run
-    timeoutId = setTimeout(() => {
-      timeoutId = null;
-      runOncePerBatch();
-    }, 50); // 50ms debounce - adjust as needed
-  });
-
-  observer.observe(root, config);
-
-  const runOncePerBatch = () => {
     SCE_SILENT++;
     try {
         addButtonsToSummaries();
@@ -377,14 +352,18 @@ const sceMutationObserver = () => {
         addUserVpRing_silent();
 
         // Re-initialize post features when on a post page (handles React re-renders from language/theme changes)
-        const postClass = document.querySelector('.Post');
-        if (postClass && typeof loadPost === 'function') {
+        const postClass = document.querySelector('.Post:not(:has([class*="ReplyEditor"]))');
+        if (postClass && typeof loadPost === 'function' && !isPostLoading) {
             // Use async IIFE to handle async loadPost without blocking
             (async () => {
+                isPostLoading = true;
                 try {
-                    post_info = await loadPost(post_info, USER_LANGUAGE || detectUserLanguage() || 'en');
+                    const result = await loadPost(post_info, USER_LANGUAGE || detectUserLanguage() || 'en');
+                    if (result) post_info = result;
                 } catch (error) {
                     console.error("Error loading post data in mutation observer:", error);
+                } finally {
+                    isPostLoading = false;
                 }
             })();
         }
@@ -393,17 +372,81 @@ const sceMutationObserver = () => {
     } finally {
         SCE_SILENT--;
     }
-  }
+}
+
+// Mutation observer to detect logout -> login and other page changes.
+const sceMutationObserver = () => {
+  const root = document.documentElement || document.body;
+  const config = { childList: true, subtree: true };
+  
+  let timeoutId = null;
+  let lastRunTime = 0;
+  const DEBOUNCE_DELAY = 250;
+  const MAX_WAIT = 1000; // Force run every 1s if mutations are continuous
+  let lastUrl = window.location.href;
+
+  const observer = new MutationObserver((mutations) => {
+    // Ignore mutations triggered by our own script execution
+    if (SCE_SILENT > 0) return;
+
+    // Ignore mutations caused by tooltips and similar transient UI elements.
+    // This prevents heavy routines from re-running repeatedly during hovers and interactions.
+    const onlyTransientUI = mutations?.length > 0 && mutations.every((m) => {
+      const t = m.target;
+      const el = t && t.nodeType === 1 ? t : t?.parentElement; // Element or nearest parent Element
+      return !!(el && el.closest && (el.closest('.voter-tooltip') || el.closest('[role="tooltip"]') || el.closest('.tooltip')));
+    });
+    if (onlyTransientUI) return;
+
+    const now = Date.now();
+    const urlChanged = window.location.href !== lastUrl;
+
+    // Immediate response for URL changes, or forced run if debounce is being stalled by constant mutations
+    if (urlChanged || (now - lastRunTime > MAX_WAIT)) {
+        lastUrl = window.location.href;
+        lastRunTime = now;
+        clearTimeout(timeoutId);
+        timeoutId = null;
+        runOncePerBatch();
+        return;
+    }
+
+    // Standard debounce for other mutations
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      timeoutId = null;
+      lastRunTime = Date.now();
+      runOncePerBatch();
+    }, DEBOUNCE_DELAY); 
+  });
+
+  observer.observe(root, config);
 }
 
 window.addEventListener('load', async () => {
+    if (document.querySelector('[class*="ReplyEditor"]')) return;
+    runOncePerBatch();
     post_info = await loadPost({"author":null, "permlink":null}, USER_LANGUAGE); // Call your function
+});
 
+window.addEventListener('popstate', () => {
+    runOncePerBatch();
 });
 
 window.addEventListener('click', async () => {
-     // Call your function
-     post_info = await loadPost(post_info, USER_LANGUAGE);
+    if (document.querySelector('[class*="ReplyEditor"]')) return;
+
+    runOncePerBatch();
+    
+    if (!isPostLoading && document.querySelector('.Post')) {
+        isPostLoading = true;
+        try {
+            const result = await loadPost(post_info, USER_LANGUAGE || detectUserLanguage() || 'en');
+            if (result) post_info = result;
+        } finally {
+            isPostLoading = false;
+        }
+    }
 });
 
 window.addEventListener('scroll', async () => {

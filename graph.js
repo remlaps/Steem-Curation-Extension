@@ -55,6 +55,13 @@ const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxi
     const isDarkMode = document.body.classList.contains('theme-dark');
     const textColor = isDarkMode ? '#fcfcfc' : '#000000'; // Black for day mode
 
+    // Explicitly destroy existing Chart instance before removing the element
+    const existingCanvas = document.getElementById(canvasId);
+    if (existingCanvas) {
+        const chartInstance = Chart.getChart(existingCanvas);
+        if (chartInstance) chartInstance.destroy();
+    }
+
     if (graphContainer) {
         // Remove existing graph if it exists (avoid duplicates on re-init)
         const existingWrapper = graphContainer.querySelector(`.${canvasId}-wrapper`);
@@ -206,6 +213,11 @@ const createLineGraphWithClickableDots = (containerClass, canvasId, title, label
 
     // Remove existing chart and its wrapper if it exists (avoid duplicates on re-init)
     const existingCanvas = document.getElementById(canvasId);
+    if (existingCanvas) {
+        const chartInstance = Chart.getChart(existingCanvas);
+        if (chartInstance) chartInstance.destroy();
+    }
+    
     if (existingCanvas && existingCanvas.parentElement) {
         existingCanvas.parentElement.remove();
     }
@@ -396,6 +408,11 @@ const createBarGraph = (containerClass, canvasId, title, labels, data, yAxisLabe
 
     // Remove existing chart and its wrapper if it exists (avoid duplicates on re-init)
     const existingCanvas = document.getElementById(canvasId);
+    if (existingCanvas) {
+        const chartInstance = Chart.getChart(existingCanvas);
+        if (chartInstance) chartInstance.destroy();
+    }
+
     if (existingCanvas && existingCanvas.parentElement) {
         existingCanvas.parentElement.remove();
     }

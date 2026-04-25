@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "version": "0.5.3",
-  "version_name": "0.5.3 Beta",
+  "version": "0.5.4",
+  "version_name": "0.5.4 Beta",
   "name": "Steem Curation Extension",
   "description": "Provide supplemental information for curators on Steem/Condenser based web sites.",
   "icons": { 
@@ -17,7 +17,9 @@
     {
       "matches": [
         "https://steemit.com/*",
+        "https://www.steemit.com/*",
         "https://steemitdev.com/*",
+        "https://www.steemitdev.com/*",
         "https://steemit.steemnet.org/*",
         "https://steemit.moecki.online/*"
       ],
