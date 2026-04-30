@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "version": "0.5.3",
-  "version_name": "0.5.3 Beta",
+  "version": "0.5.4",
+  "version_name": "0.5.4 Beta",
   "name": "Steem Curation Extension",
   "description": "Provide supplemental information for curators on Steem/Condenser based web sites.",
   "icons": { 
@@ -17,9 +17,12 @@
     {
       "matches": [
         "https://steemit.com/*",
-        "https://steemitdev.com/*",
+        "https://www.steemit.com/*",
+        "https://steemit.moecki.online/*",
+        "https://steemit.steemapps.com/*",
         "https://steemit.steemnet.org/*",
-        "https://steemit.moecki.online/*"
+        "https://steemitdev.com/*",
+        "https://www.steemitdev.com/*"
       ],
       "js": ["useful.js", "post/votes/VoterTip.js", "post/votes/votes.js", "profilePictureDisplay.js", "language.js", "payoutDisplay.js", "steemWorld.js", "post/author.js", "graph.js", "post/Post.js", "post/loadPostData.js", "libs/chart.min.js","botNotifier.js", "postMetrics.js", "overlay.js", "resteemControl.js", "main.js"],
       "css": [ "post/styles.css", "styles.css", "profilePictureDisplay.css" ]

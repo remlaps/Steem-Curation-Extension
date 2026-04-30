@@ -24,7 +24,7 @@ function checkAndUpdateAnchorColors() {
 // Prevent observer recursion when we update anchor colors
 checkAndUpdateAnchorColors = withSilentMutations(checkAndUpdateAnchorColors);
 
-async function showOverlay(postInfo, curatorOverlayAnchor) {
+async function showOverlay(postInfo, curatorOverlayAnchor, user_lang = 'en') {
     // Clear any existing overlay first
     if (currentOverlay) {
         currentOverlay.remove();
@@ -64,7 +64,6 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
         botVotePct = calculateRsharePercentage(result.active_votes);
         steemitVoteCount = countVotes(result.active_votes, steemitList);
         steemitVotePct = calculateRsharePercentage(result.active_votes, steemitList);
-        steemitVoteLabel = steemitVoteCount === 1 ? "vote" : "votes";
         organicValue = totalValue * (1 - 0.01 * botVotePct);
         formattedOrganicValue = organicValue.toFixed(2);
         wordCount = getWordCount(result.body);
@@ -128,54 +127,57 @@ async function showOverlay(postInfo, curatorOverlayAnchor) {
     const commentsPerWeek = commentCount / (7 * ageInDays);
     const repliesPerWeek = replyCount / (7 * ageInDays);
 
+    const curationLabels = getCurationOverlayInLang(user_lang);
+    steemitVoteLabel = steemitVoteCount === 1 ? curationLabels.vote : curationLabels.votes;
+
     overlayContent.innerHTML = `
         <table>
             <tr>
-                <th colspan="2"><b>Post Info</b></th>
+                <th colspan="2"><b>${curationLabels.postInfo}</b></th>
             </tr>
             <tr>
                 <td colspan="2">
                     <ul>
-                        <li><b>Word count / Reading time:</b> ${wordCount} / ${readingTime} min.</li>
-                        <li><b>[#images / #links / #tags]:</b> [${imageLength} / ${linksLength} / ${tagsLength}]</li>
-                        <li><b>Tags:</b> ${tagString}</li>
+                        <li><b>${curationLabels.wordCountReadingTime}</b> ${wordCount} / ${readingTime} ${curationLabels.min}</li>
+                        <li><b>${curationLabels.imagesLinksTags}</b> [${imageLength} / ${linksLength} / ${tagsLength}]</li>
+                        <li><b>${curationLabels.tags}</b> ${tagString}</li>
                     </ul>
                 </td>
             </tr>
             <tr>
-                <th><b>Audience, Votes, and Values</b></th>
+                <th><b>${curationLabels.audienceVotesValues}</b></th>
             </tr>
             <tr>
                 <td>
                     <ul>
-                        <li><b># Resteems:</b> ${resteemLength}</li>
-                        <li><b>Feed-reach:</b> ${feedReach}</li>
-                        <li><b>$ / feed:</b> ${dollarsPerFeed}</li>
+                        <li><b>${curationLabels.resteems}</b> ${resteemLength}</li>
+                        <li><b>${curationLabels.feedReach}</b> ${feedReach}</li>
+                        <li><b>${curationLabels.dollarsPerFeed}</b> ${dollarsPerFeed}</li>
                     </ul>
                 </td>
                 <td>
                     <ul>
-                        <li><b># bots / % bots:</b> ${botVoteCount} / ${botVotePct}%</li>
-                        <li><b>Steemit:</b> ${steemitVoteCount} ${steemitVoteLabel} / ${steemitVotePct}%</li>
+                        <li><b>${curationLabels.bots}</b> ${botVoteCount} / ${botVotePct}%</li>
+                        <li><b>${curationLabels.steemit}</b> ${steemitVoteCount} ${steemitVoteLabel} / ${steemitVotePct}%</li>
                         <li><b>Organic value</b>:</b> ${formattedOrganicValue} SBD</li>
                 </td>
             </tr>
             <tr>
-                <th><b>Author Info</b></th>
-                <th><b>Wallet Info</b></th>
+                <th><b>${curationLabels.authorInfo}</b></th>
+                <th><b>${curationLabels.walletInfo}</b></th>
             </tr>
             <tr>
                 <td>
                     <ul>
-                        <li><b>Posts:</b> ${postCount.toFixed(0)}</li>
-                        <li><b>Comments / Post:</b> ${(commentCount / postCount).toFixed(2)}</li>
-                        <li><b>Replies / Post:</b> ${(replyCount / ( postCount + commentCount )).toFixed(2)}</li>
+                        <li><b>${curationLabels.posts}</b> ${postCount.toFixed(0)}</li>
+                        <li><b>${curationLabels.commentsPost}</b> ${(commentCount / postCount).toFixed(2)}</li>
+                        <li><b>${curationLabels.repliesPost}</b> ${(replyCount / ( postCount + commentCount )).toFixed(2)}</li>
                     </ul>
                 </td>
                 <td>
                     <ul>
                         <li><b>${classDisplay}</b> </li>
-                        <li><b>Powerdown %:</b> ${powerdownPct.toFixed(2)} </li>
+                        <li><b>${curationLabels.powerdown}</b> ${powerdownPct.toFixed(2)} </li>
                     </ul>
                 </td>
             </tr>
@@ -210,6 +212,8 @@ clearAllOverlays = withSilentMutations(clearAllOverlays);
 
 function addButtonsToSummaries() {
     const headers = document.querySelectorAll('div.articles__summary-header');
+    const user_lang = detectUserLanguage() || 'en';
+    const curationLabels = getCurationOverlayInLang(user_lang);
 
     headers.forEach(header => {
         if (!header.querySelector('.curator-custom-anchor')) {
@@ -218,7 +222,7 @@ function addButtonsToSummaries() {
 
             const curatorOverlayAnchor = document.createElement('a');
             curatorOverlayAnchor.className = 'curator-custom-anchor';
-            curatorOverlayAnchor.textContent = 'CURATION INFO';
+            curatorOverlayAnchor.textContent = curationLabels.curationInfo;
             curatorOverlayAnchor.style.color = bodyFontColor;
 
             overlayContainer.appendChild(curatorOverlayAnchor);
@@ -247,8 +251,9 @@ function addButtonsToSummaries() {
                 if (link && link.href) {
                     curatorOverlayAnchor.href = link.href;
                     const result = extractAuthorAndPermlink(curatorOverlayAnchor.href);
+                    const currentLang = detectUserLanguage() || 'en';
                     overlayTimeout = setTimeout(async () => {
-                        overlayPromise = showOverlay(result, curatorOverlayAnchor);
+                        overlayPromise = showOverlay(result, curatorOverlayAnchor, currentLang);
                         await overlayPromise;
                     }, 150);
                 }

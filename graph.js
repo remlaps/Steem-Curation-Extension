@@ -48,13 +48,25 @@ const formatTimeLabel = (elapsedMs, timeUnit) => {
  * @param {Array} data - The data for the Y-axis.
  * @param {string} yAxisLabel - The label for the Y-axis.
  * @param {boolean} showDollarSign - Whether to show a dollar sign with datapoints on mouseover.
+ * @param {string} user_lang - The user's language code.
  */
-const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxisLabel, showDollarSign = true) => {
+const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxisLabel, showDollarSign = true, user_lang = 'en') => {
     const graphContainer = document.querySelector(`.${containerClass}`);
     const isDarkMode = document.body.classList.contains('theme-dark');
     const textColor = isDarkMode ? '#fcfcfc' : '#000000'; // Black for day mode
 
+    // Explicitly destroy existing Chart instance before removing the element
+    const existingCanvas = document.getElementById(canvasId);
+    if (existingCanvas) {
+        const chartInstance = Chart.getChart(existingCanvas);
+        if (chartInstance) chartInstance.destroy();
+    }
+
     if (graphContainer) {
+        // Remove existing graph if it exists (avoid duplicates on re-init)
+        const existingWrapper = graphContainer.querySelector(`.${canvasId}-wrapper`);
+        if (existingWrapper) existingWrapper.remove();
+
         // Create a wrapper div for the graph
         const wrapper = document.createElement('div');
         wrapper.className = `${canvasId}-wrapper chart-container`;
@@ -121,7 +133,7 @@ const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxi
                     x: {
                         title: {
                             display: true,
-                            text: 'Time',
+                            text: getGraphLabelsInLang(user_lang).time,
                             color: textColor,
                             font: {
                                 size: 14,
@@ -159,18 +171,21 @@ const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxi
  * Format the elapsed time for evenly scaled intervals.
  * @param {number} elapsedMs - The elapsed time in milliseconds since post creation.
  * @param {number} maxElapsedMs - The maximum elapsed time in milliseconds.
+ * @param {string} user_lang - The user's language code.
  * @returns {string} - The formatted time label.
  */
-const formatScaledTimeLabel = (elapsedMs, maxElapsedMs) => {
+const formatScaledTimeLabel = (elapsedMs, maxElapsedMs, user_lang = 'en') => {
+    const timeMetrics = getWordTimeMetricsInLang(user_lang);
+    
     if (maxElapsedMs < 2 * 60 * 60 * 1000) {
         // If the total time is less than 2 hours, show in minutes
-        return `${Math.floor(elapsedMs / (60 * 1000))} min`;
+        return `${Math.floor(elapsedMs / (60 * 1000))} ${timeMetrics.min}`;
     } else if (maxElapsedMs < 2 * 24 * 60 * 60 * 1000) {
         // If the total time is less than 2 days, show in hours
-        return `${(elapsedMs / (60 * 60 * 1000)).toFixed(1)} hr`;
+        return `${(elapsedMs / (60 * 60 * 1000)).toFixed(1)} ${timeMetrics.hr}`;
     } else {
         // If the total time is more than 2 days, show in days
-        return `${(elapsedMs / (24 * 60 * 60 * 1000)).toFixed(1)} d`;
+        return `${(elapsedMs / (24 * 60 * 60 * 1000)).toFixed(1)} ${timeMetrics.d}`;
     }
 };
 
@@ -184,8 +199,9 @@ const formatScaledTimeLabel = (elapsedMs, maxElapsedMs) => {
  * @param {Array} data - The data for the Y-axis (e.g., payout values).
  * @param {string} yAxisLabel - The label for the Y-axis.
  * @param {Array} posts - Array of Post objects to map clickable dots to their URLs.
+ * @param {string} user_lang - The user's language code.
  */
-const createLineGraphWithClickableDots = (containerClass, canvasId, title, labels, data, yAxisLabel, posts) => {
+const createLineGraphWithClickableDots = (containerClass, canvasId, title, labels, data, yAxisLabel, posts, user_lang = 'en') => {
     const graphContainer = document.querySelector(`.${containerClass}`);
     if (!graphContainer) {
         console.error(`Graph container not found: ${containerClass}`);
@@ -195,10 +211,15 @@ const createLineGraphWithClickableDots = (containerClass, canvasId, title, label
     const isDarkMode = document.body.classList.contains('theme-dark');
     const textColor = isDarkMode ? '#fcfcfc' : '#000000'; // Black for day mode // Match efficiency graph colors
 
-    // Remove existing chart if it exists
+    // Remove existing chart and its wrapper if it exists (avoid duplicates on re-init)
     const existingCanvas = document.getElementById(canvasId);
     if (existingCanvas) {
-        existingCanvas.remove();
+        const chartInstance = Chart.getChart(existingCanvas);
+        if (chartInstance) chartInstance.destroy();
+    }
+    
+    if (existingCanvas && existingCanvas.parentElement) {
+        existingCanvas.parentElement.remove();
     }
 
     // Create a new canvas element for the graph
@@ -211,6 +232,10 @@ const createLineGraphWithClickableDots = (containerClass, canvasId, title, label
     containerDiv.style.marginTop = '20px';
     containerDiv.appendChild(canvas);
     graphContainer.appendChild(containerDiv);
+
+    // Remove existing status bar if present (avoid duplicates on re-init)
+    const existingStatusBar = document.getElementById('custom-status-bar');
+    if (existingStatusBar) existingStatusBar.remove();
 
     // Create a custom status bar element
     const statusBar = document.createElement('div');
@@ -256,7 +281,9 @@ const createLineGraphWithClickableDots = (containerClass, canvasId, title, label
                     callbacks: {
                         label: function (tooltipItem) {
                             const postIndex = tooltipItem.dataIndex;
-                            return `Payout: $${data[postIndex].toFixed(2)}`;
+                            const graphLabels = getGraphLabelsInLang(user_lang);
+                            const graphTitles = getGraphTitlesInLang(user_lang);
+                            return `${graphTitles.payoutLabel} $${data[postIndex].toFixed(2)}`;
                         },
                     },
                     bodyFont: {
@@ -268,7 +295,7 @@ const createLineGraphWithClickableDots = (containerClass, canvasId, title, label
                 x: {
                     title: {
                         display: true,
-                        text: 'Post Number',
+                        text: getGraphLabelsInLang(user_lang).postNumber,
                         color: textColor,
                         font: {
                             size: 14,
@@ -366,9 +393,10 @@ const createLineGraphWithClickableDots = (containerClass, canvasId, title, label
  * @param {Array<number>} data - An array of numerical data points corresponding to each label.
  * @param {string} yAxisLabel - The label for the Y-axis, describing the units of the data.
  * @param {Array<string>} colors - An array of color strings for each bar in the graph.
+ * @param {string} user_lang - The user's language code.
  * @returns {void}
  */
-const createBarGraph = (containerClass, canvasId, title, labels, data, yAxisLabel, colors) => {
+const createBarGraph = (containerClass, canvasId, title, labels, data, yAxisLabel, colors, user_lang = 'en') => {
     const graphContainer = document.querySelector(`.${containerClass}`);
     if (!graphContainer) {
         console.error(`Graph container not found: ${containerClass}`);
@@ -378,10 +406,15 @@ const createBarGraph = (containerClass, canvasId, title, labels, data, yAxisLabe
     const isDarkMode = document.body.classList.contains('theme-dark');
     const textColor = isDarkMode ? '#fcfcfc' : '#000000'; // Black for day mode // Match efficiency graph colors
 
-    // Remove existing chart if it exists
+    // Remove existing chart and its wrapper if it exists (avoid duplicates on re-init)
     const existingCanvas = document.getElementById(canvasId);
     if (existingCanvas) {
-        existingCanvas.remove();
+        const chartInstance = Chart.getChart(existingCanvas);
+        if (chartInstance) chartInstance.destroy();
+    }
+
+    if (existingCanvas && existingCanvas.parentElement) {
+        existingCanvas.parentElement.remove();
     }
 
     // Create a new canvas element for the graph
@@ -438,7 +471,7 @@ const createBarGraph = (containerClass, canvasId, title, labels, data, yAxisLabe
                 x: {
                     title: {
                         display: true,
-                        text: 'Category',
+                        text: getGraphLabelsInLang(user_lang).category,
                         color: textColor,
                         font: {
                             size: 14,
@@ -883,7 +916,7 @@ class EfficiencyScatter {
     }
 };
 
-const loadPostValueGraph = (post) => {
+const loadPostValueGraph = (post, user_lang = 'en') => {
     // Ensure the date strings are treated as UTC by appending 'Z'
     const postCreationTime = new Date(post.details.created + 'Z');
     const payoutEndTime = new Date(postCreationTime.getTime() + 7 * 24 * 60 * 60 * 1000); // Add 7 days to creation time
@@ -917,7 +950,7 @@ const loadPostValueGraph = (post) => {
     // Generate evenly spaced time labels
     for (let i = 0; i <= numIntervals; i++) {
         const elapsedMs = intervalMs * i;
-        timeLabels.push(formatScaledTimeLabel(elapsedMs, maxElapsedMs)); // Format elapsed time
+        timeLabels.push(formatScaledTimeLabel(elapsedMs, maxElapsedMs, user_lang)); // Format elapsed time
     }
 
     // Assign cumulative values to intervals
@@ -947,27 +980,32 @@ const loadPostValueGraph = (post) => {
         return;
     }
 
-    data.push({ label: 'Total Value', data: cumulativeTotalValues, color: 'rgba(22, 216, 174, 1)' }); // Steemit green/cyan to match efficiency scatter
+    const graphTitles = getGraphTitlesInLang(user_lang);
+    const graphLabels = getGraphLabelsInLang(user_lang);
+
+    data.push({ label: graphTitles.totalValue, data: cumulativeTotalValues, color: 'rgba(22, 216, 174, 1)' }); // Steemit green/cyan to match efficiency scatter
 
     if (cumulativeOrganic > 0) {
-        data.push({ label: 'Organic Value', data: cumulativeOrganicValues, color: 'rgba(34, 197, 94, 1)' }); // Vibrant green for organic plants
+        data.push({ label: graphTitles.organicValue, data: cumulativeOrganicValues, color: 'rgba(34, 197, 94, 1)' }); // Vibrant green for organic plants
     }
 
     if (cumulativeBurn > 0) {
-        data.push({ label: 'Burn Value', data: cumulativeBurnValues, color: 'rgba(239, 68, 68, 1)' }); // Vibrant red for burning
+        data.push({ label: graphTitles.burnValue, data: cumulativeBurnValues, color: 'rgba(239, 68, 68, 1)' }); // Vibrant red for burning
     }
 
     createLineGraph(
         'c-sidebr-market',
         'postValueGraph',
-        'Post Value Over Time ($)',
+        graphTitles.postValueOverTime,
         timeLabels,
         data,
-        'Value ($)'
+        `${graphLabels.value} ($)`,
+        true,
+        user_lang
     );
 };
 
-const loadPostVoteGraph = (post) => {
+const loadPostVoteGraph = (post, user_lang = 'en') => {
     // Ensure the date strings are treated as UTC by appending 'Z'
     const postCreationTime = new Date(post.details.created + 'Z');
     const payoutEndTime = new Date(postCreationTime.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -996,7 +1034,7 @@ const loadPostVoteGraph = (post) => {
     // Generate evenly spaced time labels
     for (let i = 0; i <= numIntervals; i++) {
         const elapsedMs = intervalMs * i;
-        timeLabels.push(formatScaledTimeLabel(elapsedMs, maxElapsedMs)); // Format elapsed time
+        timeLabels.push(formatScaledTimeLabel(elapsedMs, maxElapsedMs, user_lang)); // Format elapsed time
     }
 
     // Assign cumulative votes to intervals
@@ -1016,13 +1054,17 @@ const loadPostVoteGraph = (post) => {
         }
     }
 
+    const graphTitles = getGraphTitlesInLang(user_lang);
+    const graphLabels = getGraphLabelsInLang(user_lang);
+
     createLineGraph(
         'c-sidebr-market',
         'postVoteGraph',
-        'Total Votes Over Time',
+        graphTitles.totalVotesOverTime,
         timeLabels,
-        [{ label: 'Total Votes', data: cumulativeVoteCounts, color: 'rgba(22, 216, 174, 1)' }], // Steemit green/cyan to match efficiency scatter
-        'Votes',
-        false
+        [{ label: graphTitles.totalVotes, data: cumulativeVoteCounts, color: 'rgba(22, 216, 174, 1)' }], // Steemit green/cyan to match efficiency scatter
+        graphLabels.votes,
+        false,
+        user_lang
     );
 };

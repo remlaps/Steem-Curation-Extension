@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4-beta] - 2026-04-25
+
+### Changed
+- Added steemit.steemapps.com to the manifest.json.
+
+### Fixed
+- Runaway memory consumption when editing a preexisting post
+- Debounced chart refresh activity when viewing/editing a post
+- Possible fix of problem with posts not getting highlighted correctly after certain click sequences(?)
+
 ## [0.5.3-beta] - 2026-01-25
 - Added voter efficiency graphs and stats in the voter dropdown list of a post.
 - Refactored vote-related functions into votes.js file.
