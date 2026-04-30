@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [0.5.4-beta] - 2026-04-25
+
+### Changed
+- Added steemit.steemapps.com to the manifest.json.
+
 ### Fixed
 - Runaway memory consumption when editing a preexisting post
 - Debounced chart refresh activity when viewing/editing a post
