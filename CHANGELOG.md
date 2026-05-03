@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.5-beta] - 2026-05-02
+
+### Fixed
+- Eliminated duplicate accounts from "feed reach" and "price per feed" calculations using unique account sets and SDS API.
+- Fixed data bleed-through issue where post-payout data persisted on repurposed DOM nodes when navigating between feeds.
+
 ## [0.5.4-beta] - 2026-04-25
 
 ### Changed

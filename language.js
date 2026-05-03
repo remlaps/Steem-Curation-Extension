@@ -1,5 +1,6 @@
 const detectUserLanguage = () => {
-    return document.querySelector('.SidePanel select.language').value
+    const select = document.querySelector('.SidePanel select.language');
+    return select ? select.value : 'en';
 };
 
 class UnsupportedLanguageError extends Error {

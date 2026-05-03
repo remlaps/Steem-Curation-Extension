@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "version": "0.5.4",
-  "version_name": "0.5.4 Beta",
+  "version": "0.5.5",
+  "version_name": "0.5.5 Beta",
   "name": "Steem Curation Extension",
   "description": "Provide supplemental information for curators on Steem/Condenser based web sites.",
   "icons": { 
@@ -13,6 +13,9 @@
   "host_permissions": [
     "https://sds.steemworld.org/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": [

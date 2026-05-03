@@ -1,3 +1,7 @@
 April 30, 2026
 [ ] - Make sure all replies in a thread have the word count, reading time, footer highlighting, and supplemental voter information.
 [ ] - Eliminate unneccessary logging, and get rid of ERROR level logging where it's not needed.
+
+May 2, 2026
+[x] - Eliminate duplicate accounts from the "feed reach" and "price per feed" calculations.
+[x] - Obscure BUG fix: When a post-payout post is pinned to the "All Posts", some data bleeds through to the post in the same position when the "My Friends" feed is clicked.

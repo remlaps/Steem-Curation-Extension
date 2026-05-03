@@ -184,11 +184,9 @@ async function isFollowing(steemApi, follower, following) {
     const url = steemApi;
     const method = "condenser_api.get_following";
     try {
-        const response = await fetch(`${url}`, {
+        const data = await fetchProxy(url, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 jsonrpc: "2.0",
                 method,
@@ -196,7 +194,6 @@ async function isFollowing(steemApi, follower, following) {
                 id: 1
             })
         });
-        const data = await response.json();
         const result = data.result;
         let isFollowing = false;
         if (result.length > 0 && result[0].following === following) {

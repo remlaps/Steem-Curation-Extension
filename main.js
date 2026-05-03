@@ -305,6 +305,23 @@ async function getVotingPower(username, maxRetries = 3) {
     }
 }
 
+function setupFeedNavigation() {
+    const feedsNav = document.getElementById('FeedsNavigation');
+    if (feedsNav && !feedsNav.dataset.sceObserved) {
+        feedsNav.addEventListener('click', (e) => {
+            if (e.target.closest('a')) {
+                // When switching feeds, clear our custom DOM markers so that
+                // repurposed DOM nodes are correctly re-processed.
+                document.querySelectorAll('#past_payout').forEach(el => el.removeAttribute('id'));
+                document.querySelectorAll('#beneficiary-item').forEach(el => el.remove());
+            }
+        });
+        feedsNav.dataset.sceObserved = 'true';
+    }
+}
+
+setupFeedNavigation = withSilentMutations(setupFeedNavigation);
+
 // Should this be repeated with a timer?
 fetch(urlRequestTransfers).then(function (response) {
     return response.json();
@@ -338,6 +355,7 @@ const runOncePerBatch = () => {
     try {
         addButtonsToSummaries();
         modifyUserElement();
+        setupFeedNavigation();
         highLight();
         removeCondenserResteemToggle();
         updateResteemVisibility();
@@ -404,6 +422,10 @@ const sceMutationObserver = () => {
     // Immediate response for URL changes, or forced run if debounce is being stalled by constant mutations
     if (urlChanged || (now - lastRunTime > MAX_WAIT)) {
         lastUrl = window.location.href;
+        // Clear custom DOM markers on URL change to prevent data bleed-through 
+        // between different feeds sharing the same DOM structure.
+        document.querySelectorAll('#past_payout').forEach(el => el.removeAttribute('id'));
+        document.querySelectorAll('#beneficiary-item').forEach(el => el.remove());
         lastRunTime = now;
         clearTimeout(timeoutId);
         timeoutId = null;

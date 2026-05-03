@@ -25,17 +25,18 @@ function checkAndUpdateAnchorColors() {
 checkAndUpdateAnchorColors = withSilentMutations(checkAndUpdateAnchorColors);
 
 async function showOverlay(postInfo, curatorOverlayAnchor, user_lang = 'en') {
-    // Clear any existing overlay first
-    if (currentOverlay) {
-        currentOverlay.remove();
-        currentOverlay = null;
-    }
+    clearAllOverlays();
 
     // Create new overlay
     const overlay = document.createElement('div');
     overlay.className = 'custom-overlay-pane';
     overlay.style.backgroundColor = bodyBackgroundColor;
     overlay.style.color = bodyFontColor;
+    overlay.innerHTML = '<div class="overlay-content">Loading...</div>';
+    
+    curatorOverlayAnchor.parentElement.appendChild(overlay);
+    overlay.style.display = 'block';
+    currentOverlay = overlay;
 
     const overlayContent = document.createElement('div');
     overlayContent.classList.add('overlay-content');
@@ -50,12 +51,15 @@ async function showOverlay(postInfo, curatorOverlayAnchor, user_lang = 'en') {
         console.debug(`postInfo not set: ${postInfo}`);
     }
 
-    let pending_payout_value, total_paid, botVoteCount, botVotePct, organicValue, formattedOrganicValue,
-        wordCount, readingTime, category, postMetaData, links, tags, images, imageLength, linksLength,
-        tagsLength, uniqueTags, tagString, depth=-1;
+    let pending_payout_value = 0, total_paid = 0, totalValue = 0, botVoteCount = 0, botVotePct = 0, steemitVoteCount = 0, steemitVotePct = 0,
+        organicValue = 0, formattedOrganicValue = "0.00", wordCount = 0, readingTime = 0, 
+        category = "", imageLength = 0, linksLength = 0, tagsLength = 0, tagString = "", depth = -1;
 
+    let result;
     try {
         result = await getContent(author, permlink);
+        if (!result) throw new Error("Content not found");
+
         pending_payout_value = parseFloat(result.pending_payout_value);
         total_paid = 2 * parseFloat(result.curator_payout_value);
         totalValue = pending_payout_value + total_paid;
@@ -68,14 +72,14 @@ async function showOverlay(postInfo, curatorOverlayAnchor, user_lang = 'en') {
         formattedOrganicValue = organicValue.toFixed(2);
         wordCount = getWordCount(result.body);
         readingTime = getReadingTime(wordCount);
-        category = result.category;
-        postMetaData = JSON.parse(result.json_metadata);
-        links = postMetaData.links;
-        tags = postMetaData.tags;
-        images = postMetaData.image;
+        category = result.category || "";
+        const postMetaData = result.json_metadata ? JSON.parse(result.json_metadata) : {};
+        const links = postMetaData.links;
+        const tags = postMetaData.tags;
+        const images = postMetaData.image;
         imageLength = images ? images.length : 0;
         linksLength = links ? links.length : 0;
-        uniqueTags = [...new Set([category, ...(tags || [])])].sort();
+        const uniqueTags = [...new Set([category, ...(tags || [])])].filter(Boolean).sort();
         tagsLength = uniqueTags.length;
         tagString = uniqueTags.slice(0, 10).join(", ");
         depth = result.depth;
@@ -83,53 +87,82 @@ async function showOverlay(postInfo, curatorOverlayAnchor, user_lang = 'en') {
         console.warn("Error:", error);
     }
 
-    let resteemers, resteemLength;
+    let resteemers = [], resteemLength = 0;
     try {
-        sdsResponse = await getResteems(author, permlink);
-        resteemers = sdsResponse.result.rows.map(row => row[1]);
-        resteemLength = resteemers ? resteemers.length : 0;
+        const sdsResponse = await getResteems(author, permlink);
+        if (sdsResponse?.result?.rows) {
+            resteemers = sdsResponse.result.rows.map(row => row[1]);
+            resteemLength = resteemers.length;
+        }
         console.debug(resteemers);
     } catch (error) {
         console.warn(error);
     }
 
     // Execute network calls in parallel
-    const [
-        accountInfo,
-        subscriberCount, 
-        followerCount, 
-        resteemReach, 
-        {commentCount, postCount, replyCount}
-    ] = await Promise.all([
-        getAccountInfo(steemApi, author),
-        category.match("hive-*") ? getCommunitySubscribersFromAPI(steemApi, category, "") : 0,
-        getFollowerCountFromAPI(steemApi, author),
-        calculateResteemReach(steemApi, resteemers, author),
-        getPostAndCommentCountsForAccount(author)
-    ]);
-    
-    const feedReach = ( depth === 0 ) ? subscriberCount + followerCount + resteemReach : 0;
+    const uniqueReachSet = new Set();
+
+    let accountInfo, communitySubscribers = [], authorFollowers = [], 
+        commentCount = 0, postCount = 1, replyCount = 0;
+
+    try {
+        const statsPromise = getPostAndCommentCountsForAccount(author);
+        const results = await Promise.allSettled([
+            getAccountInfo(steemApi, author),
+            (category && category.startsWith("hive-")) ? getCommunitySubscriberNamesSDS(category) : Promise.resolve([]),
+            getFollowerNamesSDS(author),
+            statsPromise
+        ]);
+
+        accountInfo = results[0].status === 'fulfilled' ? results[0].value : null;
+        communitySubscribers = results[1].status === 'fulfilled' ? results[1].value : [];
+        authorFollowers = results[2].status === 'fulfilled' ? results[2].value : [];
+        
+        if (results[3].status === 'fulfilled') {
+            const stats = results[3].value;
+            commentCount = stats.commentCount;
+            postCount = stats.postCount || 1;
+            replyCount = stats.replyCount;
+        }
+    } catch (e) {
+        console.warn("Overlay network aggregation failed:", e);
+    }
+
+    authorFollowers.forEach(name => uniqueReachSet.add(name));
+    communitySubscribers.forEach(name => uniqueReachSet.add(name));
+
+    if (depth === 0) {
+        try {
+            await calculateResteemReach(resteemers, author, uniqueReachSet);
+        } catch (e) {
+            console.warn("Could not calculate complete resteem reach due to network error:", e);
+        }
+    }
+
+    // Use loose equality or Number cast to handle cases where API returns depth as a string
+    const feedReach = ( Number(depth) === 0 ) ? uniqueReachSet.size : 0;
     const dollarsPerFeed = ( feedReach === 0 ) ? "---" : (totalValue / feedReach).toFixed(5);
 
     /** Wallet information */
-    const vestingDetails = getVestingDetails(accountInfo);
-    const ownVests = vestingDetails.vesting_shares;
-    const effectiveVests = vestingDetails.vesting_shares - vestingDetails.delegated_vesting_shares + vestingDetails.received_vesting_shares;
-    const pendingWithdrawals = (vestingDetails.to_withdraw - vestingDetails.withdrawn);
+    const vestingDetails = accountInfo ? getVestingDetails(accountInfo) : null;
+    const ownVests = vestingDetails?.vesting_shares || 0;
+    const effectiveVests = ownVests - (vestingDetails?.delegated_vesting_shares || 0) + (vestingDetails?.received_vesting_shares || 0);
+    const pendingWithdrawals = ((vestingDetails?.to_withdraw || 0) - (vestingDetails?.withdrawn || 0));
     const ownLevel = getVestingLevel(ownVests);
     const effectiveLevel = getVestingLevel(effectiveVests);
     const classDisplay = formatVestingLevels ( ownLevel, effectiveLevel );
     const powerdownPct = getPowerdownPercentage(pendingWithdrawals, ownVests);
 
     // Comments & replies per week of account life
-    const created=accountInfo.result[0].created;
+    const created = accountInfo?.result?.[0]?.created || new Date().toISOString();
     const ageInDays=accountAge(created) / (1000 * 60 * 60 * 24);  // age in weeks (approx.)
     const commentsPerWeek = commentCount / (7 * ageInDays);
     const repliesPerWeek = replyCount / (7 * ageInDays);
 
     const curationLabels = getCurationOverlayInLang(user_lang);
-    steemitVoteLabel = steemitVoteCount === 1 ? curationLabels.vote : curationLabels.votes;
+    const steemitVoteLabel = steemitVoteCount === 1 ? curationLabels.vote : curationLabels.votes;
 
+    overlay.innerHTML = '';
     overlayContent.innerHTML = `
         <table>
             <tr>
@@ -159,7 +192,8 @@ async function showOverlay(postInfo, curatorOverlayAnchor, user_lang = 'en') {
                     <ul>
                         <li><b>${curationLabels.bots}</b> ${botVoteCount} / ${botVotePct}%</li>
                         <li><b>${curationLabels.steemit}</b> ${steemitVoteCount} ${steemitVoteLabel} / ${steemitVotePct}%</li>
-                        <li><b>Organic value</b>:</b> ${formattedOrganicValue} SBD</li>
+                        <li><b>${curationLabels.organicValue}:</b> ${formattedOrganicValue} SBD</li>
+                    </ul>
                 </td>
             </tr>
             <tr>
@@ -185,11 +219,6 @@ async function showOverlay(postInfo, curatorOverlayAnchor, user_lang = 'en') {
     `;
 
     overlay.appendChild(overlayContent);
-
-    // Track the new overlay
-    currentOverlay = overlay;
-    curatorOverlayAnchor.parentElement.appendChild(overlay);
-    overlay.style.display = 'block';
     return overlay;
 }
 
@@ -220,10 +249,12 @@ function addButtonsToSummaries() {
             const overlayContainer = document.createElement('div');
             overlayContainer.className = 'overlay-container';
 
-            const curatorOverlayAnchor = document.createElement('a');
+            const curatorOverlayAnchor = document.createElement('span');
             curatorOverlayAnchor.className = 'curator-custom-anchor';
             curatorOverlayAnchor.textContent = curationLabels.curationInfo;
             curatorOverlayAnchor.style.color = bodyFontColor;
+            curatorOverlayAnchor.style.cursor = 'pointer';
+            curatorOverlayAnchor.style.textDecoration = 'underline';
 
             overlayContainer.appendChild(curatorOverlayAnchor);
             header.appendChild(overlayContainer);
@@ -249,8 +280,7 @@ function addButtonsToSummaries() {
                 }
 
                 if (link && link.href) {
-                    curatorOverlayAnchor.href = link.href;
-                    const result = extractAuthorAndPermlink(curatorOverlayAnchor.href);
+                    const result = extractAuthorAndPermlink(link.href);
                     const currentLang = detectUserLanguage() || 'en';
                     overlayTimeout = setTimeout(async () => {
                         overlayPromise = showOverlay(result, curatorOverlayAnchor, currentLang);
@@ -297,11 +327,9 @@ function extractAuthorAndPermlink(url) {
 }
 
 async function getContent(author, permlink) {
-    const response = await fetch(steemApi, {
+    const data = await fetchProxy(steemApi, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
             jsonrpc: "2.0",
             method: "condenser_api.get_content",
@@ -310,16 +338,13 @@ async function getContent(author, permlink) {
         })
     });
 
-    const data = await response.json();
     return data.result;
 }
 
 async function getCommunityInfo(apiEndpoint, community, observer = "") {
-    const response = await fetch(apiEndpoint, {
+    const result = await fetchProxy(apiEndpoint, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             jsonrpc: '2.0',
             method: 'bridge.get_community',
@@ -331,7 +356,6 @@ async function getCommunityInfo(apiEndpoint, community, observer = "") {
         })
     });
 
-    const result = await response.json();
     return result.result;
 }
 
@@ -347,11 +371,9 @@ async function getCommunitySubscribersFromAPI(apiEndpoint, community, observer =
 }
 
 async function getFollowCount(apiEndpoint, account) {
-    const response = await fetch(apiEndpoint, {
+    const result = await fetchProxy(apiEndpoint, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             jsonrpc: '2.0',
             method: 'condenser_api.get_follow_count',
@@ -360,7 +382,6 @@ async function getFollowCount(apiEndpoint, account) {
         })
     });
 
-    const result = await response.json();
     return result.result;
 }
 
@@ -373,21 +394,18 @@ async function getFollowerCountFromAPI(apiEndpoint, account) {
     return followCountResult.follower_count;
 }
 
-async function calculateResteemReach(steemApi, resteemerList, author, initialFeedReach = 0) {
-    let feedReach = initialFeedReach;
-
+async function calculateResteemReach(resteemerList, author, uniqueReachSet) {
+    if (!resteemerList || !Array.isArray(resteemerList)) return;
     const promises = resteemerList.map(async (resteemer) => {
         if ( resteemer != author ) {
-            const resteemFeed = await getFollowerCountFromAPI(steemApi, resteemer);
-            console.debug(`Resteemer: ${resteemer}, feedReach: ${feedReach}, resteemFeed: ${resteemFeed}`);
-            feedReach += resteemFeed;
+            const followers = await getFollowerNamesSDS(resteemer);
+            followers.forEach(name => uniqueReachSet.add(name));
         } else {
             console.debug (`Skipping ${author}`);
         }
     });
 
     await Promise.all(promises);
-    return feedReach;
 }
 
 const getPostAndCommentCountsForAccount = async (accountName) => {
@@ -405,11 +423,9 @@ const getPostAndCommentCounts = (extendedStats) => {
 
 async function getAccountInfo(steemApi, username) {
     try {
-        const response = await fetch(steemApi, {
+        return await fetchProxy(steemApi, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 jsonrpc: '2.0',
                 method: 'condenser_api.get_accounts',
@@ -417,8 +433,6 @@ async function getAccountInfo(steemApi, username) {
                 id: 1
             })
         });
- 
-        return await response.json();
     } catch (error) {
         console.error('Error fetching account info:', error);
         throw error;
