@@ -17,6 +17,10 @@ let USER_LANGUAGE;
 const vpCache = new Map();
 const VP_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+// Cache for follow status (10 minute TTL)
+const followCache = new Map();
+const FOLLOW_CACHE_TTL = 10 * 60 * 1000;
+
 /*
  *  The main logic is in highLight() and handleProfileDropdownClick()
  * o highlight()
@@ -234,6 +238,54 @@ function getAddress(elem) {
     return link ? link : null;
 }
 
+/**
+ * Checks if the target user follows the logged-in user via Steem API.
+ * Results are cached to minimize network overhead.
+ */
+async function checkFollowsMe(targetUser, currentUser) {
+    const cacheKey = `${targetUser}_follows_${currentUser}`;
+    const cached = followCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < FOLLOW_CACHE_TTL) return cached.value;
+
+    try {
+        const data = await fetchProxy(steemApi, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                method: 'condenser_api.get_following',
+                params: [targetUser, currentUser, 'blog', 1],
+                id: 1
+            })
+        });
+        const follows = data?.result?.[0]?.following === currentUser;
+        followCache.set(cacheKey, { value: follows, timestamp: Date.now() });
+        return follows;
+    } catch (e) { return null; }
+}
+
+/**
+ * Attaches listeners to user links to display follow status on hover.
+ */
+function initFollowStatusHandlers() {
+    const currentUser = getUsername();
+    if (!currentUser) return;
+
+    const userLinks = document.querySelectorAll('a[href^="/@"]:not([data-sce-follow])');
+    userLinks.forEach(link => {
+        const targetUser = link.getAttribute('href').split('/@')[1]?.split('/')[0];
+        if (!targetUser || targetUser === currentUser) return;
+
+        link.setAttribute('data-sce-follow', 'observed');
+        link.addEventListener('mouseenter', async () => {
+            const follows = await checkFollowsMe(targetUser, currentUser);
+            if (follows === null) return;
+            const statusText = follows ? "follows you" : "does not follow you";
+            link.title = (link.title ? link.title + " \n" : "") + `@${targetUser} ${statusText}`;
+        }, { once: true });
+    });
+}
+
 /*
  * Network queries
  */
@@ -367,6 +419,7 @@ const runOncePerBatch = () => {
             updatePayoutValue();
         }
 
+        initFollowStatusHandlers();
         addUserVpRing_silent();
 
         // Re-initialize post features when on a post page (handles React re-renders from language/theme changes)

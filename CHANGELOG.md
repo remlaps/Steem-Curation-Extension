@@ -6,8 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.5.5-beta] - 2026-05-02
+## [0.6.0-beta] - 2026-05-31
+### Added
+- Follow status tooltips: Hovering over any user link now shows if they follow the logged-in user.
+- 10-minute caching for follow status to optimize performance.
 
+## [0.5.5-beta] - 2026-05-02
 ### Fixed
 - Eliminated duplicate accounts from "feed reach" and "price per feed" calculations using unique account sets and SDS API.
 - Fixed data bleed-through issue where post-payout data persisted on repurposed DOM nodes when navigating between feeds.
