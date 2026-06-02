@@ -19,7 +19,90 @@ const VP_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Cache for follow status (10 minute TTL)
 const followCache = new Map();
-const FOLLOW_CACHE_TTL = 10 * 60 * 1000;
+const FOLLOW_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+const NINETY_DAYS_SEC = 90 * 24 * 60 * 60;
+const FOLLOW_STATS_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+const activeFollowerFetches = new Set();
+
+let tooltipElement = null;
+
+/**
+ * Persistent cache helpers using chrome.storage.local to share data between tabs.
+ */
+async function getCachedData(key, ttl) {
+    if (followCache.has(key)) {
+        const entry = followCache.get(key);
+        if (Date.now() - entry.timestamp < ttl) return entry;
+    }
+    try {
+        const storageData = await chrome.storage.local.get(key);
+        if (storageData[key]) {
+            const entry = storageData[key];
+            if (Date.now() - entry.timestamp < ttl) {
+                followCache.set(key, entry);
+                return entry;
+            }
+        }
+    } catch (e) { console.debug("SCE: Cache read error:", e); }
+    return null;
+}
+
+async function setCachedData(key, value) {
+    const entry = { value, timestamp: Date.now() };
+    followCache.set(key, entry);
+    try {
+        await chrome.storage.local.set({ [key]: entry });
+    } catch (e) { console.debug("SCE: Cache write error:", e); }
+}
+
+/**
+ * Listen for storage changes from other tabs to keep the local in-memory cache in sync.
+ */
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'local') {
+        for (let [key, { newValue }] of Object.entries(changes)) {
+            if (newValue) {
+                followCache.set(key, newValue);
+                // If the updated key belongs to the user currently in the tooltip, refresh it
+                if (tooltipElement && tooltipElement.style.display === 'block' && tooltipElement.dataset.user) {
+                    const targetUser = tooltipElement.dataset.user;
+                    if (key === `stats_${targetUser}` || key === `${targetUser}_follows_${getUsername()}`) {
+                        const stats = followCache.get(`stats_${targetUser}`)?.value;
+                        const follows = followCache.get(`${targetUser}_follows_${getUsername()}`)?.value;
+                        updateFollowerTooltip(targetUser, follows !== undefined ? follows : null, stats);
+                    }
+                }
+            }
+        }
+    }
+});
+
+/**
+ * Injects CSS for the custom dynamic tooltip.
+ */
+function injectTooltipStyles() {
+    if (document.getElementById('sce-tooltip-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'sce-tooltip-styles';
+    style.textContent = `
+        .sce-custom-tooltip {
+            position: fixed;
+            background: rgba(40, 40, 40, 0.95);
+            color: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            z-index: 10000;
+            pointer-events: none;
+            white-space: pre-line;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            border: 1px solid #555;
+            font-family: sans-serif;
+            line-height: 1.4;
+        }
+    `;
+    document.head.appendChild(style);
+}
 
 /*
  *  The main logic is in highLight() and handleProfileDropdownClick()
@@ -244,8 +327,8 @@ function getAddress(elem) {
  */
 async function checkFollowsMe(targetUser, currentUser) {
     const cacheKey = `${targetUser}_follows_${currentUser}`;
-    const cached = followCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < FOLLOW_CACHE_TTL) return cached.value;
+    const cachedEntry = await getCachedData(cacheKey, FOLLOW_CACHE_TTL);
+    if (cachedEntry) return cachedEntry.value;
 
     try {
         const data = await fetchProxy(steemApi, {
@@ -259,7 +342,7 @@ async function checkFollowsMe(targetUser, currentUser) {
             })
         });
         const follows = data?.result?.[0]?.following === currentUser;
-        followCache.set(cacheKey, { value: follows, timestamp: Date.now() });
+        await setCachedData(cacheKey, follows);
         return follows;
     } catch (e) { return null; }
 }
@@ -270,20 +353,225 @@ async function checkFollowsMe(targetUser, currentUser) {
 function initFollowStatusHandlers() {
     const currentUser = getUsername();
     if (!currentUser) return;
+    injectTooltipStyles();
 
     const userLinks = document.querySelectorAll('a[href^="/@"]:not([data-sce-follow])');
     userLinks.forEach(link => {
         const targetUser = link.getAttribute('href').split('/@')[1]?.split('/')[0];
-        if (!targetUser || targetUser === currentUser) return;
+        if (!targetUser) return;
 
         link.setAttribute('data-sce-follow', 'observed');
-        link.addEventListener('mouseenter', async () => {
-            const follows = await checkFollowsMe(targetUser, currentUser);
-            if (follows === null) return;
-            const statusText = follows ? "follows you" : "does not follow you";
-            link.title = (link.title ? link.title + " \n" : "") + `@${targetUser} ${statusText}`;
-        }, { once: true });
+
+        link.addEventListener('mouseenter', (e) => {
+            if (!tooltipElement) {
+                tooltipElement = document.createElement('div');
+                tooltipElement.className = 'sce-custom-tooltip';
+                document.body.appendChild(tooltipElement);
+            }
+            tooltipElement.style.display = 'block';
+            tooltipElement.dataset.user = targetUser;
+            
+            // Position initially
+            updateTooltipPosition(e);
+
+            // Kick off data retrieval
+            handleTooltipData(link, targetUser, currentUser);
+        });
+
+        link.addEventListener('mousemove', updateTooltipPosition);
+
+        link.addEventListener('mouseleave', () => {
+            if (tooltipElement) tooltipElement.style.display = 'none';
+        });
+        
+        // Clear native title to prevent conflict
+        if (link.title) link.setAttribute('data-sce-old-title', link.title);
+        link.title = ""; 
     });
+}
+
+function updateTooltipPosition(e) {
+    if (!tooltipElement) return;
+    const padding = 15;
+    let x = e.clientX + padding;
+    let y = e.clientY + padding;
+
+    // Flip to left/top if overflow
+    if (x + 200 > window.innerWidth) x = e.clientX - tooltipElement.offsetWidth - padding;
+    if (y + 150 > window.innerHeight) y = e.clientY - tooltipElement.offsetHeight - padding;
+
+    tooltipElement.style.left = `${x}px`;
+    tooltipElement.style.top = `${y}px`;
+}
+
+/**
+ * Coordinates fetching and refreshing the UI.
+ */
+async function handleTooltipData(link, targetUser, currentUser) {
+    // 1. Initial State
+    const cacheKey = `stats_${targetUser}`;
+    const cachedEntry = await getCachedData(cacheKey, FOLLOW_STATS_CACHE_TTL);
+    let stats = cachedEntry?.value;
+    let follows = await checkFollowsMe(targetUser, currentUser);
+    updateFollowerTooltip(targetUser, follows, stats);
+
+    // 2. Start (or join) stats fetch
+    // Passing targetUser allows the fetch loop to update the global tooltipElement 
+    // if the user is still hovering over this specific account.
+    await getFollowerExtendedStats(targetUser);
+}
+
+/**
+ * Helper to build and set the tooltip title string.
+ */
+function updateFollowerTooltip(targetUser, follows, stats) {
+    if (!tooltipElement || tooltipElement.dataset.user !== targetUser) return;
+
+    const isSelf = targetUser === getUsername();
+    const statusText = isSelf ? "" : (follows === null ? "" : (follows ? "follows you" : "does not follow you"));
+    
+    let content = `<strong>@${targetUser}</strong>\n${statusText ? `<span style="color: ${follows ? '#4caf50' : '#aaa'}">${statusText}</span>\n` : ''}`;
+    
+    if (stats) {
+        content += `\nFollowers: ${stats.count.toLocaleString()}`;
+        if (stats.processedCount !== undefined) {
+            const isDone = stats.full;
+            content += `\nActive (90d): ${stats.activeCount.toLocaleString()}${isDone ? '' : '...'}`;
+            content += `\nMedian Rep: ${stats.medianRep.toFixed(1)}`;
+            content += `\nActive Median Rep: ${stats.medianActiveRep.toFixed(1)}`;
+            
+            if (!isDone) {
+                const pct = Math.round((stats.processedCount / stats.count) * 100);
+                content += `\n\n<small style="color:#aaa">Analyzing: ${pct}%</small>`;
+            }
+        } else if (!stats.full) {
+            content += `\n\n<small style="color:#aaa">Loading stats...</small>`;
+        }
+    }
+    tooltipElement.innerHTML = content;
+}
+
+/**
+ * Fetches extended follower statistics from Steemit API for the tooltip.
+ */
+async function getFollowerExtendedStats(targetUser) {
+    const cacheKey = `stats_${targetUser}`;
+    const cachedEntry = await getCachedData(cacheKey, FOLLOW_STATS_CACHE_TTL);
+    if (cachedEntry?.value?.full) return cachedEntry.value;
+    if (activeFollowerFetches.has(targetUser)) return cachedEntry?.value;
+
+    activeFollowerFetches.add(targetUser);
+
+    try {
+        const currentUser = getUsername();
+        const follows = await checkFollowsMe(targetUser, currentUser);
+
+        // 1. Get follower count (Fast)
+        const countResp = await fetchProxy(steemApi, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                jsonrpc: '2.0',
+                method: 'condenser_api.get_follow_count',
+                params: [targetUser],
+                id: 1
+            })
+        });
+        const totalCount = countResp?.result?.follower_count || 0;
+
+        // Cache partial data immediately so the first hover can at least show the count
+        let runningStats = { count: totalCount, processedCount: 0, activeCount: 0, medianRep: 25, medianActiveRep: 25, full: false };
+        await setCachedData(cacheKey, runningStats);
+        updateFollowerTooltip(targetUser, follows, runningStats);
+
+        if (totalCount === 0) return runningStats;
+
+        let activeCount = 0;
+        const reputations = [];
+        const activeReputations = [];
+        let startFollower = "";
+        const limit = 100; // condenser_api batch size
+        const now = Date.now() / 1000;
+
+        const calcMedian = (arr) => {
+            if (arr.length === 0) return 25;
+            const sorted = [...arr].sort((a, b) => a - b);
+            const rawMedian = sorted[Math.floor(sorted.length / 2)];
+            return rawMedian > 0 ? (Math.log10(rawMedian) - 9) * 9 + 25 : 25;
+        };
+
+        // 2. Iterate through follower list (Slow)
+        while (true) {
+            const followersResp = await fetchProxy(steemApi, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jsonrpc: '2.0',
+                    method: 'condenser_api.get_followers',
+                    params: [targetUser, startFollower, 'blog', limit],
+                    id: 1
+                })
+            });
+
+            const page = followersResp?.result || [];
+            if (page.length === 0) break;
+
+            // condenser_api includes the start account in the results, so we slice it off on subsequent pages
+            const names = (startFollower === "" ? page : page.slice(1)).map(f => f.follower);
+            if (names.length === 0) break;
+
+            // 3. Fetch account details for the batch to get reputation and last activity
+            const accountsResp = await fetchProxy(steemApi, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jsonrpc: '2.0',
+                    method: 'condenser_api.get_accounts',
+                    params: [names],
+                    id: 1
+                })
+            });
+
+            const accounts = accountsResp?.result || [];
+            accounts.forEach(acc => {
+                const rep = parseFloat(acc.reputation);
+                const lastRoot = new Date(acc.last_root_post + 'Z').getTime() / 1000;
+                const lastVote = new Date(acc.last_vote_time + 'Z').getTime() / 1000;
+                const lastActive = Math.max(lastRoot, lastVote);
+
+                if (rep > 0) reputations.push(rep);
+                if (now - lastActive < NINETY_DAYS_SEC) {
+                    activeCount++;
+                    if (rep > 0) activeReputations.push(rep);
+                }
+            });
+
+            // Update running stats for real-time refresh
+            runningStats.processedCount += page.length;
+            runningStats.activeCount = activeCount;
+            runningStats.medianRep = calcMedian(reputations);
+            runningStats.medianActiveRep = calcMedian(activeReputations);
+            
+            // Throttle storage writes to avoid rate limits (write every 500 or on completion)
+            if (runningStats.processedCount % 500 === 0) {
+                await setCachedData(cacheKey, runningStats);
+            }
+            updateFollowerTooltip(targetUser, follows, runningStats);
+
+            startFollower = page[page.length - 1].follower;
+            if (page.length < limit) break;
+        }
+
+        runningStats.full = true;
+        await setCachedData(cacheKey, runningStats);
+        updateFollowerTooltip(targetUser, follows, runningStats);
+
+        return runningStats;
+    } catch (e) {
+        return null;
+    } finally {
+        activeFollowerFetches.delete(targetUser);
+    }
 }
 
 /*
