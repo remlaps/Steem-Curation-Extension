@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.1-beta] - 2026-06-02
+### Fixed
+- Resolved an issue where the follower analysis tooltip could become "stuck" and remain visible after the mouse moved away from the link.
+- Improved tooltip overflow logic by using dynamic dimensions instead of hardcoded values, ensuring better placement at screen edges.
+
+### Changed
+- Refined tooltip targeting: now specifically triggers on post authors, comment authors, and "@-mentions" in post bodies, preventing the overlay from appearing on non-essential account links (like voter lists or sidebars).
+
 ## [0.7.0-beta] - 2026-06-01
 ### Added
 - Enhanced follower analysis tooltips: Hovering over any user link now shows total followers, 90-day active count, median reputation, and median reputation of active followers.

@@ -355,7 +355,16 @@ function initFollowStatusHandlers() {
     if (!currentUser) return;
     injectTooltipStyles();
 
-    const userLinks = document.querySelectorAll('a[href^="/@"]:not([data-sce-follow])');
+    // Target only links that refer to post or comment authors
+    const selectors = [
+        '.user__name a[href^="/@"]',          // Feeds
+        '.Author a[href^="/@"]',             // Post headers
+        '.Comment__header-user a[href^="/@"]', // Comments
+        '.MarkdownViewer a[href^="/@"]',      // Mentions in post/comment body
+        '.entry-content a[href^="/@"]'       // Alternative body selector
+    ];
+    const userLinks = document.querySelectorAll(selectors.map(s => `${s}:not([data-sce-follow])`).join(', '));
+
     userLinks.forEach(link => {
         const targetUser = link.getAttribute('href').split('/@')[1]?.split('/')[0];
         if (!targetUser) return;
@@ -380,9 +389,14 @@ function initFollowStatusHandlers() {
 
         link.addEventListener('mousemove', updateTooltipPosition);
 
-        link.addEventListener('mouseleave', () => {
-            if (tooltipElement) tooltipElement.style.display = 'none';
-        });
+        const hideTooltip = () => {
+            if (tooltipElement && tooltipElement.dataset.user === targetUser) {
+                tooltipElement.style.display = 'none';
+            }
+        };
+
+        link.addEventListener('mouseleave', hideTooltip);
+        link.addEventListener('mousedown', hideTooltip); // Hide when navigating
         
         // Clear native title to prevent conflict
         if (link.title) link.setAttribute('data-sce-old-title', link.title);
@@ -396,9 +410,12 @@ function updateTooltipPosition(e) {
     let x = e.clientX + padding;
     let y = e.clientY + padding;
 
-    // Flip to left/top if overflow
-    if (x + 200 > window.innerWidth) x = e.clientX - tooltipElement.offsetWidth - padding;
-    if (y + 150 > window.innerHeight) y = e.clientY - tooltipElement.offsetHeight - padding;
+    // Use actual dimensions for overflow calculation
+    const tooltipWidth = tooltipElement.offsetWidth || 200;
+    const tooltipHeight = tooltipElement.offsetHeight || 150;
+
+    if (x + tooltipWidth > window.innerWidth) x = e.clientX - tooltipWidth - padding;
+    if (y + tooltipHeight > window.innerHeight) y = e.clientY - tooltipHeight - padding;
 
     tooltipElement.style.left = `${x}px`;
     tooltipElement.style.top = `${y}px`;
