@@ -11,7 +11,8 @@
     "128": "images/icon128.png"
   },
   "host_permissions": [
-    "https://sds.steemworld.org/*"
+    "https://sds.steemworld.org/*",
+    "https://api.steemit.com/*"
   ],
   "background": {
     "service_worker": "background.js"
