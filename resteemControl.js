@@ -162,21 +162,35 @@ async function updateResteemVisibility(username) {
 // Ensure we silence mutations while we toggle visibility (covers async inner work)
 updateResteemVisibility = withSilentMutationsAsync(updateResteemVisibility);
 
-const cacheExpiration = 30 * 60 * 1000; // 30 minutes in milliseconds
+const cacheExpiration = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
 let followingCache = null;
+const FOLLOWING_CACHE_KEY = 'resteem_following_cache';
+
+/**
+ * Sync the following cache if updated by other tabs.
+ */
+if (typeof chrome !== 'undefined' && chrome.storage) {
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'local' && changes[FOLLOWING_CACHE_KEY]) {
+            const { newValue } = changes[FOLLOWING_CACHE_KEY];
+            if (newValue) {
+                followingCache = new Map(newValue.value);
+            }
+        }
+    });
+}
 
 async function isFollowing(steemApi, follower, following) {
     const cacheKey = `${follower}:${following}`;
 
-    // Check if the cache is loaded in memory
     if (!followingCache) {
-        // If the cache is not loaded, try to load it from local storage
-        followingCache = await getCachedResult();
+        const stored = await getCachedResult();
+        followingCache = stored ? stored : new Map();
     }
 
-    // Check the cache
-    if (followingCache && followingCache.has(cacheKey) && Date.now() - followingCache.get(cacheKey).timestamp < cacheExpiration) {
-        return followingCache.get(cacheKey).result;
+    const cachedEntry = followingCache.get(cacheKey);
+    if (cachedEntry && Date.now() - cachedEntry.timestamp < cacheExpiration) {
+        return cachedEntry.result;
     }
 
     // If the cache is not found or expired, fetch the data from the API
@@ -200,32 +214,31 @@ async function isFollowing(steemApi, follower, following) {
             isFollowing = true;
         }
 
-        // Update the in-memory cache
-        if (!followingCache) {
-            followingCache = new Map();
-        }
         followingCache.set(cacheKey, {
             result: isFollowing,
             timestamp: Date.now()
         });
 
-        // Save the updated cache to local storage
         await setCachedResult(followingCache);
-
         return isFollowing;
     } catch (error) {
-        throw error;
+        console.error("SCE: Error checking following status:", error);
+        return false;
     }
 }
 
 async function getCachedResult() {
-    const cachedValue = localStorage.getItem('followingCache');
-    if (cachedValue) {
-        return new Map(JSON.parse(cachedValue));
+    if (typeof chrome === 'undefined' || !chrome.storage) return null;
+    const data = await chrome.storage.local.get(FOLLOWING_CACHE_KEY);
+    const entry = data[FOLLOWING_CACHE_KEY];
+    if (entry && Date.now() - entry.timestamp < cacheExpiration) {
+        return new Map(entry.value);
     }
     return null;
 }
 
 async function setCachedResult(cache) {
-    localStorage.setItem('followingCache', JSON.stringify(Array.from(cache.entries())));
+    if (typeof chrome === 'undefined' || !chrome.storage) return;
+    const entry = { value: Array.from(cache.entries()), timestamp: Date.now() };
+    await chrome.storage.local.set({ [FOLLOWING_CACHE_KEY]: entry });
 }

@@ -12,7 +12,7 @@ Specifically, it highlights posts that are promoted by burning Steem Dollars (SB
 - Enables toggling of resteem visibility
 - Displays voting power in the Profile menu
 - Provides a curator overlay in Steem feeds with information about a post, author, and the author's follower network.
-- Displays follow status (whether a user follows you) as a tooltip when hovering over account links.
+- Displays enhanced follow status and follower analysis (count, 90-day activity, and median reputations) as a dynamic tooltip when hovering over account links.
 - Provides additional detailed information and visuals inside the Steem post page
 - Works on Steemit.com and other Steem-based sites using the Condenser front end.
 
@@ -105,7 +105,7 @@ Once installed, the extension will automatically highlight the relevant posts on
 - Look for the toggle option near the top/center-left of the page to control resteem visibility.
 - Your available voting power will appear in the profile dropdown menu near the top-right of the page.
 - Hover over the "Curation Info" label in feeds to see the curator overlay.
-- Hover over any user account link to see a tooltip indicating if that account follows you.
+- Hover over any user account link to see a dynamic tooltip with follow status and detailed follower statistics.
 
 ## Contributing
 

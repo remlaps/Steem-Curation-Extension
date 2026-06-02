@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0-beta] - 2026-06-01
+### Added
+- Enhanced follower analysis tooltips: Hovering over any user link now shows total followers, 90-day active count, median reputation, and median reputation of active followers.
+- Real-time analysis progress indicator for accounts with large follower lists.
+- Persistent cross-tab caching: Statistics are now shared across all open tabs and persist after page reloads using `chrome.storage.local`.
+- Support for viewing follower statistics on your own account.
+- 24-hour caching for all follow-related data to improve performance and reduce API load.
+
+### Changed
+- Replaced native browser tooltips with a custom dynamic HTML overlay to support real-time data updates while hovering.
+- Migrated follower data fetching from SDS to the official Steemit API (`condenser_api`).
+
 ## [0.6.0-beta] - 2026-05-31
 ### Added
 - Follow status tooltips: Hovering over any user link now shows if they follow the logged-in user.
