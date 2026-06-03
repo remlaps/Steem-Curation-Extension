@@ -162,7 +162,7 @@ const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxi
             },
         });
     } else {
-        console.error(`Element with class "${containerClass}" not found!`);
+        console.warn(`SCE: Element with class "${containerClass}" not found!`);
     }
 };
 
@@ -204,7 +204,7 @@ const formatScaledTimeLabel = (elapsedMs, maxElapsedMs, user_lang = 'en') => {
 const createLineGraphWithClickableDots = (containerClass, canvasId, title, labels, data, yAxisLabel, posts, user_lang = 'en') => {
     const graphContainer = document.querySelector(`.${containerClass}`);
     if (!graphContainer) {
-        console.error(`Graph container not found: ${containerClass}`);
+        console.warn(`SCE: Graph container not found: ${containerClass}`);
         return;
     }
 
@@ -716,7 +716,7 @@ class EfficiencyScatter {
 
         if (tsMs < this._minPointTs){
             this._minPointTs = tsMs;
-            console.log(tsMs)
+            console.debug(tsMs)
             this.chart.options.scales.x.min = tsMs - 5
         }
 
@@ -726,7 +726,7 @@ class EfficiencyScatter {
         try {
             this.chart.update('none');
         } catch (e) {
-            console.error('Chart update failed:', e);
+            console.warn('SCE: Chart update failed:', e);
         }
     }
 
@@ -927,7 +927,7 @@ const loadPostValueGraph = (post, user_lang = 'en') => {
     );
 
     if (activeVotes.length === 0) {
-        console.log('SCE:No votes during the payout period to display.');
+        console.debug('SCE: No votes during the payout period to display.');
         return;
     }
 
@@ -1016,7 +1016,7 @@ const loadPostVoteGraph = (post, user_lang = 'en') => {
     );
 
     if (activeVotes.length === 0) {
-        console.log('SCE: No votes to display.');
+        console.debug('SCE: No votes to display.');
         return;
     }
 

@@ -32,7 +32,7 @@ const loadPost = async (p_info, language) => {
             }
 
         } else {
-            console.log('There was a problem loading the post data!');
+            console.warn('SCE: There was a problem loading the post data!');
         }
         return { "author": author, "permlink": permlink }
     } else {
@@ -48,10 +48,8 @@ const loadPost = async (p_info, language) => {
  * @param {string} user_lang - The user's language code.
  */
 const displayWordCountAndReadingTime = (containerClass, wordCount, readingTimeMinutes, user_lang = 'en') => {
-    console.log("entered function");
     const container = document.querySelector(`.${containerClass}`);
     if (!container) {
-        console.log(`Container with class "${containerClass}" not found.`);
         return;
     }
 
@@ -121,11 +119,11 @@ const displayWordCountAndReadingTime = (containerClass, wordCount, readingTimeMi
  * @param {string} user_lang - The user's language code.
  */
 const loadAuthorWeeklyEarningsGraph = async (post, user_lang = 'en') => {
-    console.log(`Fetching payouts for ${post.details.author}`);
+    console.debug(`Fetching payouts for ${post.details.author}`);
     const payouts = await getAuthorPayoutsInWeekBefore(post.details.author, post.details.created);
 
     if (payouts.length === 1) {
-        console.log("Only 1 payout in last week");
+        console.debug("Only 1 payout in last week");
         return payouts;
     } else if (payouts.length === 0) {
         return null
@@ -134,7 +132,7 @@ const loadAuthorWeeklyEarningsGraph = async (post, user_lang = 'en') => {
     // Prepare data for the graph
     const timeLabels = payouts.map((_, index) => `${index + 1}`); // Post 1, Post 2, etc.
     const payoutValues = payouts.map(payout => payout.details.total_payout_value); // Use total_value for Y-axis
-    console.log(payoutValues)
+    console.debug(payoutValues)
 
     // Create the graph
     const graphContainerClass = 'c-sidebr-market';
@@ -174,10 +172,10 @@ const loadAuthorWeeklyEarningsBarGraph = (payouts, user_lang = 'en') => {
     const organicSum = payouts.reduce((sum, payout) => sum + (payout.details.organic_payout_value || 0), 0);
     const burnSum = payouts.reduce((sum, payout) => sum + (payout.details.burn_payout_value || 0), 0);
 
-    console.log({ totalSum, organicSum, burnSum });
+    console.debug({ totalSum, organicSum, burnSum });
 
     if (totalSum === 0) {
-        console.log("Total Value 0")
+        console.debug("Total Value 0")
         return
     }
 
@@ -282,7 +280,7 @@ const displayPostResteemData = async (post, anchorClassSelector) => {
     // Set the background color of the dropdown menu, depending on dark/light mode
     dropdownMenu.style.backgroundColor = resteemDropdownBgColor;
 
-    console.log("Resteems data:", resteems);
+    console.debug("Resteems data:", resteems);
     // Populate the dropdown menu with resteemers
     resteems.forEach(resteem => {
         const resteemer = resteem[1];

@@ -1,4 +1,4 @@
-console.log("The extension is up and running...");
+console.debug("The extension is up and running...");
 
 var promotedPosts = {}; // contains all transactions for promoted posts with accounts, count, and whether self-promoted
 const urlRequestTransfers = "https://sds.steemworld.org/transfers_api/getTransfersByTypeTo/transfer/null/time/DESC/250/0";
@@ -291,7 +291,7 @@ function addText(listItem) {
         }
     }
     if (added) {
-        console.log("User added");
+        console.debug("User added");
     }
 }
 
@@ -361,17 +361,29 @@ function initFollowStatusHandlers() {
         '.Author a[href^="/@"]',             // Post headers
         '.Comment__header-user a[href^="/@"]', // Comments
         '.MarkdownViewer a[href^="/@"]',      // Mentions in post/comment body
-        '.entry-content a[href^="/@"]'       // Alternative body selector
+        '.entry-content a[href^="/@"]',       // Alternative body selector
+        '.UserNames a[href^="/@"]'            // Resteems in feeds
     ];
     const userLinks = document.querySelectorAll(selectors.map(s => `${s}:not([data-sce-follow])`).join(', '));
 
     userLinks.forEach(link => {
-        const targetUser = link.getAttribute('href').split('/@')[1]?.split('/')[0];
-        if (!targetUser) return;
+        // Verify it is a valid user link structure before observing. 
+        // We pull the actual username dynamically in handlers to support DOM reuse.
+        const initialCheck = link.getAttribute('href').split('/@')[1]?.split('/')[0];
+        if (!initialCheck) return;
 
         link.setAttribute('data-sce-follow', 'observed');
 
         link.addEventListener('mouseenter', (e) => {
+            const targetUser = link.getAttribute('href').split('/@')[1]?.split('/')[0];
+            if (!targetUser) return;
+
+            // Clear native title again to prevent conflict if React restored it on this reused node
+            if (link.title) {
+                link.setAttribute('data-sce-old-title', link.title);
+                link.title = ""; 
+            }
+
             if (!tooltipElement) {
                 tooltipElement = document.createElement('div');
                 tooltipElement.className = 'sce-custom-tooltip';
@@ -384,12 +396,13 @@ function initFollowStatusHandlers() {
             updateTooltipPosition(e);
 
             // Kick off data retrieval
-            handleTooltipData(link, targetUser, currentUser);
+            handleTooltipData(link, targetUser, getUsername());
         });
 
         link.addEventListener('mousemove', updateTooltipPosition);
 
         const hideTooltip = () => {
+            const targetUser = link.getAttribute('href').split('/@')[1]?.split('/')[0];
             if (tooltipElement && tooltipElement.dataset.user === targetUser) {
                 tooltipElement.style.display = 'none';
             }
@@ -641,7 +654,7 @@ async function getVotingPower(username, maxRetries = 3) {
                     await new Promise(resolve => setTimeout(resolve, delay));
                     continue;
                 }
-                console.warn(`Failed to fetch voting power for ${username}: ${response.statusText}`);
+                console.warn(`SCE: Failed to fetch voting power for ${username}: ${response.statusText}`);
                 return null;
             }
             const data = await response.json();
@@ -656,7 +669,7 @@ async function getVotingPower(username, maxRetries = 3) {
                 await new Promise(resolve => setTimeout(resolve, delay));
                 continue;
             }
-            console.warn(`Error fetching voting power for ${username}:`, error.message);
+            console.warn(`SCE: Error fetching voting power for ${username}:`, error.message);
             return null;
         }
     }
@@ -685,9 +698,7 @@ fetch(urlRequestTransfers).then(function (response) {
 }).then(function (data) {
     prepareData(data);
     highLight();
-}).catch(function (error) {
-    console.log("error: fetching transfers:", error);
-});
+}).catch(error => console.warn("SCE: Failed to fetch transfers:", error));
 
 /*
  * Execution and event handling
@@ -737,14 +748,14 @@ const runOncePerBatch = () => {
                     const result = await loadPost(post_info, USER_LANGUAGE || detectUserLanguage() || 'en');
                     if (result) post_info = result;
                 } catch (error) {
-                    console.error("Error loading post data in mutation observer:", error);
+                    console.warn("SCE: Error loading post data in mutation observer:", error);
                 } finally {
                     isPostLoading = false;
                 }
             })();
         }
     } catch (error) {
-        console.error("Error in mutation observer handling:", error);
+        console.warn("SCE: Error in mutation observer handling:", error);
     } finally {
         SCE_SILENT--;
     }
@@ -836,4 +847,4 @@ addButtonsToSummaries();        // New for curation info buttons
 sceMutationObserver();          // Mutation observer for new dropdown menu after login.
 createResteemToggleControl();   // Resteem checkbox
 
-console.log("The extension is done.");
+console.debug("The extension is done.");

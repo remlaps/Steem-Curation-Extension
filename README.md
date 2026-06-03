@@ -23,6 +23,7 @@ This functionality helps web site visitors to identify posts that may have recei
 - `https://steemitdev.com/*`
 - `https://steemit.steemnet.org/*`
 - `https://steemit.moecki.online/*`
+- `https://steemit.steemapps.com/*`
 
 ## Installation Instructions
 

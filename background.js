@@ -1,6 +1,6 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === 'FETCH_PROXY') {
-        console.log(`Proxying ${request.options?.method || 'GET'} request to: ${request.url}`);
+        console.debug(`Proxying ${request.options?.method || 'GET'} request to: ${request.url}`);
         fetch(request.url, request.options)
             .then(async response => {
                 const contentType = response.headers.get("content-type");
@@ -21,7 +21,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 }
             })
             .catch(error => {
-                console.error(`Fetch error for ${request.url}:`, error);
+                console.warn(`SCE: Fetch error for ${request.url}:`, error);
                 sendResponse({ error: error.message });
             });
         return true; // Keeps the message channel open for the async response

@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.2-beta] - 2026-06-03
+### Fixed
+- Resolved a data "stale-ness" issue where tooltips displayed incorrect author information when navigating between feeds. This was caused by the Single Page Application (SPA) reusing DOM nodes; handlers now dynamically retrieve identities from current element attributes.
+- Expanded follower analysis tooltip support to include user links in resteem notifications within feeds.
+### Changed
+- Minimized developer console noise by demoting informational logs to `debug` level and converting caught non-critical exceptions from `error` to `warn` across the entire codebase.
+
 ## [0.7.1-beta] - 2026-06-02
 ### Fixed
 - Resolved an issue where the follower analysis tooltip could become "stuck" and remain visible after the mouse moved away from the link.
