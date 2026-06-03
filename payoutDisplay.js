@@ -144,7 +144,7 @@ var addBeneficiaryVal = withSilentMutations(function(post, beneficiaryValue, cur
     } catch (e) {}
     let ben_text = getBeneficiaryInLanguage(lang);
 
-    console.log(csPos)
+    console.debug(csPos)
     if (csPos == "start"){
         beneficiarySpan.textContent = ben_text + currencySymb + integer + decSymb + decimal;
     } else {

@@ -6,7 +6,7 @@ function createResteemToggleControl() {
     removeCondenserResteemToggle();
     const targetContainer = document.querySelector('#content > div > div:nth-child(2) > div > div > header > nav > div.small-6.medium-8.large-7.columns.Header__buttons');
     if (!targetContainer) {
-        console.warn("Target container not found!");
+        console.warn("SCE: Resteem control target container not found!");
         return;
     }
 
@@ -47,7 +47,7 @@ function createResteemToggleControl() {
         try {
             targetContainer.appendChild(controlDiv);
         } catch (error) {
-            console.warn(`Couldn't append resteem control: ${error}`);
+            console.warn(`SCE: Couldn't append resteem control: ${error}`);
         }
 
         // Add event listener for the checkbox
@@ -76,7 +76,7 @@ function removeCondenserResteemToggle() {
             const oldControlContainer = oldCheckboxInput.closest('div'); // Or oldCheckboxInput.parentElement;
             if (oldControlContainer) {
                 oldControlContainer.style.display = 'none';
-                console.log("SCE: Hiding the pre-existing 'hideResteems' control.");
+                console.debug("SCE: Hiding the pre-existing 'hideResteems' control.");
             }
         }
     } catch (error) {
@@ -110,7 +110,7 @@ function setControlBoxVisibility(visibility) {
     if (controlBox) {
         controlBox.style.display = visibility;
     } else {
-        console.warn("Control row element with class 'sce-control' not found!");
+        console.warn("SCE: Control row element with class 'sce-control' not found!");
     }
 }
 setControlBoxVisibility = withSilentMutations(setControlBoxVisibility);
@@ -222,7 +222,7 @@ async function isFollowing(steemApi, follower, following) {
         await setCachedResult(followingCache);
         return isFollowing;
     } catch (error) {
-        console.error("SCE: Error checking following status:", error);
+        console.warn("SCE: Error checking following status:", error);
         return false;
     }
 }

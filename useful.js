@@ -22,7 +22,7 @@ function roundMinutes(date) {
     const minutes = date.getMinutes();
     const roundedMinutes = Math.round(minutes).toFixed(0); // Round the minutes to the nearest integer
     date.setMinutes(roundedMinutes, 0, 0); // Set the rounded minutes, resetting seconds and milliseconds
-    console.log(date)
+    console.debug(date)
     return date;
 }
 

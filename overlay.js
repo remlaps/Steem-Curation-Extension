@@ -84,7 +84,7 @@ async function showOverlay(postInfo, curatorOverlayAnchor, user_lang = 'en') {
         tagString = uniqueTags.slice(0, 10).join(", ");
         depth = result.depth;
     } catch (error) {
-        console.warn("Error:", error);
+        console.warn("SCE: Error loading overlay content:", error);
     }
 
     let resteemers = [], resteemLength = 0;
@@ -96,7 +96,7 @@ async function showOverlay(postInfo, curatorOverlayAnchor, user_lang = 'en') {
         }
         console.debug(resteemers);
     } catch (error) {
-        console.warn(error);
+        console.warn("SCE: Error fetching resteems:", error);
     }
 
     // Execute network calls in parallel
@@ -321,7 +321,7 @@ function extractAuthorAndPermlink(url) {
         const permlink = match[2];
         return { author, permlink };
     } else {
-        console.log(`${url} did not match.`);
+        console.debug(`${url} did not match.`);
         return null;
     }
 }
@@ -434,7 +434,7 @@ async function getAccountInfo(steemApi, username) {
             })
         });
     } catch (error) {
-        console.error('Error fetching account info:', error);
+        console.warn('SCE: Error fetching account info:', error);
         throw error;
     }
  }
