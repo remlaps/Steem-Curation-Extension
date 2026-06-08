@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.3-beta] - 2026-06-04
+### Fixed
+- Hardened XSS protection in the curation overlay by sanitizing user-defined tags before rendering.
+- Fixed a formatting typo in the v0.5.1 changelog entry.
+
 ## [0.7.2-beta] - 2026-06-03
 ### Fixed
 - Resolved a data "stale-ness" issue where tooltips displayed incorrect author information when navigating between feeds. This was caused by the Single Page Application (SPA) reusing DOM nodes; handlers now dynamically retrieve identities from current element attributes.
@@ -65,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added circle display around profile picture representing user current voting power
 - Added mutation safeguard to avoid recursive loop from vp display updates to interface
 
-## [0.5.1-beta] - 2025-04-25]
+## [0.5.1-beta] - 2025-04-25
 ### Added
 
 - Promoted post language handling for all locales in condenser (Issue 16)

@@ -81,7 +81,8 @@ async function showOverlay(postInfo, curatorOverlayAnchor, user_lang = 'en') {
         linksLength = links ? links.length : 0;
         const uniqueTags = [...new Set([category, ...(tags || [])])].filter(Boolean).sort();
         tagsLength = uniqueTags.length;
-        tagString = uniqueTags.slice(0, 10).join(", ");
+        // Sanitize tag string to prevent XSS from user-defined metadata
+        tagString = uniqueTags.slice(0, 10).join(", ").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         depth = result.depth;
     } catch (error) {
         console.warn("SCE: Error loading overlay content:", error);
