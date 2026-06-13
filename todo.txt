@@ -1,6 +1,9 @@
+June 13, 2026
+[ ] - Test to see if host_permissions are really needed in manifest.json (they don't seem to be).  Eliminate them, if possible.
+
 April 30, 2026
-[ ] - Make sure all replies in a thread have the word count, reading time, footer highlighting, and supplemental voter information.
-[ ] - Eliminate unneccessary logging, and get rid of ERROR level logging where it's not needed.
+[X] - Make sure all replies in a thread have the word count, reading time, footer highlighting, and supplemental voter information.
+[X] - Eliminate unneccessary logging, and get rid of ERROR level logging where it's not needed.
 
 May 2, 2026
 [x] - Eliminate duplicate accounts from the "feed reach" and "price per feed" calculations.
