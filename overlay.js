@@ -247,15 +247,25 @@ function addButtonsToSummaries() {
 
     headers.forEach(header => {
         if (!header.querySelector('.curator-custom-anchor')) {
+            const postItem = header.closest('li');
+            const postLink = postItem
+                ? postItem.querySelector(
+                    '.articles__content h2 > a, .articles__content .PostSummary__body.entry-content > a'
+                )
+                : null;
+
             const overlayContainer = document.createElement('div');
             overlayContainer.className = 'overlay-container';
 
-            const curatorOverlayAnchor = document.createElement('span');
+            const curatorOverlayAnchor = document.createElement('a');
             curatorOverlayAnchor.className = 'curator-custom-anchor';
             curatorOverlayAnchor.textContent = curationLabels.curationInfo;
             curatorOverlayAnchor.style.color = bodyFontColor;
             curatorOverlayAnchor.style.cursor = 'pointer';
             curatorOverlayAnchor.style.textDecoration = 'underline';
+            if (postLink && postLink.href) {
+                curatorOverlayAnchor.href = postLink.href;
+            }
 
             overlayContainer.appendChild(curatorOverlayAnchor);
             header.appendChild(overlayContainer);
