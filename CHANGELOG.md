@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.5-beta] - 2026-08-06
+### Changed
+- Removed `host_permissions` from `manifest.json`; the extension no longer requires explicit host permission declarations.
+
+### Fixed
+- Fixed a missing link at the "CURATION INFO" label: the label was previously rendered as a non-link `<span>` placeholder with no associated link; it is now a real hyperlink (`<a>`) pointing to the associated post.
+
 ## [0.7.3-beta] - 2026-06-04
 ### Fixed
 - Hardened XSS protection in the curation overlay by sanitizing user-defined tags before rendering.

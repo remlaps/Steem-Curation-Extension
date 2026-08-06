@@ -1,6 +1,10 @@
+June 13, 2026
+[X] - Test to see if host_permissions are really needed in manifest.json.  Eliminate them, if possible.
+[X] - Run action script to update chart.js, if needed. (not needed.  4.5.1 is still the latest.)
+
 April 30, 2026
-[ ] - Make sure all replies in a thread have the word count, reading time, footer highlighting, and supplemental voter information.
-[ ] - Eliminate unneccessary logging, and get rid of ERROR level logging where it's not needed.
+[X] - Make sure all replies in a thread have the word count, reading time, footer highlighting, and supplemental voter information.
+[X] - Eliminate unneccessary logging, and get rid of ERROR level logging where it's not needed.
 
 May 2, 2026
 [x] - Eliminate duplicate accounts from the "feed reach" and "price per feed" calculations.
