@@ -207,7 +207,7 @@ function sceReblogBuildBody(comment, excerpt, author, permlink, title, labels, r
         const alt = String(title || '').replace(/"/g, '').trim();
         lines.push('<div class="pull-right">');
         lines.push('');
-        lines.push(`<img src="${thumbnail}" alt="${alt}" />`);
+        lines.push(`<a href="${relativeUrl}"><img src="${thumbnail}" alt="${alt}" /></a>`);
         lines.push('');
         lines.push('</div>');
         lines.push('');
@@ -685,11 +685,14 @@ function sceReblogRenderPreview(container, { comment, excerpt, author, permlink,
     const mention = (reblogger && reblogger === author) ? '' : `@${author}`;
 
     if (thumbnail) {
+        const imgLink = document.createElement('a');
+        imgLink.href = relativeUrl;
         const img = document.createElement('img');
         img.className = 'sce-reblog-preview-thumbnail';
         img.src = thumbnail;
         img.alt = title || '';
-        container.appendChild(img);
+        imgLink.appendChild(img);
+        container.appendChild(imgLink);
     }
 
     if (comment && comment.trim()) {
