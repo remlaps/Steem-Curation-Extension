@@ -116,8 +116,7 @@
     resize: vertical;
 }
 
-.sce-reblog-preview,
-.sce-reblog-post-preview {
+.sce-reblog-preview {
     border: 1px solid #ccc;
     border-radius: 4px;
     padding: 8px;
@@ -125,14 +124,50 @@
     font-size: 13px;
     opacity: 0.9;
     white-space: pre-wrap;
-}
-
-.sce-reblog-preview {
     max-height: 120px;
 }
 
 .sce-reblog-post-preview {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px;
+    overflow-y: auto;
+    font-size: 13px;
+    opacity: 0.9;
     max-height: 240px;
+}
+
+.sce-reblog-post-preview p {
+    margin: 0 0 8px;
+}
+
+.sce-reblog-post-preview p:last-child {
+    margin-bottom: 0;
+}
+
+.sce-reblog-post-preview blockquote {
+    margin: 0 0 8px;
+    padding: 4px 10px;
+    border-left: 3px solid #ccc;
+    opacity: 0.85;
+}
+
+.sce-reblog-post-preview a {
+    color: #1e90ff;
+    text-decoration: underline;
+}
+
+.sce-reblog-preview-comment {
+    white-space: pre-wrap;
+}
+
+.sce-reblog-preview-thumbnail {
+    float: right;
+    max-width: 45%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin: 0 0 8px 8px;
 }
 
 .sce-reblog-beneficiary {
@@ -236,4 +271,8 @@ body.theme-dark .sce-reblog-comment-input,
 body.theme-dark .sce-reblog-preview,
 body.theme-dark .sce-reblog-post-preview {
     border-color: #434344;
+}
+
+body.theme-dark .sce-reblog-post-preview blockquote {
+    border-left-color: #434344;
 }

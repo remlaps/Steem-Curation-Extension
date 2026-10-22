@@ -193,10 +193,25 @@ function sceReblogBuildExcerpt(body, maxLength = SCE_REBLOG_EXCERPT_LENGTH) {
  * Assembles the Markdown body of the new post: the user's comment, a quoted
  * excerpt of the original post, and a link back to it.
  */
-function sceReblogBuildBody(comment, excerpt, author, permlink, title, labels, reblogger) {
+function sceReblogBuildBody(comment, excerpt, author, permlink, title, labels, reblogger, thumbnail) {
     const relativeUrl = `/@${author}/${permlink}`;
     const linkText = title || `${author}/${permlink}`;
     const lines = [];
+
+    // The image is included in the body (not only json_metadata) because some
+    // Condenser front ends (e.g. steemit.com) derive the feed thumbnail from the
+    // body's first image rather than from json_metadata.image. It is wrapped in
+    // a right-floated <div> (Condenser whitelists the "pull-right" class) so the
+    // surrounding text wraps around it.
+    if (thumbnail) {
+        const alt = String(title || '').replace(/"/g, '').trim();
+        lines.push('<div class="pull-right">');
+        lines.push('');
+        lines.push(`<img src="${thumbnail}" alt="${alt}" />`);
+        lines.push('');
+        lines.push('</div>');
+        lines.push('');
+    }
 
     if (comment && comment.trim()) {
         lines.push(comment.trim());
@@ -217,9 +232,16 @@ function sceReblogBuildBody(comment, excerpt, author, permlink, title, labels, r
         lines.push(`${labels.linkLabel} [${linkText}](${relativeUrl})`);
     }
 
+    const trailingNotes = [];
     if (labels.attributionNote) {
+        trailingNotes.push(labels.attributionNote);
+    }
+    if (!(reblogger && reblogger === author) && labels.beneficiaryNote) {
+        trailingNotes.push(labels.beneficiaryNote.replace('{author}', author));
+    }
+    if (trailingNotes.length) {
         lines.push('');
-        lines.push(`_${labels.attributionNote}_`);
+        lines.push(`_${trailingNotes.join(' ')}_`);
     }
 
     return lines.join('\n');
@@ -399,7 +421,7 @@ function sceReblogComputeTags(content) {
  * (50% to the original author) is attached to the `comment_options` op and
  * applies to the new post.
  */
-function sceReblogBuildOperations({ username, info, content, title, body, tags }) {
+function sceReblogBuildOperations({ username, info, content, title, body, tags, images }) {
     const tagInput = (Array.isArray(tags) && tags.length) ? tags : sceReblogDefaultTagList(content);
     const finalTags = sceReblogFinalizeTags(tagInput);
     const parentPermlink = finalTags[0];
@@ -412,13 +434,13 @@ function sceReblogBuildOperations({ username, info, content, title, body, tags }
         console.debug('SCE: Unable to read extension version:', error);
     }
 
-    const images = sceReblogExtractImages(content);
+    const finalImages = Array.isArray(images) ? images : sceReblogExtractImages(content);
     const jsonMetadata = {
         tags: finalTags,
         app: `${SCE_REBLOG_APP_NAME}/${version}`
     };
-    if (images.length) {
-        jsonMetadata.image = images;
+    if (finalImages.length) {
+        jsonMetadata.image = finalImages;
     }
 
     const operations = [
@@ -560,6 +582,157 @@ function sceReblogBuildModal(labels) {
 }
 
 /**
+ * Trims punctuation that is unlikely to be part of a bare URL (trailing
+ * sentence punctuation, plus an unbalanced closing bracket).
+ */
+function sceReblogTrimUrl(rawUrl) {
+    let url = rawUrl;
+    while (/[.,;:!?]$/.test(url)) {
+        url = url.slice(0, -1);
+    }
+    if (/[)\]]$/.test(url)) {
+        const open = (url.match(/[(\[]/g) || []).length;
+        const close = (url.match(/[)\]]/g) || []).length;
+        if (close > open) {
+            url = url.slice(0, -1);
+        }
+    }
+    return url;
+}
+
+/**
+ * Appends plain text to `parent`, turning bare http(s) URLs into anchors and
+ * everything else into text nodes (never HTML).
+ */
+function sceReblogAppendLinkifiedText(parent, text) {
+    const source = String(text == null ? '' : text);
+    const urlRegex = /(https?:\/\/[^\s<>]+)/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = urlRegex.exec(source)) !== null) {
+        if (match.index > lastIndex) {
+            parent.appendChild(document.createTextNode(source.slice(lastIndex, match.index)));
+        }
+
+        const url = sceReblogTrimUrl(match[1]);
+        const trailing = match[1].slice(url.length);
+
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.textContent = url;
+        anchor.rel = 'noopener noreferrer';
+        anchor.target = '_blank';
+        parent.appendChild(anchor);
+
+        if (trailing) {
+            parent.appendChild(document.createTextNode(trailing));
+        }
+
+        lastIndex = urlRegex.lastIndex;
+    }
+
+    if (lastIndex < source.length) {
+        parent.appendChild(document.createTextNode(source.slice(lastIndex)));
+    }
+}
+
+/**
+ * Appends `text` to `parent`, rendering `[text](url)` occurrences and bare
+ * http(s) URLs as anchors, and all other content as plain text. Untrusted text
+ * is never parsed as HTML, so it cannot inject markup into the preview.
+ */
+function sceReblogRenderInlineMarkdown(parent, text) {
+    const source = String(text == null ? '' : text);
+    const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+    let lastIndex = 0;
+    let match;
+
+    while ((match = linkRegex.exec(source)) !== null) {
+        if (match.index > lastIndex) {
+            sceReblogAppendLinkifiedText(parent, source.slice(lastIndex, match.index));
+        }
+
+        const href = match[2];
+        const anchor = document.createElement('a');
+        anchor.href = href;
+        anchor.textContent = match[1];
+        anchor.rel = 'noopener noreferrer';
+        if (/^https?:\/\//i.test(href)) {
+            anchor.target = '_blank';
+        }
+        parent.appendChild(anchor);
+
+        lastIndex = linkRegex.lastIndex;
+    }
+
+    if (lastIndex < source.length) {
+        sceReblogAppendLinkifiedText(parent, source.slice(lastIndex));
+    }
+}
+
+/**
+ * Renders the reblog post preview as DOM nodes (lightweight, no Markdown
+ * dependency). Only the structures this extension generates are rendered as
+ * rich elements; user and third-party text is always inserted with
+ * textContent.
+ */
+function sceReblogRenderPreview(container, { comment, excerpt, author, permlink, title, labels, reblogger, thumbnail }) {
+    container.textContent = '';
+
+    const relativeUrl = `/@${author}/${permlink}`;
+    const linkText = title || `${author}/${permlink}`;
+    const mention = (reblogger && reblogger === author) ? '' : `@${author}`;
+
+    if (thumbnail) {
+        const img = document.createElement('img');
+        img.className = 'sce-reblog-preview-thumbnail';
+        img.src = thumbnail;
+        img.alt = title || '';
+        container.appendChild(img);
+    }
+
+    if (comment && comment.trim()) {
+        const commentEl = document.createElement('p');
+        commentEl.className = 'sce-reblog-preview-comment';
+        sceReblogRenderInlineMarkdown(commentEl, comment.trim());
+        container.appendChild(commentEl);
+    }
+
+    const excerptEl = document.createElement('blockquote');
+    excerptEl.className = 'sce-reblog-preview-excerpt';
+    excerptEl.textContent = excerpt;
+    container.appendChild(excerptEl);
+
+    const linkEl = document.createElement('p');
+    linkEl.className = 'sce-reblog-preview-link';
+    linkEl.appendChild(document.createTextNode(
+        mention ? `${labels.linkLabelBy} ${mention}: ` : `${labels.linkLabel} `
+    ));
+    const anchor = document.createElement('a');
+    anchor.href = relativeUrl;
+    anchor.textContent = linkText;
+    linkEl.appendChild(anchor);
+    container.appendChild(linkEl);
+
+    const trailingNotes = [];
+    if (labels.attributionNote) {
+        trailingNotes.push(labels.attributionNote);
+    }
+    if (!(reblogger && reblogger === author) && labels.beneficiaryNote) {
+        trailingNotes.push(labels.beneficiaryNote.replace('{author}', author));
+    }
+    if (trailingNotes.length) {
+        const attributionEl = document.createElement('p');
+        attributionEl.className = 'sce-reblog-preview-attribution';
+        const em = document.createElement('em');
+        sceReblogRenderInlineMarkdown(em, trailingNotes.join(' '));
+        attributionEl.appendChild(em);
+        container.appendChild(attributionEl);
+    }
+}
+
+/**
  * Opens the reblog dialog for a post. Handles login/Keychain checks, fetches
  * the original post, and wires up the broadcast on submit.
  */
@@ -592,6 +765,8 @@ async function openReblogDialog(info) {
     }
 
     const excerpt = sceReblogBuildExcerpt(content.body);
+    const images = sceReblogExtractImages(content);
+    const thumbnail = images[0] || null;
     const defaultTitle = `${labels.titlePrefix} ${content.title || `${info.author}/${info.permlink}`}`;
 
     const ui = sceReblogBuildModal(labels);
@@ -599,11 +774,18 @@ async function openReblogDialog(info) {
     ui.tagsInput.value = sceReblogComputeTags(content).join(', ');
     ui.preview.textContent = excerpt;
 
-    // Live preview of the full post that will be broadcast.
+    // Live preview of the full post that will be broadcast (rendered as DOM).
     const updatePostPreview = () => {
-        ui.postPreview.textContent = sceReblogBuildBody(
-            ui.commentInput.value, excerpt, info.author, info.permlink, content.title, labels, username
-        );
+        sceReblogRenderPreview(ui.postPreview, {
+            comment: ui.commentInput.value,
+            excerpt: excerpt,
+            author: info.author,
+            permlink: info.permlink,
+            title: content.title,
+            labels: labels,
+            reblogger: username,
+            thumbnail: thumbnail
+        });
     };
     updatePostPreview();
     ui.commentInput.addEventListener('input', updatePostPreview);
@@ -634,9 +816,9 @@ async function openReblogDialog(info) {
         if (ui.submit.disabled) return;
 
         const title = ui.titleInput.value.trim() || defaultTitle;
-        const body = sceReblogBuildBody(ui.commentInput.value, excerpt, info.author, info.permlink, content.title, labels, username);
+        const body = sceReblogBuildBody(ui.commentInput.value, excerpt, info.author, info.permlink, content.title, labels, username, thumbnail);
         const tags = ui.tagsInput.value.split(/[\s,]+/).filter(Boolean);
-        const operations = sceReblogBuildOperations({ username, info, content, title, body, tags });
+        const operations = sceReblogBuildOperations({ username, info, content, title, body, tags, images });
 
         console.debug('SCE: Broadcasting reblog operations:', operations);
 
