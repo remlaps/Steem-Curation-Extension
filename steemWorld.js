@@ -9,19 +9,19 @@ const fetchProxy = (url, options = {}) => {
 };
 
 const getExtendedStats = async (accountName) => {
-    const sdsUrl = `${sdsEndpoint}/accounts_api/getAccountExt/${accountName}`;
+    const sdsUrl = `${sdsEndpoint}/accounts_api/getAccountExt/${encodeURIComponent(accountName)}`;
     const data = await fetchProxy(sdsUrl);
     return data.result;
 };
 
 async function getResteems(author, permlink) {
-    const sdsUrl = `${sdsEndpoint}/post_resteems_api/getResteems/${author}/${permlink}`;
+    const sdsUrl = `${sdsEndpoint}/post_resteems_api/getResteems/${encodeURIComponent(author)}/${encodeURIComponent(permlink)}`;
     const data = await fetchProxy(sdsUrl);
     return data;
 }
 
 const getFollowerNamesSDS = async (accountName) => {
-    const url = `${sdsEndpoint}/followers_api/getFollowers/${accountName}`;
+    const url = `${sdsEndpoint}/followers_api/getFollowers/${encodeURIComponent(accountName)}`;
     const data = await fetchProxy(url);
     if (Array.isArray(data?.result)) {
         return data.result;
@@ -30,7 +30,7 @@ const getFollowerNamesSDS = async (accountName) => {
 };
 
 const getCommunitySubscriberNamesSDS = async (communityName) => {
-    const url = `${sdsEndpoint}/communities_api/getCommunitySubscribers/${communityName}`;
+    const url = `${sdsEndpoint}/communities_api/getCommunitySubscribers/${encodeURIComponent(communityName)}`;
     const data = await fetchProxy(url);
     if (Array.isArray(data?.result)) {
         return data.result;
@@ -45,7 +45,7 @@ const getAuthorPostHistory = async (author, fromTime, toTime, limit=1000) => {
     const permlinks = [];
     let keepRunning = true;
     while (currentTime < toTime && keepRunning){
-        const sdsUrl = `${sdsEndpoint}/account_history_api/getHistoryByOpTypesTime/${author}/comment/${fromTime}-${toTime}/${limit}`;
+        const sdsUrl = `${sdsEndpoint}/account_history_api/getHistoryByOpTypesTime/${encodeURIComponent(author)}/comment/${fromTime}-${toTime}/${limit}`;
         data = await fetchProxy(sdsUrl);
         const rows = data.result.rows;
         if (rows.length < limit) keepRunning = false

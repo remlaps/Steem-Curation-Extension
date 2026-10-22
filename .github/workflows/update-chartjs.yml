@@ -76,30 +76,52 @@ jobs:
             echo "No existing PR found. Proceeding with update."
           fi
 
-      - name: Download latest Chart.js
+      - name: Download and verify Chart.js from npm
         if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
         run: |
           LATEST="${{ steps.latest-version.outputs.latest_version }}"
           CURRENT="${{ steps.current-version.outputs.current_version }}"
           
-          echo "Downloading Chart.js v$LATEST..."
+          echo "Downloading Chart.js v$LATEST from the npm registry..."
           
-          # Download the new version to a temp file
-          curl -L "https://cdn.jsdelivr.net/npm/chart.js@$LATEST/dist/chart.umd.js" -o libs/chart.min.js.tmp
+          # Download the published tarball (not a CDN copy) and verify it against
+          # the integrity hash published in the npm registry before using it.
+          TARBALL="chart.js-$LATEST.tgz"
+          curl -sSL "https://registry.npmjs.org/chart.js/-/chart.js-$LATEST.tgz" -o "$TARBALL"
           
-          # Verify download succeeded
+          EXPECTED_INTEGRITY=$(curl -sSL "https://registry.npmjs.org/chart.js/$LATEST" | jq -r '.dist.integrity')
+          ACTUAL_INTEGRITY="sha512-$(openssl dgst -sha512 -binary "$TARBALL" | openssl base64 -A)"
+          
+          if [ -z "$EXPECTED_INTEGRITY" ] || [ "$EXPECTED_INTEGRITY" = "null" ]; then
+            echo "Error: Could not read the published integrity hash for Chart.js v$LATEST."
+            exit 1
+          fi
+          if [ "$EXPECTED_INTEGRITY" != "$ACTUAL_INTEGRITY" ]; then
+            echo "Error: Integrity check failed for Chart.js v$LATEST."
+            echo "  expected: $EXPECTED_INTEGRITY"
+            echo "  actual:   $ACTUAL_INTEGRITY"
+            exit 1
+          fi
+          echo "✓ Tarball integrity verified against the npm registry."
+          
+          # Extract the UMD build from the verified tarball.
+          tar -xzf "$TARBALL" package/dist/chart.umd.js
+          cp package/dist/chart.umd.js libs/chart.min.js.tmp
+          rm -rf "$TARBALL" package
+          
+          # Verify extraction succeeded
           if [ ! -s libs/chart.min.js.tmp ]; then
-            echo "Error: Download failed or file is empty"
+            echo "Error: Extracted file is missing or empty"
             exit 1
           fi
           
           # Create the file with the proper header format matching the original
           {
             echo "/**"
-            echo " * Skipped minification because the original files appears to be already minified."
+            echo " * Skipped minification because the original file appears to be already minified."
             echo " * Original file: /npm/chart.js@$LATEST/dist/chart.umd.js"
             echo " *"
-            echo " * Do NOT use SRI with dynamically generated files! More information: https://www.jsdelivr.com/using-sri-with-dynamic-files"
+            echo " * Verified against the integrity hash published in the npm registry."
             echo " */"
             echo "/*!"
             echo " * Chart.js v$LATEST"
@@ -209,7 +231,7 @@ jobs:
           - **New version:** $LATEST
           
           ### Changes
-          - Updated \`libs/chart.min.js\` to the latest version from [jsdelivr CDN](https://cdn.jsdelivr.net/npm/chart.js@$LATEST/dist/chart.umd.js)
+          - Updated \`libs/chart.min.js\` to the latest version from the [npm registry](https://www.npmjs.com/package/chart.js/v/$LATEST) (verified against the published integrity hash)
           
           ### Verification
           Please verify that the extension still works correctly with this Chart.js version before merging.

@@ -5,6 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Security
+- Hardened the Steem Keychain bridge (`reblogBridge.js`) so it no longer trusts the contents of the messages it receives. It now only signs `comment` + `comment_options` operations with the Posting key, rebuilds the payload from validated fields (rejecting any other operation, key type, or malformed value), and ignores messages that do not come from one of the extension's own origins. This prevents a script running on a matched page (an XSS, or a compromised mirror site) from using the bridge to request arbitrary Keychain signatures.
+- Escaped the thumbnail URL and link text when building the reblog body, and restricted embedded image URLs to plain `http(s)` URLs, closing a stored-XSS vector where a crafted original post could inject markup into a reblog that is broadcast to the chain.
+- Restricted the background fetch proxy (`background.js`) to this extension's own content scripts and to HTTPS requests to `api.steemit.com` and `sds.steemworld.org`, and URL-encoded the account/post identifiers interpolated into SteemWorld SDS request URLs.
+- Replaced the remaining `innerHTML` usage in the voter list (`post/votes/votes.js`) with DOM construction, and limited clickable links in the reblog preview to `http(s)`/relative URLs.
+- The Chart.js update workflow now downloads the package from the npm registry and verifies it against the published integrity hash before committing it.
+
+### Changed
+- Updated the vendored Chart.js library (`libs/chart.min.js`) from 4.5.1 to 4.6.1. The build was taken from the npm registry tarball and verified against the integrity hash published for that version before being committed.
 
 ## [0.8.0-beta] - 2026-10-22
 ### Added

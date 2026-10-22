@@ -191,21 +191,32 @@ const loadPostVoteData = (post) => {
                         // Add a custom class to style the list items
                         item.classList.add('vote-item');
 
-                        // Format and update the text content with a clickable link for the username
+                        // Rebuild the row with DOM APIs so untrusted page text is
+                        // never parsed as HTML.
+                        item.textContent = '';
+
                         if (vote.value > 0) {
-                            item.innerHTML = `
-                                        <span class="vote-value">$${vote.value.toFixed(2)}</span>
-                                        <span class="vote-percentage">(${vote.percentage}%)</span>
-                                        <a href="/@${username}" class="vote-username">${username}</a>
-                                        <span class="vote-weight">(${percent}% weight)</span>
-                                    `;
-                        } else {
-                            item.innerHTML = `
-                                        <a href="/@${username}" class="vote-username">${username}</a>
-                                        <span class="vote-weight">(${percent}% weight)</span>
-                                    `;
+                            const valueSpan = document.createElement('span');
+                            valueSpan.className = 'vote-value';
+                            valueSpan.textContent = `$${vote.value.toFixed(2)}`;
+                            item.appendChild(valueSpan);
+
+                            const percentageSpan = document.createElement('span');
+                            percentageSpan.className = 'vote-percentage';
+                            percentageSpan.textContent = `(${vote.percentage}%)`;
+                            item.appendChild(percentageSpan);
                         }
 
+                        const usernameLink = document.createElement('a');
+                        usernameLink.href = `/@${encodeURIComponent(username)}`;
+                        usernameLink.className = 'vote-username';
+                        usernameLink.textContent = username;
+                        item.appendChild(usernameLink);
+
+                        const weightSpan = document.createElement('span');
+                        weightSpan.className = 'vote-weight';
+                        weightSpan.textContent = `(${percent}% weight)`;
+                        item.appendChild(weightSpan);
                     }
                 });
             }

@@ -32,6 +32,11 @@ const SCE_REBLOG_ICON_SVG =
     '<path d="M21 13v2a4 4 0 0 1-4 4H3"></path>' +
     '</svg>';
 
+// Only plain http(s) image URLs may be embedded in a reblog: no quotes, angle
+// brackets, whitespace or backslashes that could break out of an HTML attribute.
+const SCE_REBLOG_SAFE_IMAGE_URL_REGEX = /^https?:\/\/[^\s"'<>\\]+$/i;
+const SCE_REBLOG_MAX_IMAGE_URL_LENGTH = 2048;
+
 let sceReblogRequestCounter = 0;
 const sceReblogPendingRequests = new Map();
 const sceReblogAuthorCache = new Map();
@@ -44,6 +49,7 @@ let sceReblogToastTimer = null;
 
 window.addEventListener('message', (event) => {
     if (event.source !== window) return;
+    if (event.origin !== window.location.origin) return;
     const data = event.data;
     if (!data || data.type !== SCE_REBLOG_RESPONSE || !data.nonce) return;
 
@@ -64,7 +70,7 @@ function sceReblogBridgeRequest(payload, timeoutMs = 5000) {
     return new Promise((resolve) => {
         const nonce = `${Date.now()}-${++sceReblogRequestCounter}`;
         sceReblogPendingRequests.set(nonce, resolve);
-        window.postMessage(Object.assign({ type: SCE_REBLOG_REQUEST, nonce }, payload), '*');
+        window.postMessage(Object.assign({ type: SCE_REBLOG_REQUEST, nonce }, payload), window.location.origin);
 
         setTimeout(() => {
             if (sceReblogPendingRequests.has(nonce)) {
@@ -156,6 +162,30 @@ function sceReblogFindSummaryLink(postItem) {
 /* ------------------------------------------------------------------------- */
 
 /**
+ * Escapes a value so it can be safely embedded inside an HTML attribute.
+ */
+function sceReblogEscapeHtmlAttribute(value) {
+    return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+/**
+ * Strips the characters that would let a crafted title break out of the
+ * generated `[text](url)` Markdown link.
+ */
+function sceReblogSanitizeLinkText(text) {
+    const cleaned = String(text == null ? '' : text)
+        .replace(/[[\]]/g, '')
+        .replace(/\r?\n/g, ' ')
+        .trim()
+        .slice(0, 256);
+    return cleaned || '...';
+}
+
+/**
  * Reduces Markdown to plain text so the excerpt renders predictably inside a
  * blockquote and cannot inject markup into the new post.
  */
@@ -195,7 +225,7 @@ function sceReblogBuildExcerpt(body, maxLength = SCE_REBLOG_EXCERPT_LENGTH) {
  */
 function sceReblogBuildBody(comment, excerpt, author, permlink, title, labels, reblogger, thumbnail) {
     const relativeUrl = `/@${author}/${permlink}`;
-    const linkText = title || `${author}/${permlink}`;
+    const linkText = sceReblogSanitizeLinkText(title || `${author}/${permlink}`);
     const lines = [];
 
     // The image is included in the body (not only json_metadata) because some
@@ -204,10 +234,12 @@ function sceReblogBuildBody(comment, excerpt, author, permlink, title, labels, r
     // a right-floated <div> (Condenser whitelists the "pull-right" class) so the
     // surrounding text wraps around it.
     if (thumbnail) {
-        const alt = String(title || '').replace(/"/g, '').trim();
+        const safeUrl = sceReblogEscapeHtmlAttribute(relativeUrl);
+        const safeSrc = sceReblogEscapeHtmlAttribute(thumbnail);
+        const safeAlt = sceReblogEscapeHtmlAttribute(String(title || '').trim());
         lines.push('<div class="pull-right">');
         lines.push('');
-        lines.push(`<a href="${relativeUrl}"><img src="${thumbnail}" alt="${alt}" /></a>`);
+        lines.push(`<a href="${safeUrl}"><img src="${safeSrc}" alt="${safeAlt}" /></a>`);
         lines.push('');
         lines.push('</div>');
         lines.push('');
@@ -268,7 +300,10 @@ function sceReblogExtractImages(content, maxImages = 2) {
     const add = (url) => {
         if (typeof url !== 'string') return;
         const trimmed = url.trim();
-        if (/^https?:\/\//i.test(trimmed) && !images.includes(trimmed)) {
+        // Reject anything that is not a plain http(s) URL so a crafted original
+        // post cannot inject markup into the reblog body through its thumbnail.
+        if (trimmed.length > SCE_REBLOG_MAX_IMAGE_URL_LENGTH) return;
+        if (SCE_REBLOG_SAFE_IMAGE_URL_REGEX.test(trimmed) && !images.includes(trimmed)) {
             images.push(trimmed);
         }
     };
@@ -653,15 +688,23 @@ function sceReblogRenderInlineMarkdown(parent, text) {
             sceReblogAppendLinkifiedText(parent, source.slice(lastIndex, match.index));
         }
 
-        const href = match[2];
-        const anchor = document.createElement('a');
-        anchor.href = href;
-        anchor.textContent = match[1];
-        anchor.rel = 'noopener noreferrer';
-        if (/^https?:\/\//i.test(href)) {
-            anchor.target = '_blank';
+        const href = match[2].trim();
+        const isExternal = /^https?:\/\//i.test(href);
+        const isRelative = /^\/(?!\/)/.test(href) || href.startsWith('#');
+
+        if (isExternal || isRelative) {
+            const anchor = document.createElement('a');
+            anchor.href = href;
+            anchor.textContent = match[1];
+            anchor.rel = 'noopener noreferrer';
+            if (isExternal) {
+                anchor.target = '_blank';
+            }
+            parent.appendChild(anchor);
+        } else {
+            // Unsafe scheme (e.g. javascript:, data:): render as plain text.
+            parent.appendChild(document.createTextNode(match[0]));
         }
-        parent.appendChild(anchor);
 
         lastIndex = linkRegex.lastIndex;
     }
