@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "version": "0.7.5",
-  "version_name": "0.7.5 Beta",
+  "version": "0.8.0",
+  "version_name": "0.8.0 Beta",
   "name": "Steem Curation Extension",
   "description": "Provide supplemental information for curators on Steem/Condenser based web sites.",
   "icons": { 
@@ -27,8 +27,22 @@
         "https://steemitdev.com/*",
         "https://www.steemitdev.com/*"
       ],
-      "js": ["useful.js", "post/votes/VoterTip.js", "post/votes/votes.js", "profilePictureDisplay.js", "language.js", "payoutDisplay.js", "steemWorld.js", "post/author.js", "graph.js", "post/Post.js", "post/loadPostData.js", "libs/chart.min.js","botNotifier.js", "postMetrics.js", "overlay.js", "resteemControl.js", "main.js"],
-      "css": [ "post/styles.css", "styles.css", "profilePictureDisplay.css" ]
+      "js": ["reblogBridge.js"],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://steemit.com/*",
+        "https://www.steemit.com/*",
+        "https://steemit.moecki.online/*",
+        "https://steemit.steemapps.com/*",
+        "https://steemit.steemnet.org/*",
+        "https://steemitdev.com/*",
+        "https://www.steemitdev.com/*"
+      ],
+      "js": ["useful.js", "post/votes/VoterTip.js", "post/votes/votes.js", "profilePictureDisplay.js", "language.js", "payoutDisplay.js", "steemWorld.js", "post/author.js", "graph.js", "post/Post.js", "post/loadPostData.js", "libs/chart.min.js","botNotifier.js", "postMetrics.js", "overlay.js", "resteemControl.js", "reblogControl.js", "main.js"],
+      "css": [ "post/styles.css", "styles.css", "profilePictureDisplay.css", "reblogControl.css" ]
     }
   ]
 }

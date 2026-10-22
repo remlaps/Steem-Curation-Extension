@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0-beta] - 2026-10-22
+### Added
+- Added a "reblog with comment" icon to every post container (feeds, blog pages, and the full post view). Clicking it broadcasts a new post that contains the user's own comment, a quoted excerpt from the beginning of the original post, and a link back to the original, with a 50% beneficiary assigned to the original ("parent") author. Signing is delegated to the [Steem Keychain](https://chromewebstore.google.com/detail/steem-keychain/lkcjlnjfpbikmcmbachjpdbijejflpcm) browser extension through a main-world bridge (`reblogBridge.js`); the extension itself still never requests, stores, or uses any keys.
+- The generated reblog post reuses the first image from the original post as its thumbnail (`json_metadata.image`) when one is available.
+- The generated reblog post includes an attribution note linking to the [Steem Curation Extension](https://github.com/remlaps/Steem-Curation-Extension) GitHub repository and noting that Steem Keychain is required.
+- The generated reblog post mentions the original author with an `@`-mention (as plain text, outside the link) so that Condenser renders it as a real mention. The mention is omitted for self-reblogs.
+- The link to the original post uses the post's title as its link text and a relative path (e.g. `Original post by @author: [Post Title](/@author/permlink)`), so it resolves correctly on whichever Condenser front end the reblog is viewed on.
+- Tags for the new post are editable in the reblog dialog and default to the original post's tags.
+- Every reblog includes the `steem-curation-extension` tag (appended, or replacing the last tag when the tag list is already full) so reblogs can be aggregated through a single tag feed.
+- The reblog dialog now shows a full, live preview of the post that will be broadcast (comment, excerpt, link to the original, and attribution note).
+- The "Show Resteems" toggle (now "Show Resteems & Reblogs") also hides reblog posts created by this extension: on the following feed they remain visible when the original author is followed; on blog/profile pages they are hidden along with resteems.
+
 ## [0.7.5-beta] - 2026-08-06
 ### Changed
 - Removed `host_permissions` from `manifest.json`; the extension no longer requires explicit host permission declarations.

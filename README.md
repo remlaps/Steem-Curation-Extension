@@ -9,7 +9,8 @@ Specifically, it highlights posts that are promoted by burning Steem Dollars (SB
 - Highlights posts that were promoted by burning SBD tokens.
 - Highlights posts that have beneficiary rewards set to direct rewards to the @null account.
 - Color gradients in the highlighting help to identify promotion costs and beneficiary settings at a glance.
-- Enables toggling of resteem visibility
+- Enables toggling the visibility of resteems and of reblogs created by this extension
+- Adds a "reblog with comment" icon to every post container. Clicking it creates a new post containing your own comment, an excerpt from the beginning of the original post, and a link back to it, with a 50% beneficiary assigned to the original author. The new post reuses the original post's first image as its thumbnail, includes an attribution note linking to this repository and noting that Steem Keychain is required, and carries the `steem-curation-extension` tag so reblogs can be aggregated. Tags are editable and a live preview shows the full post before you submit (requires the [Steem Keychain](https://chromewebstore.google.com/detail/steem-keychain/lkcjlnjfpbikmcmbachjpdbijejflpcm) browser extension).
 - Displays voting power in the Profile menu
 - Provides a curator overlay in Steem feeds with information about a post, author, and the author's follower network.
 - Displays enhanced follow status and follower analysis (count, 90-day activity, and median reputations) as a dynamic tooltip when hovering over post authors, comment authors, or user mentions.
@@ -103,10 +104,11 @@ This functionality helps web site visitors to identify posts that may have recei
 
 Once installed, the extension will automatically highlight the relevant posts on Steem-based websites that you visit. No further configuration is needed.
 
-- Look for the toggle option near the top/center-left of the page to control resteem visibility.
+- Look for the toggle option near the top/center-left of the page to control the visibility of resteems and of reblogs created by this extension.
 - Your available voting power will appear in the profile dropdown menu near the top-right of the page.
 - Hover over the "Curation Info" label in feeds to see the curator overlay.
 - Hover over a post author, comment author, or user mention to see a dynamic tooltip with follow status and detailed follower statistics.
+- Click the reblog icon on any post to publish a new post with your own comment, an excerpt of the original, and a link back to it. A 50% beneficiary is assigned to the original author. This feature requires the [Steem Keychain](https://chromewebstore.google.com/detail/steem-keychain/lkcjlnjfpbikmcmbachjpdbijejflpcm) browser extension; if it is not installed, the extension will prompt you to install it.
 
 ## Contributing
 
@@ -121,6 +123,7 @@ For any questions or suggestions, feel free to open an issue on the GitHub repos
 - It is not recommended to enable untrusted browser extensions on any page that has access to your Steem master password or your Steem active/owner keys.  Beware that browser extensions can steal your keys.
 - You can review this extension's code in the associated github repo.
 - This extension does not require, request, or use any keys or passwords.
+- The optional "reblog with comment" feature delegates signing to the Steem Keychain browser extension. This extension never sees or handles your keys; each broadcast is approved by you directly in Steem Keychain, using your posting key.
 - This extension is not intended for use with any pages that have access to your Steem active/owner keys or your Steem master password.
 - It is recommended to login to condenser with your posting key - not with your active/owner key or your master password.
 

@@ -722,6 +722,7 @@ const runOncePerBatch = () => {
     SCE_SILENT++;
     try {
         addButtonsToSummaries();
+        addReblogButtons();
         modifyUserElement();
         setupFeedNavigation();
         highLight();
@@ -844,6 +845,7 @@ window.addEventListener('scroll', async () => {
 })
 
 addButtonsToSummaries();        // New for curation info buttons
+addReblogButtons();             // Reblog-with-comment icons on every post container
 sceMutationObserver();          // Mutation observer for new dropdown menu after login.
 createResteemToggleControl();   // Resteem checkbox
 

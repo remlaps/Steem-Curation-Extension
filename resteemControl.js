@@ -35,7 +35,7 @@ function createResteemToggleControl() {
 
         const label = document.createElement('label');
         label.htmlFor = 'resteem-toggle';
-        label.textContent = 'Show Resteems';
+        label.textContent = 'Show Resteems & Reblogs';
 
         // Append the elements to the control div
         controlDiv.appendChild(titleLink);
@@ -134,29 +134,56 @@ async function updateResteemVisibility(username) {
 
     const feedOwner = window.location.pathname.split('/')[1].replace('@', '');
     const showState = checkbox.checked;
+    const onFeed = window.location.pathname.endsWith('/feed');
 
     const promises = summaries.map(async summary => {
-        const hasResteem = summary.querySelector('.articles__resteem') !== null;
-        if (!hasResteem) return;
-
-        const targetElement = summary.querySelector('#posts_list > ul > li > div > div.articles__summary-header > div.user > div.user__col.user__col--right > span.user__name > span > strong > a');
-        if (!targetElement) return;
-        const resteemedAuthor = targetElement.textContent;
-        const isFollowed = await isFollowing(steemApi, feedOwner, resteemedAuthor);
-
         const parentLi = summary.closest('li');
         if (!parentLi) return;
 
-        if (window.location.pathname.endsWith('/feed')) {
-            if (!isFollowed && resteemedAuthor !== feedOwner) {
-                parentLi.style.display = showState ? 'block' : 'none';
-            }
+        const hasResteem = summary.querySelector('.articles__resteem') !== null;
+
+        // Determine the account whose follow status governs visibility: the
+        // resteemed author for resteems, or the original ("reblogged") author
+        // for reblogs created by this extension.
+        let authorToCheck = null;
+
+        if (hasResteem) {
+            const targetElement = summary.querySelector('#posts_list > ul > li > div > div.articles__summary-header > div.user > div.user__col.user__col--right > span.user__name > span > strong > a');
+            if (!targetElement) return;
+            authorToCheck = targetElement.textContent;
         } else {
-            parentLi.style.display = showState ? 'block' : 'none';
+            if (typeof sceReblogFindSummaryLink !== 'function') return;
+
+            const postLink = sceReblogFindSummaryLink(parentLi);
+            if (!postLink || !postLink.href) return;
+
+            const info = sceReblogParsePostHref(postLink.href);
+            if (!info || !sceReblogIsReblogPermlink(info.permlink)) return;
+
+            authorToCheck = await sceReblogGetRebloggedAuthor(info.author, info.permlink);
+            if (!authorToCheck) return;
         }
+
+        const isFollowed = await isFollowing(steemApi, feedOwner, authorToCheck);
+        setSummaryVisibility(parentLi, showState, onFeed, isFollowed, authorToCheck, feedOwner);
     });
 
     await Promise.all(promises);
+}
+
+/**
+ * Applies the resteem/reblog visibility rule to a single feed summary.
+ * On the "following" feed, posts stay visible when the toggle is on, when the
+ * author is followed, or when the author is the feed owner. On blog/profile
+ * pages, the toggle controls visibility directly.
+ */
+function setSummaryVisibility(parentLi, showState, onFeed, isFollowed, author, feedOwner) {
+    if (onFeed) {
+        const keepVisible = showState || isFollowed || author === feedOwner;
+        parentLi.style.display = keepVisible ? 'block' : 'none';
+    } else {
+        parentLi.style.display = showState ? 'block' : 'none';
+    }
 }
 
 // Ensure we silence mutations while we toggle visibility (covers async inner work)
