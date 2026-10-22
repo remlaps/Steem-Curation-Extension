@@ -18,7 +18,7 @@ const SCE_REBLOG_REQUEST = 'SCE_REBLOG_REQUEST';
 const SCE_REBLOG_RESPONSE = 'SCE_REBLOG_RESPONSE';
 const SCE_REBLOG_BENEFICIARY_WEIGHT = 5000;   // 5000 / 10000 = 50%
 const SCE_REBLOG_EXCERPT_LENGTH = 320;        // max characters of the original post excerpt
-const SCE_REBLOG_MARKER_TAG = 'steem-curation-extension'; // added to every reblog so reblogs can be aggregated
+const SCE_REBLOG_MARKER_TAG = 'sce-reblog'; // added to every reblog so reblogs can be aggregated (one dash so it stays editable in Condenser)
 const SCE_REBLOG_MAX_TAGS = 5;                // maximum number of tags on the new post
 const SCE_REBLOG_MAX_TAG_LENGTH = 24;         // Condenser's maximum tag length
 const SCE_REBLOG_APP_NAME = 'steem-curation-extension';
