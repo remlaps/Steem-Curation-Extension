@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.8.1-beta] - 2026-10-22
 ### Security
 - Hardened the Steem Keychain bridge (`reblogBridge.js`) so it no longer trusts the contents of the messages it receives. It now only signs `comment` + `comment_options` operations with the Posting key, rebuilds the payload from validated fields (rejecting any other operation, key type, or malformed value), and ignores messages that do not come from one of the extension's own origins. This prevents a script running on a matched page (an XSS, or a compromised mirror site) from using the bridge to request arbitrary Keychain signatures.
 - Escaped the thumbnail URL and link text when building the reblog body, and restricted embedded image URLs to plain `http(s)` URLs, closing a stored-XSS vector where a crafted original post could inject markup into a reblog that is broadcast to the chain.
