@@ -44,6 +44,10 @@ This checklist covers files and areas needing inspection before submitting the S
     - [ ] Review utility functions for correctness.
     - [ ] General checks, as specified above.
 
+- [ ] **`background.js`** (service worker):
+    - [ ] **Critical:** Review the `FETCH_PROXY` message handler. Confirm it validates the sender and restricts requests to the allowlisted hosts (`api.steemit.com`, `sds.steemworld.org`) over HTTPS.
+    - [ ] General checks, as specified above.
+
 - [ ] **`post/author.js`**:
     - [ ] Verify logic for fetching/processing author-specific data (`getAuthorPayoutsInWeekBefore`, `getAuthorPostHistory`). Confirm API endpoints used.
     - [ ] General checks, as specified above.
@@ -80,6 +84,17 @@ This checklist covers files and areas needing inspection before submitting the S
     - [ ] Check logic for showing/hiding resteems and the control checkbox.
     - [ ] General checks, as specified above.
 
+- [ ] **`reblogControl.js`**:
+    - [ ] **Critical:** Review the reblog broadcast path (payload building, the Keychain bridge request, and the pre-broadcast confirmation warnings).
+    - [ ] Confirm the generated title, body, tags and images stay within the bridge's limits and that every inserted value is escaped/sanitized.
+    - [ ] Verify the community-name lookup and warning flow (`sceReblogCollectWarnings`, `sceReblogConfirm`).
+    - [ ] General checks, as specified above.
+
+- [ ] **`reblogBridge.js`** (runs in the page's MAIN world):
+    - [ ] **Critical:** Confirm it only signs `comment` + `comment_options` operations with the Posting key, rebuilds the payload from validated fields, and ignores messages from origins outside the allowlist.
+    - [ ] Verify it never requests, stores, or exposes any keys.
+    - [ ] General checks, as specified above.
+
 - [ ] **`steemWorld.js`** *(Assumed based on usage)*:
     - [ ] **Critical:** Verify *all* API calls target permitted domains (`sds.steemworld.org` or Steemit).
     - [ ] Review any data processing logic specific to Steemworld API responses.
@@ -87,6 +102,14 @@ This checklist covers files and areas needing inspection before submitting the S
 
 - [ ] **`post/Post.js`** *(Assumed based on usage)*:
     - [ ] **Critical:** Verify API calls made within the `Post` class (e.g., in `Post.create` or methods). Ensure permitted origins/hosts.
+    - [ ] General checks, as specified above.
+
+- [ ] **`post/votes/VoterTip.js`**, **`post/votes/votes.js`**:
+    - [ ] Review tooltip and voter-list rendering; confirm all inserted values are built with `createElement`/`textContent` (no `innerHTML`).
+    - [ ] General checks, as specified above.
+
+- [ ] **`language.js`**, **`payoutDisplay.js`**, **`profilePictureDisplay.js`**:
+    - [ ] Review for correctness; confirm no DOM injection of untrusted values.
     - [ ] General checks, as specified above.
 
 ## III. Libraries
@@ -98,7 +121,7 @@ This checklist covers files and areas needing inspection before submitting the S
 
 ## IV. Stylesheets
 
-- [ ] **`styles.css`**:
+- [ ] **`styles.css`**, **`post/styles.css`**, **`profilePictureDisplay.css`**, **`reblogControl.css`**:
     - [ ] **Layout Impact:** Ensure CSS doesn't break target website layout or usability significantly.
     - [ ] **Deceptive UI:** Ensure CSS doesn't hide essential information or create misleading interface elements.
     - [ ] **Specificity:** Ensure selectors are specific enough to avoid unintended styling conflicts.
