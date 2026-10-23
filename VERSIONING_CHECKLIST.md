@@ -87,9 +87,18 @@ This checklist outlines the steps for updating the extension version, changelog,
         powershell -ExecutionPolicy Bypass -File scripts/package.ps1
         ```
 
+- [ ] **11. Create the GitHub Release**
+    - [ ] Open the "new release" page for the tag. (Pushing a tag does **not** create a Release — GitHub only lists tags under the **Tags** tab.)
+        ```text
+        https://github.com/<owner>/<repo>/releases/new?tag=vX.Y.Z
+        ```
+    - [ ] Set the title (e.g., `vX.Y.Z: <summary>`) and the release notes (paste the finalized `CHANGELOG.md` section for this version, or use GitHub's "Generate release notes").
+    - [ ] Attach the packaged `.zip` from Step 10 as a release asset.
+    - [ ] Publish the release, then confirm it appears on the repository's **Releases** page as the latest release.
+
 ---
 
 ## III. Chrome Web Store Submission
 
-- [ ] **11. Submit to Chrome Web Store:**
+- [ ] **12. Submit to Chrome Web Store:**
     - [ ] After completing Section II and creating the `.zip` package, follow the steps outlined in the **`SUBMISSION_CHECKLIST.md`** file to upload and submit your extension via the Chrome Web Store Developer Dashboard.
