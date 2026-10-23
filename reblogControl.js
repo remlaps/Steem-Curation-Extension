@@ -879,7 +879,10 @@ async function sceReblogCollectWarnings(tags, comment, labels) {
         warnings.push(labels.communityWarning.replace('{tag}', community));
     }
 
-    if (sceReblogCountWords(comment) < SCE_REBLOG_MIN_COMMENT_WORDS) {
+    const wordCount = sceReblogCountWords(comment);
+    if (wordCount === 0) {
+        warnings.push(labels.emptyCommentWarning);
+    } else if (wordCount < SCE_REBLOG_MIN_COMMENT_WORDS) {
         warnings.push(labels.shortDescriptionWarning);
     }
 
@@ -1106,7 +1109,11 @@ async function openReblogDialog(info) {
         const warnings = await sceReblogCollectWarnings(tags, comment, labels);
         if (warnings.length) {
             const proceed = await sceReblogConfirm(warnings, labels);
-            if (!proceed) return;
+            if (!proceed) {
+                // Return focus to the user's own text so they can revise it.
+                ui.commentInput.focus();
+                return;
+            }
         }
 
         const includeImage = ui.includeImage.checked;

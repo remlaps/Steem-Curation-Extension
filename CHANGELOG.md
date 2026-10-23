@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The reblog dialog now offers an author-beneficiary dropdown (25%, 50%, 75%, or 100%) in place of the fixed 50%, and the beneficiary note shown in the dialog, the post preview, and the broadcast body reflects the selected percentage. The dropdown is hidden for self-reblogs (where no beneficiary is assigned).
 - Before broadcasting, the reblog dialog now shows a confirmation warning when the first tag is a community tag (`hive-####`), explaining that the post will be published in that community and showing the community's name alongside the tag (e.g. `hive-100421 — Threespeak`) when it can be resolved.
 - The reblog dialog also warns before broadcasting when the user's own comment is empty or under 100 words, and requires confirmation to proceed. When both conditions apply, the warnings are shown together in a single confirmation dialog.
+- Added `scripts/package.ps1`, which builds the Chrome Web Store `.zip` containing exactly the files declared in `manifest.json` (and nothing else), so the packaging step is deterministic.
+
+### Changed
+- The short-comment confirmation warning now distinguishes an empty comment from a short one, and focus returns to the comment field when the confirmation is cancelled.
+- `manifest.json`'s `version_name` now uses the same hyphenated format as the git tag (e.g. `0.8.1-beta`).
 
 ### Fixed
 - Reblogging a reply now inherits the title of the top-level (root) post instead of falling back to `Reblog: @author/permlink`, and its default title is prefixed with `Reblog-reply:` (localized) rather than `Reblog:`. The root post's title is read from the reply's `root_title` (with a fallback fetch of the root post), and it is used for the dialog's default title, the live post preview, and the broadcast body.

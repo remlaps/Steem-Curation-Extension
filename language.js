@@ -810,7 +810,8 @@ const getReblogLabelsInLang = (user_lang) => {
         confirmTitle: "Please confirm",
         confirmButton: "Post anyway",
         communityWarning: "The first tag is a community tag ({tag}). This post will be published in that community.",
-        shortDescriptionWarning: "Your comment is empty or under 100 words."
+        emptyCommentWarning: "You have not written your own comment.",
+        shortDescriptionWarning: "Your comment is shorter than 100 words."
     };
 
     switch (user_lang) {
@@ -844,7 +845,8 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.confirmTitle = "Veuillez confirmer";
             labels.confirmButton = "Publier quand même";
             labels.communityWarning = "Le premier tag est un tag de communauté ({tag}). Cette publication sera publiée dans cette communauté.";
-            labels.shortDescriptionWarning = "Votre commentaire est vide ou compte moins de 100 mots.";
+            labels.emptyCommentWarning = "Vous n'avez pas écrit votre propre commentaire.";
+            labels.shortDescriptionWarning = "Votre commentaire compte moins de 100 mots.";
             break;
         case 'it':
             labels.buttonTitle = "Ripubblica con il tuo commento";
@@ -876,7 +878,8 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.confirmTitle = "Conferma";
             labels.confirmButton = "Pubblica comunque";
             labels.communityWarning = "Il primo tag è un tag di comunità ({tag}). Questo post verrà pubblicato in quella comunità.";
-            labels.shortDescriptionWarning = "Il tuo commento è vuoto o contiene meno di 100 parole.";
+            labels.emptyCommentWarning = "Non hai scritto un tuo commento.";
+            labels.shortDescriptionWarning = "Il tuo commento contiene meno di 100 parole.";
             break;
         case 'ja':
             labels.buttonTitle = "自分のコメントを付けてリブログ";
@@ -908,7 +911,8 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.confirmTitle = "確認してください";
             labels.confirmButton = "それでも投稿する";
             labels.communityWarning = "最初のタグはコミュニティタグ（{tag}）です。この投稿はそのコミュニティに公開されます。";
-            labels.shortDescriptionWarning = "コメントが空か、100語未満です。";
+            labels.emptyCommentWarning = "自分のコメントを書いていません。";
+            labels.shortDescriptionWarning = "コメントが100語未満です。";
             break;
         case 'ko':
             labels.buttonTitle = "내 댓글과 함께 리블로그";
@@ -940,7 +944,8 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.confirmTitle = "확인해 주세요";
             labels.confirmButton = "그래도 게시";
             labels.communityWarning = "첫 번째 태그가 커뮤니티 태그({tag})입니다. 이 게시물은 해당 커뮤니티에 게시됩니다.";
-            labels.shortDescriptionWarning = "댓글이 비어 있거나 100단어 미만입니다.";
+            labels.emptyCommentWarning = "자신의 댓글을 작성하지 않았습니다.";
+            labels.shortDescriptionWarning = "댓글이 100단어 미만입니다.";
             break;
         case 'pl':
             labels.buttonTitle = "Rebloguj z własnym komentarzem";
@@ -972,7 +977,8 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.confirmTitle = "Potwierdź";
             labels.confirmButton = "Opublikuj mimo to";
             labels.communityWarning = "Pierwszy tag to tag społeczności ({tag}). Ten post zostanie opublikowany w tej społeczności.";
-            labels.shortDescriptionWarning = "Twój komentarz jest pusty lub ma mniej niż 100 słów.";
+            labels.emptyCommentWarning = "Nie napisałeś własnego komentarza.";
+            labels.shortDescriptionWarning = "Twój komentarz ma mniej niż 100 słów.";
             break;
         case 'ru':
             labels.buttonTitle = "Реблог с вашим комментарием";
@@ -1004,7 +1010,8 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.confirmTitle = "Подтвердите";
             labels.confirmButton = "Всё равно опубликовать";
             labels.communityWarning = "Первый тег — тег сообщества ({tag}). Пост будет опубликован в этом сообществе.";
-            labels.shortDescriptionWarning = "Ваш комментарий пуст или содержит менее 100 слов.";
+            labels.emptyCommentWarning = "Вы не написали свой комментарий.";
+            labels.shortDescriptionWarning = "Ваш комментарий содержит менее 100 слов.";
             break;
         case 'es':
             labels.buttonTitle = "Reblog con tu propio comentario";
@@ -1036,7 +1043,8 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.confirmTitle = "Confirma";
             labels.confirmButton = "Publicar de todos modos";
             labels.communityWarning = "La primera etiqueta es una etiqueta de comunidad ({tag}). Esta publicación se publicará en esa comunidad.";
-            labels.shortDescriptionWarning = "Tu comentario está vacío o tiene menos de 100 palabras.";
+            labels.emptyCommentWarning = "No has escrito tu propio comentario.";
+            labels.shortDescriptionWarning = "Tu comentario tiene menos de 100 palabras.";
             break;
         case 'uk':
             labels.buttonTitle = "Реблог з вашим коментарем";
@@ -1068,7 +1076,8 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.confirmTitle = "Підтвердьте";
             labels.confirmButton = "Опублікувати попри все";
             labels.communityWarning = "Перший тег — тег спільноти ({tag}). Пост буде опубліковано в цій спільноті.";
-            labels.shortDescriptionWarning = "Ваш коментар порожній або містить менше 100 слів.";
+            labels.emptyCommentWarning = "Ви не написали власний коментар.";
+            labels.shortDescriptionWarning = "Ваш коментар містить менше 100 слів.";
             break;
     }
 
