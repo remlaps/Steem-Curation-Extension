@@ -427,15 +427,17 @@ function sceReblogDefaultTagList(content) {
 }
 
 /**
- * Finalizes a tag list: normalizes it, caps it at SCE_REBLOG_MAX_TAGS and
- * guarantees the SCE_REBLOG_MARKER_TAG is present (replacing the last tag when
- * the list is already full).
+ * Finalizes a tag list: normalizes it, caps it at SCE_REBLOG_MAX_TAGS and, when
+ * `addMarker` is true (the default), guarantees the SCE_REBLOG_MARKER_TAG is
+ * present (replacing the last tag when the list is already full). Pass
+ * `addMarker = false` to respect the given tags verbatim, e.g. when the user has
+ * deliberately removed the marker tag.
  */
-function sceReblogFinalizeTags(rawList) {
+function sceReblogFinalizeTags(rawList, addMarker = true) {
     const tags = sceReblogNormalizeTags(rawList);
     if (!tags.length) tags.push('steem');
 
-    if (tags.includes(SCE_REBLOG_MARKER_TAG)) {
+    if (tags.includes(SCE_REBLOG_MARKER_TAG) || !addMarker) {
         return tags.slice(0, SCE_REBLOG_MAX_TAGS);
     }
     if (tags.length >= SCE_REBLOG_MAX_TAGS) {
@@ -458,8 +460,11 @@ function sceReblogComputeTags(content) {
  * `comment_options` op and applies to the new post.
  */
 function sceReblogBuildOperations({ username, info, content, title, body, tags, images, beneficiaryWeight }) {
-    const tagInput = (Array.isArray(tags) && tags.length) ? tags : sceReblogDefaultTagList(content);
-    const finalTags = sceReblogFinalizeTags(tagInput);
+    const userProvidedTags = Array.isArray(tags) && tags.length;
+    const tagInput = userProvidedTags ? tags : sceReblogDefaultTagList(content);
+    // Respect the tags the user submitted: do not re-add the marker tag if the
+    // user removed it in the dialog.
+    const finalTags = sceReblogFinalizeTags(tagInput, !userProvidedTags);
     const parentPermlink = finalTags[0];
     const permlink = sceReblogGeneratePermlink(info.author);
 

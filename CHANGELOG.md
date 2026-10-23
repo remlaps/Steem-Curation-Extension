@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reblogging a reply now inherits the title of the top-level (root) post instead of falling back to `Reblog: @author/permlink`, and its default title is prefixed with `Reblog-reply:` (localized) rather than `Reblog:`. The root post's title is read from the reply's `root_title` (with a fallback fetch of the root post), and it is used for the dialog's default title, the live post preview, and the broadcast body.
 - Reblogging a reply now also inherits the image and tags from the root post: the root post's first image is used as the thumbnail when the reply has none, and the root post's tags are used, with the `sce-reblog` marker still swapped in as the 5th tag (or the last tag when there are fewer than five).
 - Removed the duplicate reblog icon that appeared next to the native Reblog (resteem) button on the expanded top post of feeds and blog pages. The icon is still shown next to the Reblog button on the dedicated full-post page.
+- Removing the `sce-reblog` tag in the reblog dialog is now respected: the marker tag is no longer silently re-added when the reblog is broadcast.
 
 ## [0.8.1-beta] - 2026-10-22
 ### Security
