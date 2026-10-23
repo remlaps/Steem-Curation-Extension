@@ -22,6 +22,9 @@ const SCE_REBLOG_EXCERPT_LENGTH = 320;        // max characters of the original 
 const SCE_REBLOG_MARKER_TAG = 'sce-reblog'; // added to every reblog so reblogs can be aggregated (one dash so it stays editable in Condenser)
 const SCE_REBLOG_MAX_TAGS = 5;                // maximum number of tags on the new post
 const SCE_REBLOG_MAX_TAG_LENGTH = 24;         // Condenser's maximum tag length
+const SCE_REBLOG_MAX_TITLE_LENGTH = 256;      // mirrors reblogBridge.js MAX_TITLE_LENGTH
+const SCE_REBLOG_MAX_BODY_LENGTH = 65536;     // mirrors reblogBridge.js MAX_BODY_LENGTH
+const SCE_REBLOG_MAX_COMMENT_LENGTH = SCE_REBLOG_MAX_BODY_LENGTH - 2000; // headroom for excerpt/link/notes
 const SCE_REBLOG_APP_NAME = 'steem-curation-extension';
 const SCE_REBLOG_KEYCHAIN_URL = 'https://chromewebstore.google.com/detail/steem-keychain/lkcjlnjfpbikmcmbachjpdbijejflpcm';
 const SCE_REBLOG_ICON_SVG =
@@ -484,14 +487,19 @@ function sceReblogBuildOperations({ username, info, content, title, body, tags, 
         jsonMetadata.image = finalImages;
     }
 
+    // Stay within the bridge's limits (see reblogBridge.js) so the broadcast is
+    // never rejected for an over-long title or body.
+    const safeTitle = String(title || '').slice(0, SCE_REBLOG_MAX_TITLE_LENGTH);
+    const safeBody = String(body || '').slice(0, SCE_REBLOG_MAX_BODY_LENGTH);
+
     const operations = [
         ['comment', {
             parent_author: '',
             parent_permlink: parentPermlink,
             author: username,
             permlink: permlink,
-            title: title,
-            body: body,
+            title: safeTitle,
+            body: safeBody,
             json_metadata: JSON.stringify(jsonMetadata)
         }]
     ];
@@ -553,6 +561,7 @@ function sceReblogBuildModal(labels) {
     const titleInput = document.createElement('input');
     titleInput.type = 'text';
     titleInput.className = 'sce-reblog-title-input';
+    titleInput.maxLength = SCE_REBLOG_MAX_TITLE_LENGTH;
 
     const commentLabel = document.createElement('label');
     commentLabel.className = 'sce-reblog-label';
@@ -560,6 +569,7 @@ function sceReblogBuildModal(labels) {
     const commentInput = document.createElement('textarea');
     commentInput.className = 'sce-reblog-comment-input';
     commentInput.rows = 5;
+    commentInput.maxLength = SCE_REBLOG_MAX_COMMENT_LENGTH;
     commentInput.placeholder = labels.commentPlaceholder;
 
     const tagsLabel = document.createElement('label');
@@ -829,17 +839,44 @@ function sceReblogCountWords(text) {
 }
 
 /**
+ * Best-effort, time-boxed lookup of a community's human-readable name for a
+ * hive-#### tag. Returns null when it cannot be resolved, so callers can fall
+ * back to showing just the tag.
+ * @param {string} tag
+ * @param {number} timeoutMs
+ * @returns {Promise<string|null>}
+ */
+async function sceReblogResolveCommunityName(tag, timeoutMs = 4000) {
+    if (typeof getCommunityInfo !== 'function') return null;
+    try {
+        const info = await Promise.race([
+            getCommunityInfo(steemApi, tag),
+            new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs))
+        ]);
+        const name = info && (info.title || info.name);
+        return (typeof name === 'string' && name.trim()) ? name.trim() : null;
+    } catch (error) {
+        console.warn('SCE: Unable to resolve community name for reblog warning:', error);
+        return null;
+    }
+}
+
+/**
  * Collects the warnings the user should confirm before broadcasting.
  * @param {string[]} tags - The raw tag list; tags[0] becomes the parent permlink.
  * @param {string} comment - The user's own comment text.
  * @param {object} labels - Localized reblog labels.
- * @returns {string[]} Warning messages (empty when there is nothing to warn about).
+ * @returns {Promise<string[]>} Warning messages (empty when there is nothing to warn about).
  */
-function sceReblogCollectWarnings(tags, comment, labels) {
+async function sceReblogCollectWarnings(tags, comment, labels) {
     const warnings = [];
 
     if (Array.isArray(tags) && tags.length && SCE_REBLOG_COMMUNITY_TAG_REGEX.test(tags[0])) {
-        warnings.push(labels.communityWarning.replace('{tag}', tags[0]));
+        const tag = tags[0];
+        const name = await sceReblogResolveCommunityName(tag);
+        // Show both the tag and, when known, the community's display name.
+        const community = (name && name.toLowerCase() !== tag.toLowerCase()) ? `${tag} — ${name}` : tag;
+        warnings.push(labels.communityWarning.replace('{tag}', community));
     }
 
     if (sceReblogCountWords(comment) < SCE_REBLOG_MIN_COMMENT_WORDS) {
@@ -988,7 +1025,8 @@ async function openReblogDialog(info) {
     }
 
     const titlePrefix = isReply ? labels.titleReplyPrefix : labels.titlePrefix;
-    const defaultTitle = `${titlePrefix} ${effectiveTitle || `${info.author}/${info.permlink}`}`;
+    const defaultTitle = `${titlePrefix} ${effectiveTitle || `${info.author}/${info.permlink}`}`
+        .slice(0, SCE_REBLOG_MAX_TITLE_LENGTH);
 
     const ui = sceReblogBuildModal(labels);
     ui.titleInput.value = defaultTitle;
@@ -1065,7 +1103,7 @@ async function openReblogDialog(info) {
 
         // Warn (and require confirmation) before broadcasting when the first tag
         // targets a community or when the user's own comment is very short.
-        const warnings = sceReblogCollectWarnings(tags, comment, labels);
+        const warnings = await sceReblogCollectWarnings(tags, comment, labels);
         if (warnings.length) {
             const proceed = await sceReblogConfirm(warnings, labels);
             if (!proceed) return;
