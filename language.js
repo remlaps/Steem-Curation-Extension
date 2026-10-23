@@ -785,16 +785,19 @@ const getReblogLabelsInLang = (user_lang) => {
         dialogTitle: "Reblog with comment",
         titleLabel: "Title",
         titlePrefix: "Reblog:",
+        titleReplyPrefix: "Reblog-reply:",
         commentLabel: "Your comment",
         commentPlaceholder: "Add your own thoughts about this post...",
         tagsLabel: "Tags",
         tagsPlaceholder: "Separate tags with spaces or commas",
+        includeImageLabel: "Include image",
         excerptLabel: "Excerpt from the original post",
         postPreviewLabel: "Post preview",
         linkLabel: "Original post:",
         linkLabelBy: "Original post by",
         attributionNote: "Reblogged using the [Steem Curation Extension](https://github.com/remlaps/Steem-Curation-Extension). Steem Keychain is required to use this feature.",
-        beneficiaryNote: "50% of this post's author rewards will be assigned to @{author}.",
+        beneficiaryLabel: "Author beneficiary",
+        beneficiaryNote: "{percent}% of this post's author rewards will be assigned to @{author}.",
         submit: "Reblog",
         cancel: "Cancel",
         working: "Broadcasting...",
@@ -803,7 +806,11 @@ const getReblogLabelsInLang = (user_lang) => {
         keychainMissing: "Steem Keychain is required to reblog. Please install it to continue.",
         keychainLinkText: "Install Steem Keychain",
         loadFailed: "Could not load the original post.",
-        broadcastFailed: "Broadcast failed:"
+        broadcastFailed: "Broadcast failed:",
+        confirmTitle: "Please confirm",
+        confirmButton: "Post anyway",
+        communityWarning: "The first tag is a community tag ({tag}). This post will be published in that community.",
+        shortDescriptionWarning: "Your comment is empty or under 100 words."
     };
 
     switch (user_lang) {
@@ -812,16 +819,19 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.dialogTitle = "Re-publier avec commentaire";
             labels.titleLabel = "Titre";
             labels.titlePrefix = "Re-publication :";
+            labels.titleReplyPrefix = "Re-publication (réponse) :";
             labels.commentLabel = "Votre commentaire";
             labels.commentPlaceholder = "Ajoutez vos propres réflexions sur cette publication...";
             labels.tagsLabel = "Tags";
             labels.tagsPlaceholder = "Séparez les tags par des espaces ou des virgules";
+            labels.includeImageLabel = "Inclure l'image";
             labels.excerptLabel = "Extrait de la publication d'origine";
             labels.postPreviewLabel = "Aperçu de la publication";
             labels.linkLabel = "Publication d'origine :";
             labels.linkLabelBy = "Publication originale de";
             labels.attributionNote = "Re-publié avec l'extension [Steem Curation Extension](https://github.com/remlaps/Steem-Curation-Extension). Steem Keychain est requis pour utiliser cette fonctionnalité.";
-            labels.beneficiaryNote = "50 % des récompenses d'auteur de cette publication seront attribuées à @{author}.";
+            labels.beneficiaryLabel = "Bénéficiaire (auteur)";
+            labels.beneficiaryNote = "{percent} % des récompenses d'auteur de cette publication seront attribuées à @{author}.";
             labels.submit = "Re-publier";
             labels.cancel = "Annuler";
             labels.working = "Diffusion en cours...";
@@ -831,22 +841,29 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.keychainLinkText = "Installer Steem Keychain";
             labels.loadFailed = "Impossible de charger la publication d'origine.";
             labels.broadcastFailed = "Échec de la diffusion :";
+            labels.confirmTitle = "Veuillez confirmer";
+            labels.confirmButton = "Publier quand même";
+            labels.communityWarning = "Le premier tag est un tag de communauté ({tag}). Cette publication sera publiée dans cette communauté.";
+            labels.shortDescriptionWarning = "Votre commentaire est vide ou compte moins de 100 mots.";
             break;
         case 'it':
             labels.buttonTitle = "Ripubblica con il tuo commento";
             labels.dialogTitle = "Ripubblica con commento";
             labels.titleLabel = "Titolo";
             labels.titlePrefix = "Ripubblicazione:";
+            labels.titleReplyPrefix = "Ripubblicazione (risposta):";
             labels.commentLabel = "Il tuo commento";
             labels.commentPlaceholder = "Aggiungi i tuoi pensieri su questo post...";
             labels.tagsLabel = "Tag";
             labels.tagsPlaceholder = "Separa i tag con spazi o virgole";
+            labels.includeImageLabel = "Includi immagine";
             labels.excerptLabel = "Estratto dal post originale";
             labels.postPreviewLabel = "Anteprima del post";
             labels.linkLabel = "Post originale:";
             labels.linkLabelBy = "Post originale di";
             labels.attributionNote = "Ripubblicato con l'estensione [Steem Curation Extension](https://github.com/remlaps/Steem-Curation-Extension). Steem Keychain è necessario per utilizzare questa funzione.";
-            labels.beneficiaryNote = "Il 50% delle ricompense d'autore di questo post sarà assegnato a @{author}.";
+            labels.beneficiaryLabel = "Beneficiario (autore)";
+            labels.beneficiaryNote = "Il {percent}% delle ricompense d'autore di questo post sarà assegnato a @{author}.";
             labels.submit = "Ripubblica";
             labels.cancel = "Annulla";
             labels.working = "Trasmissione in corso...";
@@ -856,22 +873,29 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.keychainLinkText = "Installa Steem Keychain";
             labels.loadFailed = "Impossibile caricare il post originale.";
             labels.broadcastFailed = "Trasmissione non riuscita:";
+            labels.confirmTitle = "Conferma";
+            labels.confirmButton = "Pubblica comunque";
+            labels.communityWarning = "Il primo tag è un tag di comunità ({tag}). Questo post verrà pubblicato in quella comunità.";
+            labels.shortDescriptionWarning = "Il tuo commento è vuoto o contiene meno di 100 parole.";
             break;
         case 'ja':
             labels.buttonTitle = "自分のコメントを付けてリブログ";
             labels.dialogTitle = "コメント付きリブログ";
             labels.titleLabel = "タイトル";
             labels.titlePrefix = "リブログ:";
+            labels.titleReplyPrefix = "リブログ（返信）:";
             labels.commentLabel = "あなたのコメント";
             labels.commentPlaceholder = "この投稿についてのあなたの考えを追加...";
             labels.tagsLabel = "タグ";
             labels.tagsPlaceholder = "タグはスペースまたはカンマで区切ってください";
+            labels.includeImageLabel = "画像を含める";
             labels.excerptLabel = "元の投稿からの抜粋";
             labels.postPreviewLabel = "投稿プレビュー";
             labels.linkLabel = "元の投稿:";
             labels.linkLabelBy = "元の投稿者";
             labels.attributionNote = "[Steem Curation Extension](https://github.com/remlaps/Steem-Curation-Extension) を使用してリブログしました。この機能を使用するには Steem Keychain が必要です。";
-            labels.beneficiaryNote = "この投稿の著者報酬の50%は @{author} に割り当てられます。";
+            labels.beneficiaryLabel = "著者への報酬分配率";
+            labels.beneficiaryNote = "この投稿の著者報酬の{percent}%は @{author} に割り当てられます。";
             labels.submit = "リブログ";
             labels.cancel = "キャンセル";
             labels.working = "送信中...";
@@ -881,22 +905,29 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.keychainLinkText = "Steem Keychainをインストール";
             labels.loadFailed = "元の投稿を読み込めませんでした。";
             labels.broadcastFailed = "送信に失敗しました:";
+            labels.confirmTitle = "確認してください";
+            labels.confirmButton = "それでも投稿する";
+            labels.communityWarning = "最初のタグはコミュニティタグ（{tag}）です。この投稿はそのコミュニティに公開されます。";
+            labels.shortDescriptionWarning = "コメントが空か、100語未満です。";
             break;
         case 'ko':
             labels.buttonTitle = "내 댓글과 함께 리블로그";
             labels.dialogTitle = "댓글과 함께 리블로그";
             labels.titleLabel = "제목";
             labels.titlePrefix = "리블로그:";
+            labels.titleReplyPrefix = "리블로그(답글):";
             labels.commentLabel = "내 댓글";
             labels.commentPlaceholder = "이 게시물에 대한 생각을 추가하세요...";
             labels.tagsLabel = "태그";
             labels.tagsPlaceholder = "태그는 공백 또는 쉼표로 구분하세요";
+            labels.includeImageLabel = "이미지 포함";
             labels.excerptLabel = "원본 게시물에서 발췌";
             labels.postPreviewLabel = "게시물 미리보기";
             labels.linkLabel = "원본 게시물:";
             labels.linkLabelBy = "원본 작성자";
             labels.attributionNote = "[Steem Curation Extension](https://github.com/remlaps/Steem-Curation-Extension)을(를) 사용하여 리블로그했습니다. 이 기능을 사용하려면 Steem Keychain이 필요합니다.";
-            labels.beneficiaryNote = "이 게시물의 작성자 보상 50%가 @{author}에게 배정됩니다.";
+            labels.beneficiaryLabel = "작성자 수혜 비율";
+            labels.beneficiaryNote = "이 게시물의 작성자 보상 {percent}%가 @{author}에게 배정됩니다.";
             labels.submit = "리블로그";
             labels.cancel = "취소";
             labels.working = "전송 중...";
@@ -906,22 +937,29 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.keychainLinkText = "Steem Keychain 설치";
             labels.loadFailed = "원본 게시물을 불러올 수 없습니다.";
             labels.broadcastFailed = "전송 실패:";
+            labels.confirmTitle = "확인해 주세요";
+            labels.confirmButton = "그래도 게시";
+            labels.communityWarning = "첫 번째 태그가 커뮤니티 태그({tag})입니다. 이 게시물은 해당 커뮤니티에 게시됩니다.";
+            labels.shortDescriptionWarning = "댓글이 비어 있거나 100단어 미만입니다.";
             break;
         case 'pl':
             labels.buttonTitle = "Rebloguj z własnym komentarzem";
             labels.dialogTitle = "Rebloguj z komentarzem";
             labels.titleLabel = "Tytuł";
             labels.titlePrefix = "Reblog:";
+            labels.titleReplyPrefix = "Reblog (odpowiedź):";
             labels.commentLabel = "Twój komentarz";
             labels.commentPlaceholder = "Dodaj własne przemyślenia na temat tego posta...";
             labels.tagsLabel = "Tagi";
             labels.tagsPlaceholder = "Oddziel tagi spacjami lub przecinkami";
+            labels.includeImageLabel = "Dołącz obraz";
             labels.excerptLabel = "Fragment oryginalnego posta";
             labels.postPreviewLabel = "Podgląd posta";
             labels.linkLabel = "Oryginalny post:";
             labels.linkLabelBy = "Oryginalny post autorstwa";
             labels.attributionNote = "Zreblogowano przy użyciu rozszerzenia [Steem Curation Extension](https://github.com/remlaps/Steem-Curation-Extension). Do korzystania z tej funkcji wymagany jest Steem Keychain.";
-            labels.beneficiaryNote = "50% nagród autorskich z tego posta zostanie przypisane do @{author}.";
+            labels.beneficiaryLabel = "Beneficjent (autor)";
+            labels.beneficiaryNote = "{percent}% nagród autorskich z tego posta zostanie przypisane do @{author}.";
             labels.submit = "Rebloguj";
             labels.cancel = "Anuluj";
             labels.working = "Nadawanie...";
@@ -931,22 +969,29 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.keychainLinkText = "Zainstaluj Steem Keychain";
             labels.loadFailed = "Nie udało się załadować oryginalnego posta.";
             labels.broadcastFailed = "Nadawanie nie powiodło się:";
+            labels.confirmTitle = "Potwierdź";
+            labels.confirmButton = "Opublikuj mimo to";
+            labels.communityWarning = "Pierwszy tag to tag społeczności ({tag}). Ten post zostanie opublikowany w tej społeczności.";
+            labels.shortDescriptionWarning = "Twój komentarz jest pusty lub ma mniej niż 100 słów.";
             break;
         case 'ru':
             labels.buttonTitle = "Реблог с вашим комментарием";
             labels.dialogTitle = "Реблог с комментарием";
             labels.titleLabel = "Заголовок";
             labels.titlePrefix = "Реблог:";
+            labels.titleReplyPrefix = "Реблог (ответ):";
             labels.commentLabel = "Ваш комментарий";
             labels.commentPlaceholder = "Добавьте свои мысли об этом посте...";
             labels.tagsLabel = "Теги";
             labels.tagsPlaceholder = "Разделяйте теги пробелами или запятыми";
+            labels.includeImageLabel = "Включить изображение";
             labels.excerptLabel = "Отрывок из оригинального поста";
             labels.postPreviewLabel = "Предпросмотр поста";
             labels.linkLabel = "Оригинальный пост:";
             labels.linkLabelBy = "Оригинальный пост от";
             labels.attributionNote = "Реблог выполнен с помощью расширения [Steem Curation Extension](https://github.com/remlaps/Steem-Curation-Extension). Для использования этой функции требуется Steem Keychain.";
-            labels.beneficiaryNote = "50% авторских наград этого поста будет назначено @{author}.";
+            labels.beneficiaryLabel = "Бенефициар (автор)";
+            labels.beneficiaryNote = "{percent}% авторских наград этого поста будет назначено @{author}.";
             labels.submit = "Реблог";
             labels.cancel = "Отмена";
             labels.working = "Отправка...";
@@ -956,22 +1001,29 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.keychainLinkText = "Установить Steem Keychain";
             labels.loadFailed = "Не удалось загрузить оригинальный пост.";
             labels.broadcastFailed = "Ошибка отправки:";
+            labels.confirmTitle = "Подтвердите";
+            labels.confirmButton = "Всё равно опубликовать";
+            labels.communityWarning = "Первый тег — тег сообщества ({tag}). Пост будет опубликован в этом сообществе.";
+            labels.shortDescriptionWarning = "Ваш комментарий пуст или содержит менее 100 слов.";
             break;
         case 'es':
             labels.buttonTitle = "Reblog con tu propio comentario";
             labels.dialogTitle = "Reblog con comentario";
             labels.titleLabel = "Título";
             labels.titlePrefix = "Reblog:";
+            labels.titleReplyPrefix = "Reblog (respuesta):";
             labels.commentLabel = "Tu comentario";
             labels.commentPlaceholder = "Añade tus propias reflexiones sobre esta publicación...";
             labels.tagsLabel = "Etiquetas";
             labels.tagsPlaceholder = "Separa las etiquetas con espacios o comas";
+            labels.includeImageLabel = "Incluir imagen";
             labels.excerptLabel = "Extracto de la publicación original";
             labels.postPreviewLabel = "Vista previa de la publicación";
             labels.linkLabel = "Publicación original:";
             labels.linkLabelBy = "Publicación original de";
             labels.attributionNote = "Reblogueado con la extensión [Steem Curation Extension](https://github.com/remlaps/Steem-Curation-Extension). Se requiere Steem Keychain para usar esta función.";
-            labels.beneficiaryNote = "El 50% de las recompensas del autor de esta publicación se asignará a @{author}.";
+            labels.beneficiaryLabel = "Beneficiario (autor)";
+            labels.beneficiaryNote = "El {percent}% de las recompensas del autor de esta publicación se asignará a @{author}.";
             labels.submit = "Reblog";
             labels.cancel = "Cancelar";
             labels.working = "Transmitiendo...";
@@ -981,22 +1033,29 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.keychainLinkText = "Instalar Steem Keychain";
             labels.loadFailed = "No se pudo cargar la publicación original.";
             labels.broadcastFailed = "Error al transmitir:";
+            labels.confirmTitle = "Confirma";
+            labels.confirmButton = "Publicar de todos modos";
+            labels.communityWarning = "La primera etiqueta es una etiqueta de comunidad ({tag}). Esta publicación se publicará en esa comunidad.";
+            labels.shortDescriptionWarning = "Tu comentario está vacío o tiene menos de 100 palabras.";
             break;
         case 'uk':
             labels.buttonTitle = "Реблог з вашим коментарем";
             labels.dialogTitle = "Реблог з коментарем";
             labels.titleLabel = "Заголовок";
             labels.titlePrefix = "Реблог:";
+            labels.titleReplyPrefix = "Реблог (відповідь):";
             labels.commentLabel = "Ваш коментар";
             labels.commentPlaceholder = "Додайте свої думки про цей пост...";
             labels.tagsLabel = "Теги";
             labels.tagsPlaceholder = "Розділяйте теги пробілами або комами";
+            labels.includeImageLabel = "Включити зображення";
             labels.excerptLabel = "Уривок з оригінального посту";
             labels.postPreviewLabel = "Попередній перегляд посту";
             labels.linkLabel = "Оригінальний пост:";
             labels.linkLabelBy = "Оригінальний пост від";
             labels.attributionNote = "Реблог виконано за допомогою розширення [Steem Curation Extension](https://github.com/remlaps/Steem-Curation-Extension). Для використання цієї функції потрібен Steem Keychain.";
-            labels.beneficiaryNote = "50% авторських винагород цього посту буде призначено @{author}.";
+            labels.beneficiaryLabel = "Бенефіціар (автор)";
+            labels.beneficiaryNote = "{percent}% авторських винагород цього посту буде призначено @{author}.";
             labels.submit = "Реблог";
             labels.cancel = "Скасувати";
             labels.working = "Надсилання...";
@@ -1006,6 +1065,10 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.keychainLinkText = "Встановити Steem Keychain";
             labels.loadFailed = "Не вдалося завантажити оригінальний пост.";
             labels.broadcastFailed = "Помилка надсилання:";
+            labels.confirmTitle = "Підтвердьте";
+            labels.confirmButton = "Опублікувати попри все";
+            labels.communityWarning = "Перший тег — тег спільноти ({tag}). Пост буде опубліковано в цій спільноті.";
+            labels.shortDescriptionWarning = "Ваш коментар порожній або містить менше 100 слів.";
             break;
     }
 

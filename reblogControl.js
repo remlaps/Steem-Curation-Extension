@@ -16,7 +16,8 @@
 
 const SCE_REBLOG_REQUEST = 'SCE_REBLOG_REQUEST';
 const SCE_REBLOG_RESPONSE = 'SCE_REBLOG_RESPONSE';
-const SCE_REBLOG_BENEFICIARY_WEIGHT = 5000;   // 5000 / 10000 = 50%
+const SCE_REBLOG_BENEFICIARY_PERCENTAGES = [25, 50, 75, 100]; // author-beneficiary choices (percent)
+const SCE_REBLOG_DEFAULT_BENEFICIARY_PERCENT = 50;            // default author-beneficiary percentage
 const SCE_REBLOG_EXCERPT_LENGTH = 320;        // max characters of the original post excerpt
 const SCE_REBLOG_MARKER_TAG = 'sce-reblog'; // added to every reblog so reblogs can be aggregated (one dash so it stays editable in Condenser)
 const SCE_REBLOG_MAX_TAGS = 5;                // maximum number of tags on the new post
@@ -223,7 +224,7 @@ function sceReblogBuildExcerpt(body, maxLength = SCE_REBLOG_EXCERPT_LENGTH) {
  * Assembles the Markdown body of the new post: the user's comment, a quoted
  * excerpt of the original post, and a link back to it.
  */
-function sceReblogBuildBody(comment, excerpt, author, permlink, title, labels, reblogger, thumbnail) {
+function sceReblogBuildBody(comment, excerpt, author, permlink, title, labels, reblogger, thumbnail, beneficiaryPercent) {
     const relativeUrl = `/@${author}/${permlink}`;
     const linkText = sceReblogSanitizeLinkText(title || `${author}/${permlink}`);
     const lines = [];
@@ -269,7 +270,7 @@ function sceReblogBuildBody(comment, excerpt, author, permlink, title, labels, r
         trailingNotes.push(labels.attributionNote);
     }
     if (!(reblogger && reblogger === author) && labels.beneficiaryNote) {
-        trailingNotes.push(labels.beneficiaryNote.replace('{author}', author));
+        trailingNotes.push(labels.beneficiaryNote.replace('{percent}', beneficiaryPercent).replace('{author}', author));
     }
     if (trailingNotes.length) {
         lines.push('');
@@ -453,10 +454,10 @@ function sceReblogComputeTags(content) {
 
 /**
  * Builds the `comment` + `comment_options` operation pair. The beneficiary
- * (50% to the original author) is attached to the `comment_options` op and
- * applies to the new post.
+ * (a percentage of author rewards to the original author) is attached to the
+ * `comment_options` op and applies to the new post.
  */
-function sceReblogBuildOperations({ username, info, content, title, body, tags, images }) {
+function sceReblogBuildOperations({ username, info, content, title, body, tags, images, beneficiaryWeight }) {
     const tagInput = (Array.isArray(tags) && tags.length) ? tags : sceReblogDefaultTagList(content);
     const finalTags = sceReblogFinalizeTags(tagInput);
     const parentPermlink = finalTags[0];
@@ -494,7 +495,7 @@ function sceReblogBuildOperations({ username, info, content, title, body, tags, 
     const extensions = [];
     if (info.author && info.author !== username) {
         extensions.push([0, {
-            beneficiaries: [{ account: info.author, weight: SCE_REBLOG_BENEFICIARY_WEIGHT }]
+            beneficiaries: [{ account: info.author, weight: beneficiaryWeight }]
         }]);
     }
 
@@ -564,6 +565,15 @@ function sceReblogBuildModal(labels) {
     tagsInput.className = 'sce-reblog-tags-input';
     tagsInput.placeholder = labels.tagsPlaceholder;
 
+    const includeImageLabel = document.createElement('label');
+    includeImageLabel.className = 'sce-reblog-toggle-label';
+    const includeImage = document.createElement('input');
+    includeImage.type = 'checkbox';
+    includeImage.className = 'sce-reblog-include-image';
+    includeImage.checked = true;
+    includeImageLabel.appendChild(includeImage);
+    includeImageLabel.appendChild(document.createTextNode(` ${labels.includeImageLabel}`));
+
     const previewLabel = document.createElement('label');
     previewLabel.className = 'sce-reblog-label';
     previewLabel.textContent = labels.excerptLabel;
@@ -575,6 +585,19 @@ function sceReblogBuildModal(labels) {
     postPreviewLabel.textContent = labels.postPreviewLabel;
     const postPreview = document.createElement('div');
     postPreview.className = 'sce-reblog-post-preview';
+
+    const beneficiaryLabel = document.createElement('label');
+    beneficiaryLabel.className = 'sce-reblog-label';
+    beneficiaryLabel.textContent = labels.beneficiaryLabel;
+    const beneficiarySelect = document.createElement('select');
+    beneficiarySelect.className = 'sce-reblog-beneficiary-select';
+    SCE_REBLOG_BENEFICIARY_PERCENTAGES.forEach((percent) => {
+        const option = document.createElement('option');
+        option.value = String(percent);
+        option.textContent = `${percent}%`;
+        beneficiarySelect.appendChild(option);
+    });
+    beneficiarySelect.value = String(SCE_REBLOG_DEFAULT_BENEFICIARY_PERCENT);
 
     const beneficiary = document.createElement('div');
     beneficiary.className = 'sce-reblog-beneficiary';
@@ -588,10 +611,13 @@ function sceReblogBuildModal(labels) {
     body.appendChild(commentInput);
     body.appendChild(tagsLabel);
     body.appendChild(tagsInput);
+    body.appendChild(includeImageLabel);
     body.appendChild(previewLabel);
     body.appendChild(preview);
     body.appendChild(postPreviewLabel);
     body.appendChild(postPreview);
+    body.appendChild(beneficiaryLabel);
+    body.appendChild(beneficiarySelect);
     body.appendChild(beneficiary);
     body.appendChild(status);
 
@@ -613,7 +639,7 @@ function sceReblogBuildModal(labels) {
     modal.appendChild(footer);
     backdrop.appendChild(modal);
 
-    return { backdrop, close, cancel, submit, titleInput, commentInput, tagsInput, preview, postPreview, beneficiary, status };
+    return { backdrop, close, cancel, submit, titleInput, commentInput, tagsInput, includeImage, preview, postPreview, beneficiaryLabel, beneficiarySelect, beneficiary, status };
 }
 
 /**
@@ -720,7 +746,7 @@ function sceReblogRenderInlineMarkdown(parent, text) {
  * rich elements; user and third-party text is always inserted with
  * textContent.
  */
-function sceReblogRenderPreview(container, { comment, excerpt, author, permlink, title, labels, reblogger, thumbnail }) {
+function sceReblogRenderPreview(container, { comment, excerpt, author, permlink, title, labels, reblogger, thumbnail, beneficiaryPercent }) {
     container.textContent = '';
 
     const relativeUrl = `/@${author}/${permlink}`;
@@ -766,7 +792,7 @@ function sceReblogRenderPreview(container, { comment, excerpt, author, permlink,
         trailingNotes.push(labels.attributionNote);
     }
     if (!(reblogger && reblogger === author) && labels.beneficiaryNote) {
-        trailingNotes.push(labels.beneficiaryNote.replace('{author}', author));
+        trailingNotes.push(labels.beneficiaryNote.replace('{percent}', beneficiaryPercent).replace('{author}', author));
     }
     if (trailingNotes.length) {
         const attributionEl = document.createElement('p');
@@ -782,6 +808,121 @@ function sceReblogRenderPreview(container, { comment, excerpt, author, permlink,
  * Opens the reblog dialog for a post. Handles login/Keychain checks, fetches
  * the original post, and wires up the broadcast on submit.
  */
+/** Minimum number of words in the user's own comment before a reblog warns. */
+const SCE_REBLOG_MIN_COMMENT_WORDS = 100;
+/** Community tag (e.g. hive-100421); the first tag selects the target community. */
+const SCE_REBLOG_COMMUNITY_TAG_REGEX = /^hive-\d+$/i;
+
+/**
+ * Counts the words in a piece of text (whitespace-separated tokens).
+ * @param {string} text
+ * @returns {number}
+ */
+function sceReblogCountWords(text) {
+    const trimmed = String(text || '').trim();
+    return trimmed ? trimmed.split(/\s+/).length : 0;
+}
+
+/**
+ * Collects the warnings the user should confirm before broadcasting.
+ * @param {string[]} tags - The raw tag list; tags[0] becomes the parent permlink.
+ * @param {string} comment - The user's own comment text.
+ * @param {object} labels - Localized reblog labels.
+ * @returns {string[]} Warning messages (empty when there is nothing to warn about).
+ */
+function sceReblogCollectWarnings(tags, comment, labels) {
+    const warnings = [];
+
+    if (Array.isArray(tags) && tags.length && SCE_REBLOG_COMMUNITY_TAG_REGEX.test(tags[0])) {
+        warnings.push(labels.communityWarning.replace('{tag}', tags[0]));
+    }
+
+    if (sceReblogCountWords(comment) < SCE_REBLOG_MIN_COMMENT_WORDS) {
+        warnings.push(labels.shortDescriptionWarning);
+    }
+
+    return warnings;
+}
+
+/**
+ * Shows a modal confirmation listing the given warning messages. Resolves true
+ * when the user confirms, false when they cancel (button, backdrop click or
+ * Escape).
+ * @param {string[]} messages
+ * @param {object} labels
+ * @returns {Promise<boolean>}
+ */
+function sceReblogConfirm(messages, labels) {
+    return new Promise((resolve) => {
+        const backdrop = document.createElement('div');
+        backdrop.className = 'sce-reblog-modal-backdrop sce-reblog-confirm-backdrop';
+
+        const modal = document.createElement('div');
+        modal.className = 'sce-reblog-modal sce-reblog-confirm-modal';
+
+        const header = document.createElement('div');
+        header.className = 'sce-reblog-modal-header';
+        const title = document.createElement('span');
+        title.className = 'sce-reblog-modal-title';
+        title.textContent = labels.confirmTitle;
+        header.appendChild(title);
+
+        const body = document.createElement('div');
+        body.className = 'sce-reblog-confirm-list';
+        messages.forEach((message) => {
+            const p = document.createElement('p');
+            p.textContent = message;
+            body.appendChild(p);
+        });
+
+        const footer = document.createElement('div');
+        footer.className = 'sce-reblog-modal-footer';
+        const cancel = document.createElement('button');
+        cancel.type = 'button';
+        cancel.className = 'sce-reblog-cancel';
+        cancel.textContent = labels.cancel;
+        const confirm = document.createElement('button');
+        confirm.type = 'button';
+        confirm.className = 'sce-reblog-submit';
+        confirm.textContent = labels.confirmButton;
+        footer.appendChild(cancel);
+        footer.appendChild(confirm);
+
+        modal.appendChild(header);
+        modal.appendChild(body);
+        modal.appendChild(footer);
+        backdrop.appendChild(modal);
+
+        let settled = false;
+        const finish = (value) => {
+            if (settled) return;
+            settled = true;
+            document.removeEventListener('keydown', onKeydown, true);
+            if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+            resolve(value);
+        };
+        // Capture phase so Escape cancels only this confirmation and does not
+        // also trigger the main dialog's Escape handler.
+        function onKeydown(event) {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+                finish(false);
+            }
+        }
+
+        cancel.addEventListener('click', () => finish(false));
+        confirm.addEventListener('click', () => finish(true));
+        backdrop.addEventListener('click', (event) => {
+            if (event.target === backdrop) finish(false);
+        });
+        document.addEventListener('keydown', onKeydown, true);
+
+        withSilentMutations(() => document.body.appendChild(backdrop))();
+        confirm.focus();
+    });
+}
+
 async function openReblogDialog(info) {
     const labels = getReblogLabelsInLang(detectUserLanguage() || 'en');
     const username = (typeof getUsername === 'function') ? getUsername() : null;
@@ -811,14 +952,64 @@ async function openReblogDialog(info) {
     }
 
     const excerpt = sceReblogBuildExcerpt(content.body);
-    const images = sceReblogExtractImages(content);
+
+    // Replies have no title, tags or image of their own, so a reblog of a reply
+    // inherits those attributes from the top-level (root) post. Fetch the root
+    // post once and reuse it for the title, image and tags below.
+    const isReply = (content.depth > 0) || !!(content.parent_author);
+    let rootContent = null;
+    if (isReply && content.root_author && content.root_permlink) {
+        try {
+            rootContent = await getContent(content.root_author, content.root_permlink);
+        } catch (error) {
+            console.warn('SCE: Failed to fetch root post for reblog:', error);
+        }
+    }
+    const sourceContent = rootContent || content;
+
+    // Image: use the reply's own image when it has one, otherwise fall back to
+    // the root post's image.
+    let images = sceReblogExtractImages(content);
+    if (isReply && !images.length && rootContent) {
+        images = sceReblogExtractImages(rootContent);
+    }
     const thumbnail = images[0] || null;
-    const defaultTitle = `${labels.titlePrefix} ${content.title || `${info.author}/${info.permlink}`}`;
+
+    // Title: replies inherit the root post's title instead of falling back to
+    // the author/permlink.
+    let effectiveTitle = content.title || '';
+    if (isReply) {
+        effectiveTitle = content.root_title || (rootContent && rootContent.title) || effectiveTitle;
+    }
+
+    const titlePrefix = isReply ? labels.titleReplyPrefix : labels.titlePrefix;
+    const defaultTitle = `${titlePrefix} ${effectiveTitle || `${info.author}/${info.permlink}`}`;
 
     const ui = sceReblogBuildModal(labels);
     ui.titleInput.value = defaultTitle;
-    ui.tagsInput.value = sceReblogComputeTags(content).join(', ');
+    ui.tagsInput.value = sceReblogComputeTags(sourceContent).join(', ');
     ui.preview.textContent = excerpt;
+
+    // Image inclusion: default to including the thumbnail when the post has one.
+    ui.includeImage.checked = !!thumbnail;
+    ui.includeImage.disabled = !thumbnail;
+
+    // Beneficiaries only apply when reblogging someone else's post.
+    const isSelfReblog = !(info.author && info.author !== username);
+    if (isSelfReblog) {
+        ui.beneficiaryLabel.style.display = 'none';
+        ui.beneficiarySelect.style.display = 'none';
+    }
+
+    const getBeneficiaryPercent = () => parseInt(ui.beneficiarySelect.value, 10);
+
+    const updateBeneficiaryNote = () => {
+        if (isSelfReblog) return;
+        ui.beneficiary.textContent = labels.beneficiaryNote
+            .replace('{percent}', getBeneficiaryPercent())
+            .replace('{author}', info.author);
+    };
+    updateBeneficiaryNote();
 
     // Live preview of the full post that will be broadcast (rendered as DOM).
     const updatePostPreview = () => {
@@ -827,18 +1018,20 @@ async function openReblogDialog(info) {
             excerpt: excerpt,
             author: info.author,
             permlink: info.permlink,
-            title: content.title,
+            title: effectiveTitle,
             labels: labels,
             reblogger: username,
-            thumbnail: thumbnail
+            thumbnail: ui.includeImage.checked ? thumbnail : null,
+            beneficiaryPercent: getBeneficiaryPercent()
         });
     };
     updatePostPreview();
     ui.commentInput.addEventListener('input', updatePostPreview);
-
-    if (info.author && info.author !== username) {
-        ui.beneficiary.textContent = labels.beneficiaryNote.replace('{author}', info.author);
-    }
+    ui.includeImage.addEventListener('change', updatePostPreview);
+    ui.beneficiarySelect.addEventListener('change', () => {
+        updateBeneficiaryNote();
+        updatePostPreview();
+    });
 
     const closeModal = withSilentMutations(() => {
         if (ui.backdrop.parentNode) {
@@ -862,9 +1055,21 @@ async function openReblogDialog(info) {
         if (ui.submit.disabled) return;
 
         const title = ui.titleInput.value.trim() || defaultTitle;
-        const body = sceReblogBuildBody(ui.commentInput.value, excerpt, info.author, info.permlink, content.title, labels, username, thumbnail);
+        const comment = ui.commentInput.value;
         const tags = ui.tagsInput.value.split(/[\s,]+/).filter(Boolean);
-        const operations = sceReblogBuildOperations({ username, info, content, title, body, tags, images });
+
+        // Warn (and require confirmation) before broadcasting when the first tag
+        // targets a community or when the user's own comment is very short.
+        const warnings = sceReblogCollectWarnings(tags, comment, labels);
+        if (warnings.length) {
+            const proceed = await sceReblogConfirm(warnings, labels);
+            if (!proceed) return;
+        }
+
+        const includeImage = ui.includeImage.checked;
+        const beneficiaryPercent = getBeneficiaryPercent();
+        const body = sceReblogBuildBody(comment, excerpt, info.author, info.permlink, effectiveTitle, labels, username, includeImage ? thumbnail : null, beneficiaryPercent);
+        const operations = sceReblogBuildOperations({ username, info, content: sourceContent, title, body, tags, images: includeImage ? images : [], beneficiaryWeight: beneficiaryPercent * 100 });
 
         console.debug('SCE: Broadcasting reblog operations:', operations);
 
@@ -960,8 +1165,15 @@ function addReblogButtons() {
 
     // 2) Full post view.
     const reblogAnchor = document.querySelector('.Reblog__button');
+    // The top post of a feed/blog is rendered as an expanded full post that
+    // still carries a summary header; that header already received a reblog
+    // icon above, so skip the duplicate next to the native Reblog button. The
+    // dedicated full-post page has no summary header, so its Reblog button
+    // still gets an icon.
+    const reblogPostItem = reblogAnchor ? reblogAnchor.closest('li') : null;
+    const isExpandedFeedPost = !!(reblogPostItem && reblogPostItem.querySelector('.articles__summary-header'));
     const shareContainer = reblogAnchor ? reblogAnchor.parentNode : document.querySelector('.RightShare__Menu');
-    if (shareContainer && !shareContainer.querySelector('.sce-reblog-button')) {
+    if (!isExpandedFeedPost && shareContainer && !shareContainer.querySelector('.sce-reblog-button')) {
         const info = sceReblogParsePostHref(window.location.href);
         if (info) {
             const button = sceReblogCreateButton(info, labels);
