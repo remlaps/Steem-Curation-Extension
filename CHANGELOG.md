@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.9.0-beta] - 2026-10-23
 ### Added
 - The reblog dialog now includes an "Include image" checkbox (checked by default) that lets you omit the thumbnail image — and its wrapping `<div class="pull-right">` — from the reblogged post body and from `json_metadata.image`, so the image need not appear in your feed.
 - The reblog dialog now offers an author-beneficiary dropdown (25%, 50%, 75%, or 100%) in place of the fixed 50%, and the beneficiary note shown in the dialog, the post preview, and the broadcast body reflects the selected percentage. The dropdown is hidden for self-reblogs (where no beneficiary is assigned).
