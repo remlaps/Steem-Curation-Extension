@@ -82,6 +82,10 @@ This checklist outlines the steps for updating the extension version, changelog,
 - [ ] **10. Package the Extension**
     - [ ] Ensure you are on the tagged commit (`git checkout vX.Y.Z`).
     - [ ] Create the `.zip` archive containing *only* necessary extension files. **Exclude** `.git`, `node_modules`, the `checklists/` directory, all Markdown files (`*.md`), etc.
+        ```bash
+        # Example (PowerShell): packages exactly the files declared in manifest.json
+        powershell -ExecutionPolicy Bypass -File scripts/package.ps1
+        ```
 
 ---
 
