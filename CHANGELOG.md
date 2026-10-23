@@ -6,6 +6,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0-beta] - 2026-10-23
+### Added
+- The reblog dialog now includes an "Include image" checkbox (checked by default) that lets you omit the thumbnail image — and its wrapping `<div class="pull-right">` — from the reblogged post body and from `json_metadata.image`, so the image need not appear in your feed.
+- The reblog dialog now offers an author-beneficiary dropdown (25%, 50%, 75%, or 100%) in place of the fixed 50%, and the beneficiary note shown in the dialog, the post preview, and the broadcast body reflects the selected percentage. The dropdown is hidden for self-reblogs (where no beneficiary is assigned).
+- Before broadcasting, the reblog dialog now shows a confirmation warning when the first tag is a community tag (`hive-####`), explaining that the post will be published in that community and showing the community's name alongside the tag (e.g. `hive-100421 — Threespeak`) when it can be resolved.
+- The reblog dialog also warns before broadcasting when the user's own comment is empty or under 100 words, and requires confirmation to proceed. When both conditions apply, the warnings are shown together in a single confirmation dialog.
+- Added `scripts/package.ps1`, which builds the Chrome Web Store `.zip` containing exactly the files declared in `manifest.json` (and nothing else), so the packaging step is deterministic.
+
+### Changed
+- The short-comment confirmation warning now distinguishes an empty comment from a short one, and focus returns to the comment field when the confirmation is cancelled.
+- `manifest.json`'s `version_name` now uses the same hyphenated format as the git tag (e.g. `0.8.1-beta`).
+
+### Fixed
+- Reblogging a reply now inherits the title of the top-level (root) post instead of falling back to `Reblog: @author/permlink`, and its default title is prefixed with `Reblog-reply:` (localized) rather than `Reblog:`. The root post's title is read from the reply's `root_title` (with a fallback fetch of the root post), and it is used for the dialog's default title, the live post preview, and the broadcast body.
+- Reblogging a reply now also inherits the image and tags from the root post: the root post's first image is used as the thumbnail when the reply has none, and the root post's tags are used, with the `sce-reblog` marker still swapped in as the 5th tag (or the last tag when there are fewer than five).
+- Removed the duplicate reblog icon that appeared next to the native Reblog (resteem) button on the expanded top post of feeds and blog pages. The icon is still shown next to the Reblog button on the dedicated full-post page.
+- Removing the `sce-reblog` tag in the reblog dialog is now respected: the marker tag is no longer silently re-added when the reblog is broadcast.
+- Reblog titles and bodies are now capped to the bridge's limits (256 and 65,536 characters respectively), and the title and comment fields have matching input limits, so an over-long title (a near-maximum original title plus the `Reblog:` prefix) can no longer make the broadcast fail with an opaque "Unsupported operation" error.
+
 ## [0.8.1-beta] - 2026-10-22
 ### Security
 - Hardened the Steem Keychain bridge (`reblogBridge.js`) so it no longer trusts the contents of the messages it receives. It now only signs `comment` + `comment_options` operations with the Posting key, rebuilds the payload from validated fields (rejecting any other operation, key type, or malformed value), and ignores messages that do not come from one of the extension's own origins. This prevents a script running on a matched page (an XSS, or a compromised mirror site) from using the bridge to request arbitrary Keychain signatures.

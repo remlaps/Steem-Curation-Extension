@@ -100,7 +100,8 @@
 
 .sce-reblog-title-input,
 .sce-reblog-tags-input,
-.sce-reblog-comment-input {
+.sce-reblog-comment-input,
+.sce-reblog-beneficiary-select {
     width: 100%;
     box-sizing: border-box;
     padding: 6px 8px;
@@ -114,6 +115,19 @@
 
 .sce-reblog-comment-input {
     resize: vertical;
+}
+
+.sce-reblog-beneficiary-select {
+    margin-bottom: 8px;
+}
+
+.sce-reblog-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    margin-bottom: 4px;
+    cursor: pointer;
 }
 
 .sce-reblog-preview {
@@ -220,6 +234,24 @@
     cursor: default;
 }
 
+/* --- Confirmation dialog --- */
+
+.sce-reblog-confirm-backdrop {
+    z-index: 2147483002;
+}
+
+.sce-reblog-confirm-list {
+    margin: 12px 0;
+}
+
+.sce-reblog-confirm-list p {
+    margin: 0 0 8px;
+}
+
+.sce-reblog-confirm-list p:last-child {
+    margin-bottom: 0;
+}
+
 /* --- Toast --- */
 
 .sce-reblog-toast {
@@ -268,6 +300,7 @@ body.theme-dark .sce-reblog-modal-header {
 body.theme-dark .sce-reblog-title-input,
 body.theme-dark .sce-reblog-tags-input,
 body.theme-dark .sce-reblog-comment-input,
+body.theme-dark .sce-reblog-beneficiary-select,
 body.theme-dark .sce-reblog-preview,
 body.theme-dark .sce-reblog-post-preview {
     border-color: #434344;

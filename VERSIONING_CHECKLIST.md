@@ -8,10 +8,10 @@ This checklist outlines the steps for updating the extension version, changelog,
 *   Store submission steps (referenced in Section III) are performed in the **Chrome Web Store Developer Dashboard** *after* packaging, following the separate `SUBMISSION_CHECKLIST.md`.
 
 **Checklist Handling:**
-*   This workflow uses the "Copy and Commit" method for Section I. The original template files (`PRE_SUBMISSION_CHECKLIST.md`, `VERSIONING_CHECKLIST.md`) should remain clean in the `main` branch.
+*   Versioned checklist copies live in the `checklists/` directory, which is listed in `.gitignore`. They are **local working documents** and are *not* committed; the release-preparation commit and the merge commit are the authoritative record that a release was prepared.
+*   The original template files (`PRE_SUBMISSION_CHECKLIST.md`, `VERSIONING_CHECKLIST.md`, `SUBMISSION_CHECKLIST.md`) stay clean in the `main` branch.
+*   Versioned copies are named `<TEMPLATE_NAME>-<version>.md`, where `<version>` matches the git tag without its leading `v` (e.g. `PRE_SUBMISSION_CHECKLIST-0.9.0-beta.md`).
 *   Section III serves only as a pointer to the submission process guide.
-
-**Note on Self-Reference:** If you choose to commit a versioned copy of this `VERSIONING_CHECKLIST.md` (as per the optional part of Step 7), that committed file will naturally show its own Step 7 (and subsequent steps like 8, 9, etc.) as incomplete (`[ ]`). This is expected. The Git commit for Step 7 and the merge commit for Step 8 serve as the definitive record of their completion. The committed checklist primarily documents the completion of preparatory steps (1-6) and the items staged for the release commit.
 
 ---
 
@@ -22,15 +22,15 @@ This checklist outlines the steps for updating the extension version, changelog,
     - [ ] Determine SemVer increment (`MAJOR.MINOR.PATCH`).
 
 - [ ] **2. Prepare Pre-Submission Checklist Copy**
-    - [ ] Copy `PRE_SUBMISSION_CHECKLIST.md` to `PRE_SUBMISSION_CHECKLIST_vX.Y.Z.md` (using version from Step 1).
+    - [ ] Copy `PRE_SUBMISSION_CHECKLIST.md` into the (gitignored) `checklists/` directory as `PRE_SUBMISSION_CHECKLIST-<version>.md`, using the version from Step 1.
         ```bash
-        # Example:
-        cp PRE_SUBMISSION_CHECKLIST.md PRE_SUBMISSION_CHECKLIST_vX.Y.Z.md
+        # Example (version = tag without the leading "v"):
+        cp PRE_SUBMISSION_CHECKLIST.md checklists/PRE_SUBMISSION_CHECKLIST-0.9.0-beta.md
         ```
-    - *Note: Ensure original template remains unmodified.*
+    - *Note: The original template must remain unmodified. The copy lives under `checklists/`, which is gitignored, so it stays local.*
 
 - [ ] **3. Complete Pre-Submission Checklist**
-    - [ ] Thoroughly review code/assets using the *copied* checklist (`PRE_SUBMISSION_CHECKLIST_vX.Y.Z.md`).
+    - [ ] Thoroughly review code/assets using the *copied* checklist (`checklists/PRE_SUBMISSION_CHECKLIST-<version>.md`).
     - [ ] Check off items as verified/completed.
     - [ ] Address any issues identified *before* proceeding.
 
@@ -47,14 +47,13 @@ This checklist outlines the steps for updating the extension version, changelog,
     - [ ] Change `"version"` to match the new version number.
 
 - [ ] **7. Commit Release Preparation**
-    - [ ] Stage `CHANGELOG.md`, `manifest.json`, `package.json` (if applicable), and the *completed* `PRE_SUBMISSION_CHECKLIST_vX.Y.Z.md`.
-    - [ ] *Optional:* Copy, complete, and stage this `VERSIONING_CHECKLIST.md` itself (e.g., `VERSIONING_CHECKLIST_vX.Y.Z.md`).
+    - [ ] Stage `CHANGELOG.md`, `manifest.json`, and `package.json` (if applicable). Do **not** stage the versioned checklists — they live in the gitignored `checklists/` directory and are not committed.
+    - [ ] *Optional:* Copy and complete this `VERSIONING_CHECKLIST.md` itself as `checklists/VERSIONING_CHECKLIST-<version>.md` (local only; not committed).
     - [ ] Commit with a clear message (e.g., `chore(release): Prepare release vX.Y.Z`).
         ```bash
         # Example:
-        git add CHANGELOG.md manifest.json PRE_SUBMISSION_CHECKLIST_vX.Y.Z.md
+        git add CHANGELOG.md manifest.json
         # git add package.json # If applicable
-        # git add VERSIONING_CHECKLIST_vX.Y.Z.md # If applicable
         git commit -m "chore(release): Prepare release vX.Y.Z"
         ```
 
@@ -82,7 +81,11 @@ This checklist outlines the steps for updating the extension version, changelog,
 
 - [ ] **10. Package the Extension**
     - [ ] Ensure you are on the tagged commit (`git checkout vX.Y.Z`).
-    - [ ] Create the `.zip` archive containing *only* necessary extension files. **Exclude** `.git`, `node_modules`, test files, *all* checklist files (`*.md`), etc.
+    - [ ] Create the `.zip` archive containing *only* necessary extension files. **Exclude** `.git`, `node_modules`, the `checklists/` directory, all Markdown files (`*.md`), etc.
+        ```bash
+        # Example (PowerShell): packages exactly the files declared in manifest.json
+        powershell -ExecutionPolicy Bypass -File scripts/package.ps1
+        ```
 
 ---
 
