@@ -140,6 +140,6 @@ This checklist covers files and areas needing inspection before submitting the S
 
 ## VII. Overall & Store Listing
 
-- [ ] **Single Purpose:** Confirm the extension focuses on its core described functionality.
+- [ ] **Single Purpose:** Confirm the extension focuses on its core described functionality (prepared listing copy and justification live in `STORE_LISTING.md`).
 - [ ] **No Malware/Deception:** Ensure no malicious code, phishing, or deceptive practices.
 - [ ] **Thorough Testing:** Test all features across different scenarios and target pages. Test edge cases and error conditions.

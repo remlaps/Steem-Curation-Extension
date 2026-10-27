@@ -6,11 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1-beta] - 2026-10-27
+### Added
+- Added `STORE_LISTING.md`, containing prepared Chrome Web Store listing copy (description, single-purpose and permission justifications, and data-usage declarations).
+- Added `PRIVACY_POLICY.md`, containing the extension's privacy policy as a standalone repository file.
+
+### Changed
+- Updated the `manifest.json` description to disclose the optional "reblog with comment" feature and that broadcast signing is delegated to Steem Keychain (the extension never handles keys).
+- Consolidated `SUBMISSION_CHECKLIST.md` to reference `STORE_LISTING.md` and `PRIVACY_POLICY.md` instead of duplicating listing copy, and cross-linked `STORE_LISTING.md` from `PRE_SUBMISSION_CHECKLIST.md`.
+
 ## [0.9.0-beta] - 2026-10-23
 ### Added
 - The reblog dialog now includes an "Include image" checkbox (checked by default) that lets you omit the thumbnail image — and its wrapping `<div class="pull-right">` — from the reblogged post body and from `json_metadata.image`, so the image need not appear in your feed.
 - The reblog dialog now offers an author-beneficiary dropdown (25%, 50%, 75%, or 100%) in place of the fixed 50%, and the beneficiary note shown in the dialog, the post preview, and the broadcast body reflects the selected percentage. The dropdown is hidden for self-reblogs (where no beneficiary is assigned).
-- Before broadcasting, the reblog dialog now shows a confirmation warning when the first tag is a community tag (`hive-####`), explaining that the post will be published in that community and showing the community's name alongside the tag (e.g. `hive-100421 — Threespeak`) when it can be resolved.
+- Before broadcasting, the reblog dialog now shows a confirmation warning when the first tag is a community tag (`hive-####`), explaining that the post will be published in that community and showing the community's name alongside the tag (e.g. `hive-109160 — Popular STEM`) when it can be resolved.
 - The reblog dialog also warns before broadcasting when the user's own comment is empty or under 100 words, and requires confirmation to proceed. When both conditions apply, the warnings are shown together in a single confirmation dialog.
 - Added `scripts/package.ps1`, which builds the Chrome Web Store `.zip` containing exactly the files declared in `manifest.json` (and nothing else), so the packaging step is deterministic.
 
