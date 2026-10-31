@@ -6,10 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- The reblog dialog's comment editor now supports full Markdown: a formatting toolbar (bold, italic, strikethrough, heading, quote, inline code, code block, bulleted and numbered lists, link, image) and a Write/Preview toggle with a rendered preview.
-- The reblog dialog's live previews (the user's own comment and the full reblogged post) are now rendered with Remarkable — the same Markdown engine Condenser's editor uses — instead of the previous hand-rolled renderer.
+- The reblog dialog's comment editor now has a Markdown formatting toolbar (bold, italic, strikethrough, heading, quote, inline code, code block, bulleted and numbered lists, link, image).
+- The reblog dialog's live "Post preview" now renders the user's comment as full Markdown with proper heading sizes, inline-code styling and table borders, using Remarkable — the same Markdown engine Condenser's editor uses — instead of the previous hand-rolled renderer.
 
 ### Changed
+- The reblog dialog now shows a single "Post preview". The separate comment "Write/Preview" tab and the standalone "Excerpt from the original post" panel were removed as redundant (the excerpt already appears, quoted, inside the post preview).
 - The excerpt from the original post is now derived with Remarkable (rendered to HTML, then reduced to plain text) instead of a regex-based Markdown stripper, so headings, lists, tables and code are converted to text more faithfully.
 - Vendored Remarkable 2.0.1 as `libs/remarkable.min.js` and added `.github/workflows/update-remarkable.yml`, which keeps the vendored copy current (mirroring the existing Chart.js workflow).
 

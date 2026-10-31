@@ -4,10 +4,9 @@
 > the branch, the `.github/workflows/update-remarkable.yml` workflow, the vendored
 > `libs/remarkable.min.js` (Remarkable **2.0.1**, MIT, integrity-verified against
 > the npm registry), the `manifest.json` wiring, the `reblogControl.js` /
-> `reblogControl.css` refactor (Markdown toolbar, Write/Preview toggle,
-> Remarkable-based excerpt and previews with sanitization), the editor labels for
-> all 9 locales, and the `CHANGELOG.md` entry. Remaining: manual browser testing
-> and release preparation.
+> `reblogControl.css` refactor (Markdown toolbar, single "Post preview" rendered
+> with Remarkable and sanitized), the editor labels for all 9 locales, and the
+> `CHANGELOG.md` entry. Remaining: manual browser testing and release preparation.
 
 ## 1. Goal & scope
 

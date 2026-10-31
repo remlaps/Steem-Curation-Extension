@@ -806,25 +806,6 @@ function sceReblogBuildModal(labels) {
 
     const toolbar = sceReblogBuildToolbar(labels);
 
-    const editorTabs = document.createElement('div');
-    editorTabs.className = 'sce-reblog-editor-tabs';
-    const writeTab = document.createElement('button');
-    writeTab.type = 'button';
-    writeTab.className = 'sce-reblog-editor-tab sce-reblog-editor-tab-active';
-    writeTab.dataset.mode = 'write';
-    writeTab.textContent = labels.writeTab;
-    const previewTab = document.createElement('button');
-    previewTab.type = 'button';
-    previewTab.className = 'sce-reblog-editor-tab';
-    previewTab.dataset.mode = 'preview';
-    previewTab.textContent = labels.previewTab;
-    editorTabs.appendChild(writeTab);
-    editorTabs.appendChild(previewTab);
-
-    const commentPreview = document.createElement('div');
-    commentPreview.className = 'sce-reblog-comment-preview sce-reblog-markdown';
-    commentPreview.style.display = 'none';
-
     const tagsLabel = document.createElement('label');
     tagsLabel.className = 'sce-reblog-label';
     tagsLabel.textContent = labels.tagsLabel;
@@ -841,12 +822,6 @@ function sceReblogBuildModal(labels) {
     includeImage.checked = true;
     includeImageLabel.appendChild(includeImage);
     includeImageLabel.appendChild(document.createTextNode(` ${labels.includeImageLabel}`));
-
-    const previewLabel = document.createElement('label');
-    previewLabel.className = 'sce-reblog-label';
-    previewLabel.textContent = labels.excerptLabel;
-    const preview = document.createElement('div');
-    preview.className = 'sce-reblog-preview';
 
     const postPreviewLabel = document.createElement('label');
     postPreviewLabel.className = 'sce-reblog-label';
@@ -876,15 +851,11 @@ function sceReblogBuildModal(labels) {
     body.appendChild(titleLabel);
     body.appendChild(titleInput);
     body.appendChild(commentLabel);
-    body.appendChild(editorTabs);
     body.appendChild(toolbar);
     body.appendChild(commentInput);
-    body.appendChild(commentPreview);
     body.appendChild(tagsLabel);
     body.appendChild(tagsInput);
     body.appendChild(includeImageLabel);
-    body.appendChild(previewLabel);
-    body.appendChild(preview);
     body.appendChild(postPreviewLabel);
     body.appendChild(postPreview);
     body.appendChild(beneficiaryLabel);
@@ -910,7 +881,7 @@ function sceReblogBuildModal(labels) {
     modal.appendChild(footer);
     backdrop.appendChild(modal);
 
-    return { backdrop, close, cancel, submit, titleInput, commentInput, tagsInput, includeImage, preview, postPreview, beneficiaryLabel, beneficiarySelect, beneficiary, status, toolbar, editorTabs, commentPreview };
+    return { backdrop, close, cancel, submit, titleInput, commentInput, tagsInput, includeImage, postPreview, beneficiaryLabel, beneficiarySelect, beneficiary, status, toolbar };
 }
 
 /**
@@ -1288,7 +1259,6 @@ async function openReblogDialog(info) {
     const ui = sceReblogBuildModal(labels);
     ui.titleInput.value = defaultTitle;
     ui.tagsInput.value = sceReblogComputeTags(sourceContent).join(', ');
-    ui.preview.textContent = excerpt;
 
     // Image inclusion: default to including the thumbnail when the post has one.
     ui.includeImage.checked = !!thumbnail;
@@ -1337,26 +1307,6 @@ async function openReblogDialog(info) {
         }
     });
 
-    // Write / Preview toggle for the comment editor. The textarea stays the
-    // source of truth; the preview is only a rendered view of its value.
-    const renderCommentPreview = () => {
-        ui.commentPreview.textContent = '';
-        sceReblogRenderMarkdownInto(ui.commentPreview, ui.commentInput.value.trim());
-    };
-    const setEditorMode = (mode) => {
-        const isPreview = mode === 'preview';
-        if (isPreview) renderCommentPreview();
-        ui.commentInput.style.display = isPreview ? 'none' : '';
-        ui.toolbar.style.display = isPreview ? 'none' : '';
-        ui.commentPreview.style.display = isPreview ? '' : 'none';
-        ui.editorTabs.querySelectorAll('.sce-reblog-editor-tab').forEach((tab) => {
-            tab.classList.toggle('sce-reblog-editor-tab-active', tab.dataset.mode === mode);
-        });
-    };
-    ui.editorTabs.addEventListener('click', (event) => {
-        const tab = event.target.closest('.sce-reblog-editor-tab');
-        if (tab) setEditorMode(tab.dataset.mode);
-    });
     ui.beneficiarySelect.addEventListener('change', () => {
         updateBeneficiaryNote();
         updatePostPreview();
@@ -1394,7 +1344,6 @@ async function openReblogDialog(info) {
             const proceed = await sceReblogConfirm(warnings, labels);
             if (!proceed) {
                 // Return focus to the user's own text so they can revise it.
-                setEditorMode('write');
                 ui.commentInput.focus();
                 return;
             }

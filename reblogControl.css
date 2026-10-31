@@ -117,30 +117,7 @@
     resize: vertical;
 }
 
-/* --- Markdown editor: tabs + toolbar + rendered comment --- */
-
-.sce-reblog-editor-tabs {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 6px;
-}
-
-.sce-reblog-editor-tab {
-    padding: 4px 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background: transparent;
-    color: inherit;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 13px;
-}
-
-.sce-reblog-editor-tab-active {
-    font-weight: bold;
-    border-color: #1e90ff;
-    color: #1e90ff;
-}
+/* --- Markdown editor toolbar --- */
 
 .sce-reblog-toolbar {
     display: flex;
@@ -166,15 +143,6 @@
     background-color: rgba(128, 128, 128, 0.18);
 }
 
-.sce-reblog-comment-preview {
-    min-height: 96px;
-    max-height: 240px;
-    overflow-y: auto;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 8px;
-}
-
 .sce-reblog-beneficiary-select {
     margin-bottom: 8px;
 }
@@ -186,17 +154,6 @@
     margin-top: 8px;
     margin-bottom: 4px;
     cursor: pointer;
-}
-
-.sce-reblog-preview {
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 8px;
-    overflow-y: auto;
-    font-size: 13px;
-    opacity: 0.9;
-    white-space: pre-wrap;
-    max-height: 120px;
 }
 
 .sce-reblog-post-preview {
@@ -250,8 +207,39 @@
 .sce-reblog-markdown h5,
 .sce-reblog-markdown h6 {
     margin: 0 0 8px;
-    font-size: 1em;
     font-weight: bold;
+    line-height: 1.25;
+}
+
+.sce-reblog-markdown h1 {
+    font-size: 1.6em;
+}
+
+.sce-reblog-markdown h2 {
+    font-size: 1.35em;
+}
+
+.sce-reblog-markdown h3 {
+    font-size: 1.15em;
+}
+
+.sce-reblog-markdown h4,
+.sce-reblog-markdown h5,
+.sce-reblog-markdown h6 {
+    font-size: 1em;
+}
+
+.sce-reblog-markdown strong {
+    font-weight: bold;
+}
+
+.sce-reblog-markdown em {
+    font-style: italic;
+}
+
+.sce-reblog-markdown del,
+.sce-reblog-markdown s {
+    text-decoration: line-through;
 }
 
 .sce-reblog-markdown blockquote {
@@ -273,6 +261,9 @@
 .sce-reblog-markdown code {
     font-family: Consolas, Menlo, monospace;
     font-size: 0.92em;
+    background-color: rgba(128, 128, 128, 0.14);
+    padding: 1px 4px;
+    border-radius: 3px;
 }
 
 .sce-reblog-markdown pre code {
@@ -289,6 +280,18 @@
 .sce-reblog-markdown img {
     max-width: 100%;
     height: auto;
+}
+
+.sce-reblog-markdown table {
+    border-collapse: collapse;
+    margin: 0 0 8px;
+}
+
+.sce-reblog-markdown th,
+.sce-reblog-markdown td {
+    border: 1px solid #ccc;
+    padding: 4px 8px;
+    text-align: left;
 }
 
 .sce-reblog-markdown a {
@@ -432,7 +435,6 @@ body.theme-dark .sce-reblog-title-input,
 body.theme-dark .sce-reblog-tags-input,
 body.theme-dark .sce-reblog-comment-input,
 body.theme-dark .sce-reblog-beneficiary-select,
-body.theme-dark .sce-reblog-preview,
 body.theme-dark .sce-reblog-post-preview {
     border-color: #434344;
 }
@@ -441,9 +443,12 @@ body.theme-dark .sce-reblog-post-preview blockquote {
     border-left-color: #434344;
 }
 
-body.theme-dark .sce-reblog-editor-tab,
-body.theme-dark .sce-reblog-toolbar-button,
-body.theme-dark .sce-reblog-comment-preview {
+body.theme-dark .sce-reblog-toolbar-button {
+    border-color: #434344;
+}
+
+body.theme-dark .sce-reblog-markdown th,
+body.theme-dark .sce-reblog-markdown td {
     border-color: #434344;
 }
 
