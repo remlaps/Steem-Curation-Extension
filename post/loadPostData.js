@@ -163,7 +163,7 @@ const loadAuthorWeeklyEarningsGraph = async (post, user_lang = 'en') => {
  */
 const loadAuthorWeeklyEarningsBarGraph = (payouts, user_lang = 'en') => {
     if (payouts.length === 0) {
-        console.warn("No payouts to display in the bar graph.");
+        console.debug("No payouts to display in the bar graph.");
         return;
     }
 
@@ -216,7 +216,7 @@ const displayPostResteemData = async (post, anchorClassSelector) => {
 
     const anchorElement = document.querySelector(anchorClassSelector);
     if (!anchorElement) {
-        console.warn(`Element with class "${anchorClassSelector}" not found.`);
+        console.debug(`Element with class "${anchorClassSelector}" not found.`);
         return;
     }
 
