@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The excerpt from the original post is now derived with Remarkable (rendered to HTML, then reduced to plain text) instead of a regex-based Markdown stripper, so raw HTML in the source no longer leaks into the excerpt or the broadcast body.
 - Vendored Remarkable 2.0.1 (`libs/remarkable.min.js`) and added `.github/workflows/update-remarkable.yml` to keep it current (mirroring the Chart.js workflow).
 
+### Fixed
+- The reblog dialog's text fields (title, tags, comment and the beneficiary dropdown) are now readable in night mode — their text and background colors are set explicitly for both themes and scoped so the host site's dark-mode form styles (and the browser's own dark-mode form controls) can no longer render white text on a light background.
+
 ### Security
 - Markdown rendered in the reblog dialog is sanitized before it is inserted into the page: raw HTML is parsed (Remarkable runs with `html: true`, matching Condenser) then filtered — only an allowlist of tags and class names is kept, every other attribute is dropped, and link and image URLs are restricted to plain `http(s)` (or same-site relative) URLs.
 

@@ -211,7 +211,7 @@ class VoterTip {
     addChart() {
         this.chartContainer = this.tip.querySelector('.voter-tip__chart');
         if (!this.chartContainer){
-            console.warn(`Chart container not found`);
+            console.debug(`Chart container not found`);
             return;
         };
 

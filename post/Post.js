@@ -82,7 +82,7 @@ class Post {
                 this.details.readingTimeMinutes = getReadingTime(this.details.wordCount);
 
             } else {
-                console.warn("No details found for the post.");
+                console.debug("No details found for the post.");
             }
         } catch (error) {
             console.error("Error fetching post details:", error);

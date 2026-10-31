@@ -162,7 +162,7 @@ const createLineGraph = (containerClass, canvasId, title, labels, datasets, yAxi
             },
         });
     } else {
-        console.warn(`SCE: Element with class "${containerClass}" not found!`);
+        console.debug(`SCE: Element with class "${containerClass}" not found.`);
     }
 };
 
@@ -204,7 +204,7 @@ const formatScaledTimeLabel = (elapsedMs, maxElapsedMs, user_lang = 'en') => {
 const createLineGraphWithClickableDots = (containerClass, canvasId, title, labels, data, yAxisLabel, posts, user_lang = 'en') => {
     const graphContainer = document.querySelector(`.${containerClass}`);
     if (!graphContainer) {
-        console.warn(`SCE: Graph container not found: ${containerClass}`);
+        console.debug(`SCE: Graph container not found: ${containerClass}`);
         return;
     }
 
