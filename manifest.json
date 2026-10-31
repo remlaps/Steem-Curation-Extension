@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "version": "0.9.0",
-  "version_name": "0.9.0-beta",
+  "version": "0.10.0",
+  "version_name": "0.10.0-beta",
   "name": "Steem Curation Extension",
-  "description": "Provide supplemental information for curators on Steem/Condenser based web sites.",
+  "description": "Supplemental curation information for Steem/Condenser sites, plus optional reblogs signed via Steem Keychain.",
   "icons": { 
     "16": "images/icon16.png",
     "32": "images/icon32.png",
@@ -41,7 +41,7 @@
         "https://steemitdev.com/*",
         "https://www.steemitdev.com/*"
       ],
-      "js": ["useful.js", "post/votes/VoterTip.js", "post/votes/votes.js", "profilePictureDisplay.js", "language.js", "payoutDisplay.js", "steemWorld.js", "post/author.js", "graph.js", "post/Post.js", "post/loadPostData.js", "libs/chart.min.js","botNotifier.js", "postMetrics.js", "overlay.js", "resteemControl.js", "reblogControl.js", "main.js"],
+      "js": ["useful.js", "post/votes/VoterTip.js", "post/votes/votes.js", "profilePictureDisplay.js", "language.js", "payoutDisplay.js", "steemWorld.js", "post/author.js", "graph.js", "post/Post.js", "post/loadPostData.js", "libs/chart.min.js","botNotifier.js", "postMetrics.js", "overlay.js", "resteemControl.js", "libs/remarkable.min.js", "reblogControl.js", "main.js"],
       "css": [ "post/styles.css", "styles.css", "profilePictureDisplay.css", "reblogControl.css" ]
     }
   ]
