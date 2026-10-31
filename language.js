@@ -824,7 +824,11 @@ const getReblogLabelsInLang = (user_lang) => {
         toolbarBulletList: "Bulleted list",
         toolbarNumberedList: "Numbered list",
         toolbarLink: "Link",
-        toolbarImage: "Image"
+        toolbarImage: "Image",
+        maximize: "Maximize",
+        restore: "Restore",
+        sideBySide: "Side by side",
+        stacked: "Stacked"
     };
 
     switch (user_lang) {
@@ -873,6 +877,10 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.toolbarNumberedList = "Liste numérotée";
             labels.toolbarLink = "Lien";
             labels.toolbarImage = "Image";
+            labels.maximize = "Agrandir";
+            labels.restore = "Restaurer";
+            labels.sideBySide = "Côte à côte";
+            labels.stacked = "Empilé";
             break;
         case 'it':
             labels.buttonTitle = "Ripubblica con il tuo commento";
@@ -919,6 +927,10 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.toolbarNumberedList = "Elenco numerato";
             labels.toolbarLink = "Link";
             labels.toolbarImage = "Immagine";
+            labels.maximize = "Ingrandisci";
+            labels.restore = "Ripristina";
+            labels.sideBySide = "Affiancati";
+            labels.stacked = "Impilato";
             break;
         case 'ja':
             labels.buttonTitle = "自分のコメントを付けてリブログ";
@@ -965,6 +977,10 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.toolbarNumberedList = "番号付きリスト";
             labels.toolbarLink = "リンク";
             labels.toolbarImage = "画像";
+            labels.maximize = "最大化";
+            labels.restore = "元に戻す";
+            labels.sideBySide = "並べて表示";
+            labels.stacked = "上下に表示";
             break;
         case 'ko':
             labels.buttonTitle = "내 댓글과 함께 리블로그";
@@ -1011,6 +1027,10 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.toolbarNumberedList = "번호 매기기 목록";
             labels.toolbarLink = "링크";
             labels.toolbarImage = "이미지";
+            labels.maximize = "최대화";
+            labels.restore = "복원";
+            labels.sideBySide = "나란히 보기";
+            labels.stacked = "세로로 보기";
             break;
         case 'pl':
             labels.buttonTitle = "Rebloguj z własnym komentarzem";
@@ -1057,6 +1077,10 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.toolbarNumberedList = "Lista numerowana";
             labels.toolbarLink = "Link";
             labels.toolbarImage = "Obraz";
+            labels.maximize = "Maksymalizuj";
+            labels.restore = "Przywróć";
+            labels.sideBySide = "Obok siebie";
+            labels.stacked = "Jeden pod drugim";
             break;
         case 'ru':
             labels.buttonTitle = "Реблог с вашим комментарием";
@@ -1103,6 +1127,10 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.toolbarNumberedList = "Нумерованный список";
             labels.toolbarLink = "Ссылка";
             labels.toolbarImage = "Изображение";
+            labels.maximize = "Развернуть";
+            labels.restore = "Восстановить";
+            labels.sideBySide = "Рядом";
+            labels.stacked = "Стопкой";
             break;
         case 'es':
             labels.buttonTitle = "Reblog con tu propio comentario";
@@ -1149,6 +1177,10 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.toolbarNumberedList = "Lista numerada";
             labels.toolbarLink = "Enlace";
             labels.toolbarImage = "Imagen";
+            labels.maximize = "Maximizar";
+            labels.restore = "Restaurar";
+            labels.sideBySide = "Lado a lado";
+            labels.stacked = "Apilado";
             break;
         case 'uk':
             labels.buttonTitle = "Реблог з вашим коментарем";
@@ -1195,6 +1227,10 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.toolbarNumberedList = "Нумерований список";
             labels.toolbarLink = "Посилання";
             labels.toolbarImage = "Зображення";
+            labels.maximize = "Розгорнути";
+            labels.restore = "Відновити";
+            labels.sideBySide = "Поруч";
+            labels.stacked = "Стовпчиком";
             break;
     }
 

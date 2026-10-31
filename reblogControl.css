@@ -50,11 +50,14 @@
 }
 
 .sce-reblog-modal {
+    position: relative;
+    display: flex;
+    flex-direction: column;
     background-color: #ffffff;
     color: #111111;
     width: min(600px, 92vw);
     max-height: 88vh;
-    overflow-y: auto;
+    overflow: hidden;
     border-radius: 8px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
     padding: 16px;
@@ -63,13 +66,42 @@
     text-align: left;
 }
 
+/* Applied while the dialog is maximized (its size is set inline by JS). */
+.sce-reblog-modal-maximized {
+    border-radius: 0;
+}
+
 .sce-reblog-modal-header {
+    flex: 0 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
     border-bottom: 1px solid #eee;
     padding-bottom: 8px;
     margin-bottom: 12px;
+}
+
+.sce-reblog-modal-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sce-reblog-modal-action {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    padding: 2px 8px;
+    line-height: 1.4;
+}
+
+.sce-reblog-modal-action:hover {
+    background-color: rgba(128, 128, 128, 0.18);
 }
 
 .sce-reblog-modal-title {
@@ -88,8 +120,71 @@
 }
 
 .sce-reblog-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
+}
+
+/* Panes: editor + preview (stacked by default, side by side on request). */
+.sce-reblog-editor-pane,
+.sce-reblog-preview-pane {
+    min-width: 0;
+}
+
+.sce-reblog-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.sce-reblog-layout-toggle {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    padding: 2px 8px;
+    margin-top: 8px;
+    white-space: nowrap;
+}
+
+.sce-reblog-layout-toggle:hover {
+    background-color: rgba(128, 128, 128, 0.18);
+}
+
+/* Side-by-side layout. */
+.sce-reblog-side-by-side .sce-reblog-modal-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.sce-reblog-side-by-side .sce-reblog-status {
+    grid-column: 1 / -1;
+}
+
+/* Bottom-right resize grip. */
+.sce-reblog-resize-handle {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 16px;
+    height: 16px;
+    cursor: nwse-resize;
+    background-image: linear-gradient(135deg, transparent 45%, #999 45%, #999 55%, transparent 55%);
+    background-size: 6px 6px;
+    opacity: 0.6;
+    z-index: 1;
+}
+
+.sce-reblog-resize-handle:hover {
+    opacity: 1;
 }
 
 .sce-reblog-label {
@@ -362,10 +457,12 @@
 }
 
 .sce-reblog-modal-footer {
+    flex: 0 0 auto;
     display: flex;
     justify-content: flex-end;
     gap: 10px;
     margin-top: 16px;
+    padding-right: 18px;
 }
 
 .sce-reblog-cancel,
@@ -470,7 +567,9 @@ body.theme-dark .sce-reblog-post-preview blockquote {
     border-left-color: #434344;
 }
 
-body.theme-dark .sce-reblog-toolbar-button {
+body.theme-dark .sce-reblog-toolbar-button,
+body.theme-dark .sce-reblog-modal-action,
+body.theme-dark .sce-reblog-layout-toggle {
     border-color: #434344;
 }
 

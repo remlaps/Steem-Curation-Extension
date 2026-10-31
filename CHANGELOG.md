@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - The reblog dialog's comment editor now has a Markdown formatting toolbar (bold, italic, strikethrough, heading, quote, inline code, code block, bulleted and numbered lists, link, image).
 - The reblog dialog's live "Post preview" now renders the user's comment as full Markdown with proper heading sizes, inline-code styling and table borders, using Remarkable — the same Markdown engine Condenser's editor uses — instead of the previous hand-rolled renderer.
+- The reblog dialog is now resizable (drag its bottom-right corner) and can be maximized and restored, and the preview pane can be toggled to sit side by side with the editor instead of below it.
 
 ### Changed
 - The reblog dialog now shows a single "Post preview". The separate comment "Write/Preview" tab and the standalone "Excerpt from the original post" panel were removed as redundant (the excerpt already appears, quoted, inside the post preview).

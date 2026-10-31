@@ -40,6 +40,9 @@ const SCE_REBLOG_ICON_SVG =
 // brackets, whitespace or backslashes that could break out of an HTML attribute.
 const SCE_REBLOG_SAFE_IMAGE_URL_REGEX = /^https?:\/\/[^\s"'<>\\]+$/i;
 const SCE_REBLOG_MAX_IMAGE_URL_LENGTH = 2048;
+const SCE_REBLOG_MIN_MODAL_WIDTH = 360;      // minimum resizable dialog width (px)
+const SCE_REBLOG_MIN_MODAL_HEIGHT = 240;     // minimum resizable dialog height (px)
+const SCE_REBLOG_SIDE_BY_SIDE_WIDTH = 1040;  // width the dialog widens to for the side-by-side layout (px)
 
 let sceReblogRequestCounter = 0;
 const sceReblogPendingRequests = new Map();
@@ -829,13 +832,24 @@ function sceReblogBuildModal(labels) {
     const title = document.createElement('span');
     title.className = 'sce-reblog-modal-title';
     title.textContent = labels.dialogTitle;
+
+    const headerActions = document.createElement('div');
+    headerActions.className = 'sce-reblog-modal-actions';
+    const maximize = document.createElement('button');
+    maximize.type = 'button';
+    maximize.className = 'sce-reblog-modal-action';
+    maximize.textContent = labels.maximize;
+    maximize.title = labels.maximize;
+    maximize.setAttribute('aria-label', labels.maximize);
     const close = document.createElement('button');
     close.type = 'button';
     close.className = 'sce-reblog-modal-close';
     close.setAttribute('aria-label', labels.cancel);
     close.textContent = '\u00D7';
+    headerActions.appendChild(maximize);
+    headerActions.appendChild(close);
     header.appendChild(title);
-    header.appendChild(close);
+    header.appendChild(headerActions);
 
     const body = document.createElement('div');
     body.className = 'sce-reblog-modal-body';
@@ -879,6 +893,18 @@ function sceReblogBuildModal(labels) {
     const postPreviewLabel = document.createElement('label');
     postPreviewLabel.className = 'sce-reblog-label';
     postPreviewLabel.textContent = labels.postPreviewLabel;
+
+    const layoutToggle = document.createElement('button');
+    layoutToggle.type = 'button';
+    layoutToggle.className = 'sce-reblog-layout-toggle';
+    layoutToggle.textContent = labels.sideBySide;
+    layoutToggle.title = labels.sideBySide;
+
+    const previewHeader = document.createElement('div');
+    previewHeader.className = 'sce-reblog-preview-header';
+    previewHeader.appendChild(postPreviewLabel);
+    previewHeader.appendChild(layoutToggle);
+
     const postPreview = document.createElement('div');
     postPreview.className = 'sce-reblog-post-preview';
 
@@ -901,19 +927,29 @@ function sceReblogBuildModal(labels) {
     const status = document.createElement('div');
     status.className = 'sce-reblog-status';
 
-    body.appendChild(titleLabel);
-    body.appendChild(titleInput);
-    body.appendChild(commentLabel);
-    body.appendChild(toolbar);
-    body.appendChild(commentInput);
-    body.appendChild(tagsLabel);
-    body.appendChild(tagsInput);
-    body.appendChild(includeImageLabel);
-    body.appendChild(postPreviewLabel);
-    body.appendChild(postPreview);
-    body.appendChild(beneficiaryLabel);
-    body.appendChild(beneficiarySelect);
-    body.appendChild(beneficiary);
+    // Editor pane: everything the user fills in.
+    const editorPane = document.createElement('div');
+    editorPane.className = 'sce-reblog-editor-pane';
+    editorPane.appendChild(titleLabel);
+    editorPane.appendChild(titleInput);
+    editorPane.appendChild(commentLabel);
+    editorPane.appendChild(toolbar);
+    editorPane.appendChild(commentInput);
+    editorPane.appendChild(tagsLabel);
+    editorPane.appendChild(tagsInput);
+    editorPane.appendChild(includeImageLabel);
+    editorPane.appendChild(beneficiaryLabel);
+    editorPane.appendChild(beneficiarySelect);
+    editorPane.appendChild(beneficiary);
+
+    // Preview pane: the live post preview (can sit beside the editor).
+    const previewPane = document.createElement('div');
+    previewPane.className = 'sce-reblog-preview-pane';
+    previewPane.appendChild(previewHeader);
+    previewPane.appendChild(postPreview);
+
+    body.appendChild(editorPane);
+    body.appendChild(previewPane);
     body.appendChild(status);
 
     const footer = document.createElement('div');
@@ -929,12 +965,109 @@ function sceReblogBuildModal(labels) {
     footer.appendChild(cancel);
     footer.appendChild(submit);
 
+    const resizeHandle = document.createElement('div');
+    resizeHandle.className = 'sce-reblog-resize-handle';
+    resizeHandle.setAttribute('aria-hidden', 'true');
+
     modal.appendChild(header);
     modal.appendChild(body);
     modal.appendChild(footer);
+    modal.appendChild(resizeHandle);
     backdrop.appendChild(modal);
 
-    return { backdrop, close, cancel, submit, titleInput, commentInput, tagsInput, includeImage, postPreview, beneficiaryLabel, beneficiarySelect, beneficiary, status, toolbar };
+    return { backdrop, modal, close, maximize, layoutToggle, resizeHandle, cancel, submit, titleInput, commentInput, tagsInput, includeImage, postPreview, beneficiaryLabel, beneficiarySelect, beneficiary, status, toolbar };
+}
+
+/**
+ * Wires the dialog sizing controls: the bottom-right resize grip, the
+ * maximize/restore button, and the side-by-side / stacked layout toggle.
+ * @param {object} ui     Refs returned by sceReblogBuildModal.
+ * @param {object} labels Localized labels.
+ */
+function sceReblogWireDialogSizing(ui, labels) {
+    const clampValue = (value, min, max) => Math.min(Math.max(value, min), max);
+    const inlineSize = () => ({
+        width: ui.modal.style.width,
+        height: ui.modal.style.height,
+        maxHeight: ui.modal.style.maxHeight
+    });
+    const applyInlineSize = (size) => {
+        ui.modal.style.width = size.width || '';
+        ui.modal.style.height = size.height || '';
+        ui.modal.style.maxHeight = size.maxHeight || '';
+    };
+    const setExplicitSize = (width, height) => {
+        ui.modal.style.width = `${Math.round(width)}px`;
+        ui.modal.style.height = `${Math.round(height)}px`;
+        ui.modal.style.maxHeight = 'none';
+    };
+
+    // Resize by dragging the bottom-right grip.
+    ui.resizeHandle.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        const rect = ui.modal.getBoundingClientRect();
+        const startX = event.clientX;
+        const startY = event.clientY;
+        const startWidth = rect.width;
+        const startHeight = rect.height;
+        ui.resizeHandle.setPointerCapture(event.pointerId);
+
+        const onMove = withSilentMutations((moveEvent) => {
+            const width = clampValue(startWidth + (moveEvent.clientX - startX), SCE_REBLOG_MIN_MODAL_WIDTH, window.innerWidth - 16);
+            const height = clampValue(startHeight + (moveEvent.clientY - startY), SCE_REBLOG_MIN_MODAL_HEIGHT, window.innerHeight - 16);
+            setExplicitSize(width, height);
+        });
+        const onEnd = () => {
+            ui.resizeHandle.removeEventListener('pointermove', onMove);
+            ui.resizeHandle.removeEventListener('pointerup', onEnd);
+            ui.resizeHandle.removeEventListener('pointercancel', onEnd);
+        };
+        ui.resizeHandle.addEventListener('pointermove', onMove);
+        ui.resizeHandle.addEventListener('pointerup', onEnd);
+        ui.resizeHandle.addEventListener('pointercancel', onEnd);
+    });
+
+    // Maximize / restore.
+    let maximized = false;
+    let preMaximizeSize = null;
+    const setMaximized = (next) => {
+        if (next === maximized) return;
+        if (next) {
+            preMaximizeSize = inlineSize();
+            ui.modal.classList.add('sce-reblog-modal-maximized');
+            setExplicitSize(window.innerWidth - 24, window.innerHeight - 24);
+        } else {
+            ui.modal.classList.remove('sce-reblog-modal-maximized');
+            applyInlineSize(preMaximizeSize || { width: '', height: '', maxHeight: '' });
+        }
+        maximized = next;
+        ui.maximize.textContent = maximized ? labels.restore : labels.maximize;
+        ui.maximize.title = maximized ? labels.restore : labels.maximize;
+        ui.maximize.setAttribute('aria-label', maximized ? labels.restore : labels.maximize);
+    };
+    ui.maximize.addEventListener('click', () => setMaximized(!maximized));
+
+    // Side-by-side / stacked layout.
+    let sideBySide = false;
+    let preLayoutSize = null;
+    const setSideBySide = (next) => {
+        if (next === sideBySide) return;
+        if (next) {
+            preLayoutSize = inlineSize();
+            const rect = ui.modal.getBoundingClientRect();
+            if (!maximized && rect.width < SCE_REBLOG_SIDE_BY_SIDE_WIDTH) {
+                setExplicitSize(Math.min(SCE_REBLOG_SIDE_BY_SIDE_WIDTH, window.innerWidth - 24), rect.height);
+            }
+            ui.modal.classList.add('sce-reblog-side-by-side');
+        } else {
+            ui.modal.classList.remove('sce-reblog-side-by-side');
+            if (!maximized) applyInlineSize(preLayoutSize || { width: '', height: '', maxHeight: '' });
+        }
+        sideBySide = next;
+        ui.layoutToggle.textContent = sideBySide ? labels.stacked : labels.sideBySide;
+        ui.layoutToggle.title = sideBySide ? labels.stacked : labels.sideBySide;
+    };
+    ui.layoutToggle.addEventListener('click', () => setSideBySide(!sideBySide));
 }
 
 /**
@@ -1364,6 +1497,9 @@ async function openReblogDialog(info) {
         updateBeneficiaryNote();
         updatePostPreview();
     });
+
+    // Sizing controls: drag-resize, maximize/restore, side-by-side layout.
+    sceReblogWireDialogSizing(ui, labels);
 
     const closeModal = withSilentMutations(() => {
         if (ui.backdrop.parentNode) {
