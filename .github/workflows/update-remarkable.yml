@@ -1,0 +1,285 @@
+name: Update Remarkable
+
+# Keeps the vendored libs/remarkable.min.js current. Mirrors the structure of
+# update-chartjs.yml: it checks the npm registry, verifies the published tarball
+# against its integrity hash, then opens a PR with the updated bundle.
+
+on:
+  schedule:
+    # Run every Monday at 2 AM UTC (weekly check)
+    - cron: '0 2 * * 1'
+  workflow_dispatch: # Allow manual trigger from GitHub Actions tab
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Extract current Remarkable version
+        id: current-version
+        run: |
+          # The vendored file carries a provenance header ("Remarkable vX.Y.Z").
+          CURRENT_VERSION=$(grep -oP 'Remarkable v\K[0-9]+\.[0-9]+\.[0-9]+' libs/remarkable.min.js | head -1)
+          if [ -z "$CURRENT_VERSION" ]; then
+            # Fallback: try to extract from the provenance path comment
+            CURRENT_VERSION=$(grep -oP '/npm/remarkable@\K[0-9]+\.[0-9]+\.[0-9]+' libs/remarkable.min.js | head -1)
+          fi
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current Remarkable version: $CURRENT_VERSION"
+
+      - name: Get latest Remarkable version from npm
+        id: latest-version
+        run: |
+          LATEST_VERSION=$(curl -s https://registry.npmjs.org/remarkable | jq -r '.["dist-tags"].latest')
+          echo "latest_version=$LATEST_VERSION" >> $GITHUB_OUTPUT
+          echo "Latest Remarkable version: $LATEST_VERSION"
+
+      - name: Compare versions
+        id: compare
+        run: |
+          CURRENT="${{ steps.current-version.outputs.current_version }}"
+          LATEST="${{ steps.latest-version.outputs.latest_version }}"
+
+          if [ "$CURRENT" = "$LATEST" ]; then
+            echo "is_newer=false" >> $GITHUB_OUTPUT
+            echo "Versions match. No update needed."
+            exit 0
+          fi
+
+          # Simple semver comparison using sort -V (version sort)
+          # If latest sorts after current, it's newer
+          if printf '%s\n%s\n' "$CURRENT" "$LATEST" | sort -V | head -1 | grep -q "^$CURRENT$"; then
+            echo "is_newer=true" >> $GITHUB_OUTPUT
+            echo "New version available: $LATEST (current: $CURRENT)"
+          else
+            echo "is_newer=false" >> $GITHUB_OUTPUT
+            echo "Current version is newer or equal. No update needed."
+          fi
+
+      - name: Check for existing PR
+        id: check-pr
+        if: steps.compare.outputs.is_newer == 'true'
+        run: |
+          LATEST="${{ steps.latest-version.outputs.latest_version }}"
+          BRANCH_NAME="update/remarkable-$LATEST"
+
+          # Check if branch already exists
+          if git ls-remote --heads origin "$BRANCH_NAME" | grep -q "$BRANCH_NAME"; then
+            echo "pr_exists=true" >> $GITHUB_OUTPUT
+            echo "Branch $BRANCH_NAME already exists. Skipping update."
+          else
+            echo "pr_exists=false" >> $GITHUB_OUTPUT
+            echo "No existing PR found. Proceeding with update."
+          fi
+
+      - name: Download and verify Remarkable from npm
+        if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
+        run: |
+          LATEST="${{ steps.latest-version.outputs.latest_version }}"
+
+          echo "Downloading Remarkable v$LATEST from the npm registry..."
+
+          # Download the published tarball (not a CDN copy) and verify it against
+          # the integrity hash published in the npm registry before using it.
+          TARBALL="remarkable-$LATEST.tgz"
+          curl -sSL "https://registry.npmjs.org/remarkable/-/remarkable-$LATEST.tgz" -o "$TARBALL"
+
+          EXPECTED_INTEGRITY=$(curl -sSL "https://registry.npmjs.org/remarkable/$LATEST" | jq -r '.dist.integrity')
+          ACTUAL_INTEGRITY="sha512-$(openssl dgst -sha512 -binary "$TARBALL" | openssl base64 -A)"
+
+          if [ -z "$EXPECTED_INTEGRITY" ] || [ "$EXPECTED_INTEGRITY" = "null" ]; then
+            echo "Error: Could not read the published integrity hash for Remarkable v$LATEST."
+            exit 1
+          fi
+          if [ "$EXPECTED_INTEGRITY" != "$ACTUAL_INTEGRITY" ]; then
+            echo "Error: Integrity check failed for Remarkable v$LATEST."
+            echo "  expected: $EXPECTED_INTEGRITY"
+            echo "  actual:   $ACTUAL_INTEGRITY"
+            exit 1
+          fi
+          echo "✓ Tarball integrity verified against the npm registry."
+
+          # Extract the UMD build from the verified tarball.
+          tar -xzf "$TARBALL" package/dist/remarkable.min.js
+          cp package/dist/remarkable.min.js libs/remarkable.min.js.tmp
+          rm -rf "$TARBALL" package
+
+          # Verify extraction succeeded
+          if [ ! -s libs/remarkable.min.js.tmp ]; then
+            echo "Error: Extracted file is missing or empty"
+            exit 1
+          fi
+
+          # Write the provenance header (matching the style of libs/chart.min.js)
+          # followed by the verified UMD bundle. The "Remarkable v$LATEST" line is
+          # what the version-extraction step greps for on the next run.
+          {
+            echo "/**"
+            echo " * Vendored Remarkable UMD build (the markdown engine used by the"
+            echo " * reblog dialog). Original file: /npm/remarkable@$LATEST/dist/remarkable.min.js"
+            echo " *"
+            echo " * Verified against the integrity hash published in the npm registry."
+            echo " */"
+            echo "/*!"
+            echo " * Remarkable v$LATEST"
+            echo " * https://github.com/jonschlinkert/remarkable"
+            echo " * Released under the MIT License"
+            echo " */"
+          } > libs/remarkable.min.js
+
+          # Append the downloaded content
+          cat libs/remarkable.min.js.tmp >> libs/remarkable.min.js
+          rm libs/remarkable.min.js.tmp
+
+          echo "Remarkable updated to v$LATEST"
+          echo "File size: $(wc -c < libs/remarkable.min.js) bytes"
+
+      - name: Verify file was updated
+        if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
+        run: |
+          LATEST="${{ steps.latest-version.outputs.latest_version }}"
+          if grep -q "remarkable@$LATEST" libs/remarkable.min.js; then
+            echo "✓ File header updated correctly"
+          else
+            echo "✗ Warning: File header may not have been updated correctly"
+          fi
+
+          if [ -s libs/remarkable.min.js ]; then
+            echo "✓ File exists and is not empty"
+          else
+            echo "✗ Error: File is missing or empty"
+            exit 1
+          fi
+
+      - name: Configure git and verify changes
+        if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Verify the file was actually modified
+          if git diff --quiet libs/remarkable.min.js; then
+            echo "⚠ Warning: Git reports no changes to libs/remarkable.min.js"
+            echo "File size: $(wc -c < libs/remarkable.min.js) bytes"
+            echo "This might cause the PR creation to fail."
+            exit 1
+          else
+            echo "✓ Git detects changes in libs/remarkable.min.js"
+            git diff --stat libs/remarkable.min.js | head -5
+          fi
+
+      - name: Create branch, commit, and push
+        if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
+        run: |
+          LATEST="${{ steps.latest-version.outputs.latest_version }}"
+          BRANCH_NAME="update/remarkable-$LATEST"
+
+          # Create and checkout new branch
+          git checkout -b "$BRANCH_NAME"
+
+          # Stage the changed file
+          git add libs/remarkable.min.js
+
+          # Verify something is staged
+          if git diff --cached --quiet; then
+            echo "Error: No changes staged. Aborting."
+            exit 1
+          fi
+
+          # Commit the changes
+          git commit -m "chore: Update Remarkable to v$LATEST"
+
+          # Push the branch
+          git push origin "$BRANCH_NAME"
+
+          echo "Branch $BRANCH_NAME created and pushed successfully"
+
+      - name: Create Pull Request using GitHub API
+        id: create-pr
+        if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
+        env:
+          # Use PAT if available, otherwise fall back to GITHUB_TOKEN
+          GITHUB_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          LATEST="${{ steps.latest-version.outputs.latest_version }}"
+          CURRENT="${{ steps.current-version.outputs.current_version }}"
+          BRANCH_NAME="update/remarkable-$LATEST"
+
+          # Create PR body
+          PR_BODY=$(cat <<EOF
+          ## Automated Remarkable Update
+
+          This PR was automatically created by the [Update Remarkable](.github/workflows/update-remarkable.yml) workflow.
+
+          ### Version Information
+          - **Previous version:** $CURRENT
+          - **New version:** $LATEST
+
+          ### Changes
+          - Updated \`libs/remarkable.min.js\` to the latest version from the [npm registry](https://www.npmjs.com/package/remarkable/v/$LATEST) (verified against the published integrity hash)
+
+          ### Verification
+          Please verify that the extension still works correctly with this Remarkable version before merging.
+
+          ### Related Links
+          - [Remarkable Releases](https://github.com/jonschlinkert/remarkable/releases)
+          - [Remarkable Changelog](https://github.com/jonschlinkert/remarkable/blob/master/CHANGELOG.md)
+          EOF
+          )
+
+          # Create PR using GitHub REST API
+          PR_RESPONSE=$(curl -s -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls" \
+            -d "{
+              \"title\": \"chore: Update Remarkable to v$LATEST\",
+              \"head\": \"$BRANCH_NAME\",
+              \"base\": \"main\",
+              \"body\": $(echo "$PR_BODY" | jq -Rs .)
+            }")
+
+          # Extract PR number and URL from response
+          PR_NUMBER=$(echo "$PR_RESPONSE" | jq -r '.number // empty')
+          PR_URL=$(echo "$PR_RESPONSE" | jq -r '.html_url // empty')
+
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            echo "Error creating PR. Response: $PR_RESPONSE"
+            exit 1
+          fi
+
+          echo "pull-request-number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "pull-request-url=$PR_URL" >> $GITHUB_OUTPUT
+
+          echo "✓ Pull request created: $PR_URL"
+
+          # Try to add labels if they exist (using API)
+          for label in "dependencies" "automated"; do
+            # Check if label exists
+            if curl -s -H "Authorization: token $GITHUB_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/labels/$label" | jq -e '.name' > /dev/null 2>&1; then
+              # Add label to PR
+              curl -s -X POST \
+                -H "Accept: application/vnd.github.v3+json" \
+                -H "Authorization: token $GITHUB_TOKEN" \
+                "https://api.github.com/repos/${{ github.repository }}/issues/$PR_NUMBER/labels" \
+                -d "{\"labels\":[\"$label\"]}" > /dev/null || true
+            fi
+          done
+
+      - name: PR result
+        if: steps.compare.outputs.is_newer == 'true' && steps.check-pr.outputs.pr_exists == 'false'
+        run: |
+          echo "PR number: ${{ steps.create-pr.outputs.pull-request-number }}"
+          echo "PR url:    ${{ steps.create-pr.outputs.pull-request-url }}"
+
+
