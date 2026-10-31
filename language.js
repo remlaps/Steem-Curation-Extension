@@ -811,7 +811,20 @@ const getReblogLabelsInLang = (user_lang) => {
         confirmButton: "Post anyway",
         communityWarning: "The first tag is a community tag ({tag}). This post will be published in that community.",
         emptyCommentWarning: "You have not written your own comment.",
-        shortDescriptionWarning: "Your comment is shorter than 100 words."
+        shortDescriptionWarning: "Your comment is shorter than 100 words.",
+        writeTab: "Write",
+        previewTab: "Preview",
+        toolbarBold: "Bold",
+        toolbarItalic: "Italic",
+        toolbarStrikethrough: "Strikethrough",
+        toolbarHeading: "Heading",
+        toolbarQuote: "Quote",
+        toolbarCode: "Inline code",
+        toolbarCodeBlock: "Code block",
+        toolbarBulletList: "Bulleted list",
+        toolbarNumberedList: "Numbered list",
+        toolbarLink: "Link",
+        toolbarImage: "Image"
     };
 
     switch (user_lang) {
@@ -847,6 +860,19 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.communityWarning = "Le premier tag est un tag de communauté ({tag}). Cette publication sera publiée dans cette communauté.";
             labels.emptyCommentWarning = "Vous n'avez pas écrit votre propre commentaire.";
             labels.shortDescriptionWarning = "Votre commentaire compte moins de 100 mots.";
+            labels.writeTab = "Écrire";
+            labels.previewTab = "Aperçu";
+            labels.toolbarBold = "Gras";
+            labels.toolbarItalic = "Italique";
+            labels.toolbarStrikethrough = "Barré";
+            labels.toolbarHeading = "Titre";
+            labels.toolbarQuote = "Citation";
+            labels.toolbarCode = "Code en ligne";
+            labels.toolbarCodeBlock = "Bloc de code";
+            labels.toolbarBulletList = "Liste à puces";
+            labels.toolbarNumberedList = "Liste numérotée";
+            labels.toolbarLink = "Lien";
+            labels.toolbarImage = "Image";
             break;
         case 'it':
             labels.buttonTitle = "Ripubblica con il tuo commento";
@@ -880,6 +906,19 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.communityWarning = "Il primo tag è un tag di comunità ({tag}). Questo post verrà pubblicato in quella comunità.";
             labels.emptyCommentWarning = "Non hai scritto un tuo commento.";
             labels.shortDescriptionWarning = "Il tuo commento contiene meno di 100 parole.";
+            labels.writeTab = "Scrivi";
+            labels.previewTab = "Anteprima";
+            labels.toolbarBold = "Grassetto";
+            labels.toolbarItalic = "Corsivo";
+            labels.toolbarStrikethrough = "Barrato";
+            labels.toolbarHeading = "Titolo";
+            labels.toolbarQuote = "Citazione";
+            labels.toolbarCode = "Codice inline";
+            labels.toolbarCodeBlock = "Blocco di codice";
+            labels.toolbarBulletList = "Elenco puntato";
+            labels.toolbarNumberedList = "Elenco numerato";
+            labels.toolbarLink = "Link";
+            labels.toolbarImage = "Immagine";
             break;
         case 'ja':
             labels.buttonTitle = "自分のコメントを付けてリブログ";
@@ -913,6 +952,19 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.communityWarning = "最初のタグはコミュニティタグ（{tag}）です。この投稿はそのコミュニティに公開されます。";
             labels.emptyCommentWarning = "自分のコメントを書いていません。";
             labels.shortDescriptionWarning = "コメントが100語未満です。";
+            labels.writeTab = "作成";
+            labels.previewTab = "プレビュー";
+            labels.toolbarBold = "太字";
+            labels.toolbarItalic = "斜体";
+            labels.toolbarStrikethrough = "取り消し線";
+            labels.toolbarHeading = "見出し";
+            labels.toolbarQuote = "引用";
+            labels.toolbarCode = "インラインコード";
+            labels.toolbarCodeBlock = "コードブロック";
+            labels.toolbarBulletList = "箇条書き";
+            labels.toolbarNumberedList = "番号付きリスト";
+            labels.toolbarLink = "リンク";
+            labels.toolbarImage = "画像";
             break;
         case 'ko':
             labels.buttonTitle = "내 댓글과 함께 리블로그";
@@ -946,6 +998,19 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.communityWarning = "첫 번째 태그가 커뮤니티 태그({tag})입니다. 이 게시물은 해당 커뮤니티에 게시됩니다.";
             labels.emptyCommentWarning = "자신의 댓글을 작성하지 않았습니다.";
             labels.shortDescriptionWarning = "댓글이 100단어 미만입니다.";
+            labels.writeTab = "작성";
+            labels.previewTab = "미리보기";
+            labels.toolbarBold = "굵게";
+            labels.toolbarItalic = "기울임꼴";
+            labels.toolbarStrikethrough = "취소선";
+            labels.toolbarHeading = "제목";
+            labels.toolbarQuote = "인용";
+            labels.toolbarCode = "인라인 코드";
+            labels.toolbarCodeBlock = "코드 블록";
+            labels.toolbarBulletList = "글머리 기호 목록";
+            labels.toolbarNumberedList = "번호 매기기 목록";
+            labels.toolbarLink = "링크";
+            labels.toolbarImage = "이미지";
             break;
         case 'pl':
             labels.buttonTitle = "Rebloguj z własnym komentarzem";
@@ -979,6 +1044,19 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.communityWarning = "Pierwszy tag to tag społeczności ({tag}). Ten post zostanie opublikowany w tej społeczności.";
             labels.emptyCommentWarning = "Nie napisałeś własnego komentarza.";
             labels.shortDescriptionWarning = "Twój komentarz ma mniej niż 100 słów.";
+            labels.writeTab = "Pisz";
+            labels.previewTab = "Podgląd";
+            labels.toolbarBold = "Pogrubienie";
+            labels.toolbarItalic = "Kursywa";
+            labels.toolbarStrikethrough = "Przekreślenie";
+            labels.toolbarHeading = "Nagłówek";
+            labels.toolbarQuote = "Cytat";
+            labels.toolbarCode = "Kod w linii";
+            labels.toolbarCodeBlock = "Blok kodu";
+            labels.toolbarBulletList = "Lista punktowana";
+            labels.toolbarNumberedList = "Lista numerowana";
+            labels.toolbarLink = "Link";
+            labels.toolbarImage = "Obraz";
             break;
         case 'ru':
             labels.buttonTitle = "Реблог с вашим комментарием";
@@ -1012,6 +1090,19 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.communityWarning = "Первый тег — тег сообщества ({tag}). Пост будет опубликован в этом сообществе.";
             labels.emptyCommentWarning = "Вы не написали свой комментарий.";
             labels.shortDescriptionWarning = "Ваш комментарий содержит менее 100 слов.";
+            labels.writeTab = "Написать";
+            labels.previewTab = "Просмотр";
+            labels.toolbarBold = "Полужирный";
+            labels.toolbarItalic = "Курсив";
+            labels.toolbarStrikethrough = "Зачёркнутый";
+            labels.toolbarHeading = "Заголовок";
+            labels.toolbarQuote = "Цитата";
+            labels.toolbarCode = "Встроенный код";
+            labels.toolbarCodeBlock = "Блок кода";
+            labels.toolbarBulletList = "Маркированный список";
+            labels.toolbarNumberedList = "Нумерованный список";
+            labels.toolbarLink = "Ссылка";
+            labels.toolbarImage = "Изображение";
             break;
         case 'es':
             labels.buttonTitle = "Reblog con tu propio comentario";
@@ -1045,6 +1136,19 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.communityWarning = "La primera etiqueta es una etiqueta de comunidad ({tag}). Esta publicación se publicará en esa comunidad.";
             labels.emptyCommentWarning = "No has escrito tu propio comentario.";
             labels.shortDescriptionWarning = "Tu comentario tiene menos de 100 palabras.";
+            labels.writeTab = "Escribir";
+            labels.previewTab = "Vista previa";
+            labels.toolbarBold = "Negrita";
+            labels.toolbarItalic = "Cursiva";
+            labels.toolbarStrikethrough = "Tachado";
+            labels.toolbarHeading = "Encabezado";
+            labels.toolbarQuote = "Cita";
+            labels.toolbarCode = "Código en línea";
+            labels.toolbarCodeBlock = "Bloque de código";
+            labels.toolbarBulletList = "Lista con viñetas";
+            labels.toolbarNumberedList = "Lista numerada";
+            labels.toolbarLink = "Enlace";
+            labels.toolbarImage = "Imagen";
             break;
         case 'uk':
             labels.buttonTitle = "Реблог з вашим коментарем";
@@ -1078,6 +1182,19 @@ const getReblogLabelsInLang = (user_lang) => {
             labels.communityWarning = "Перший тег — тег спільноти ({tag}). Пост буде опубліковано в цій спільноті.";
             labels.emptyCommentWarning = "Ви не написали власний коментар.";
             labels.shortDescriptionWarning = "Ваш коментар містить менше 100 слів.";
+            labels.writeTab = "Написати";
+            labels.previewTab = "Перегляд";
+            labels.toolbarBold = "Напівжирний";
+            labels.toolbarItalic = "Курсив";
+            labels.toolbarStrikethrough = "Закреслений";
+            labels.toolbarHeading = "Заголовок";
+            labels.toolbarQuote = "Цитата";
+            labels.toolbarCode = "Вбудований код";
+            labels.toolbarCodeBlock = "Блок коду";
+            labels.toolbarBulletList = "Маркований список";
+            labels.toolbarNumberedList = "Нумерований список";
+            labels.toolbarLink = "Посилання";
+            labels.toolbarImage = "Зображення";
             break;
     }
 

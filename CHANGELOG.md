@@ -5,6 +5,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- The reblog dialog's comment editor now supports full Markdown: a formatting toolbar (bold, italic, strikethrough, heading, quote, inline code, code block, bulleted and numbered lists, link, image) and a Write/Preview toggle with a rendered preview.
+- The reblog dialog's live previews (the user's own comment and the full reblogged post) are now rendered with Remarkable — the same Markdown engine Condenser's editor uses — instead of the previous hand-rolled renderer.
+
+### Changed
+- The excerpt from the original post is now derived with Remarkable (rendered to HTML, then reduced to plain text) instead of a regex-based Markdown stripper, so headings, lists, tables and code are converted to text more faithfully.
+- Vendored Remarkable 2.0.1 as `libs/remarkable.min.js` and added `.github/workflows/update-remarkable.yml`, which keeps the vendored copy current (mirroring the existing Chart.js workflow).
+
+### Security
+- Markdown rendered in the reblog dialog is sanitized before it is inserted into the page: raw HTML in the source is escaped (Remarkable runs with `html: false`), only an allowlist of tags is kept, and link and image URLs are restricted to plain `http(s)` (or same-site relative) URLs.
 
 ## [0.9.1-beta] - 2026-10-27
 ### Added

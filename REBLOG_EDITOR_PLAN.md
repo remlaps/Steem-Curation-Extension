@@ -1,10 +1,13 @@
 # Plan: Reuse Condenser's markdown engine in the reblog dialog (Option A)
 
-> **Status — branch `feature/reblog-markdown-editor`:** already in place are the
-> branch itself, the `.github/workflows/update-remarkable.yml` workflow, and the
-> vendored `libs/remarkable.min.js` (Remarkable **2.0.1**, MIT, integrity-verified
-> against the npm registry). Still to do: the `manifest.json` wiring and the
-> `reblogControl.js` / CSS / labels work in the steps below.
+> **Status — branch `feature/reblog-markdown-editor`:** implemented. In place are
+> the branch, the `.github/workflows/update-remarkable.yml` workflow, the vendored
+> `libs/remarkable.min.js` (Remarkable **2.0.1**, MIT, integrity-verified against
+> the npm registry), the `manifest.json` wiring, the `reblogControl.js` /
+> `reblogControl.css` refactor (Markdown toolbar, Write/Preview toggle,
+> Remarkable-based excerpt and previews with sanitization), the editor labels for
+> all 9 locales, and the `CHANGELOG.md` entry. Remaining: manual browser testing
+> and release preparation.
 
 ## 1. Goal & scope
 

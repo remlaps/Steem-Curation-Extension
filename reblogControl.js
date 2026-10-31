@@ -48,6 +48,36 @@ let sceReblogToastElement = null;
 let sceReblogToastTimer = null;
 
 /* ------------------------------------------------------------------------- */
+/* Markdown engine (Remarkable, vendored in libs/remarkable.min.js)          */
+/* ------------------------------------------------------------------------- */
+
+// Remarkable is the Markdown engine Condenser's own editor uses. It is declared
+// before this script in manifest.json and exposes `window.remarkable`
+// (`Remarkable` plus the `linkify` plugin) in the isolated world. Options:
+//   html: false  - raw HTML in the source is escaped, never executed, so an
+//                  untrusted post body or comment cannot inject markup.
+//   breaks: true - single newlines become <br> (matches Condenser).
+// The linkify plugin (bundled in the same UMD build) turns bare http(s) URLs
+// into anchors, matching the previous hand-rolled preview behavior.
+const sceReblogRemarkable = (typeof window !== 'undefined' && window.remarkable)
+    ? window.remarkable
+    : null;
+const sceReblogMarkdown = (sceReblogRemarkable && sceReblogRemarkable.Remarkable)
+    ? new sceReblogRemarkable.Remarkable({ html: false, breaks: true })
+    : null;
+if (sceReblogMarkdown && typeof sceReblogRemarkable.linkify === 'function') {
+    sceReblogMarkdown.use(sceReblogRemarkable.linkify);
+}
+
+// Tags Remarkable may emit (with the options above) that the preview is allowed
+// to keep. Everything else is unwrapped and every attribute is dropped.
+const SCE_REBLOG_ALLOWED_TAGS = new Set([
+    'P', 'A', 'STRONG', 'EM', 'DEL', 'S', 'BLOCKQUOTE', 'CODE', 'PRE',
+    'UL', 'OL', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HR', 'BR',
+    'IMG', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD'
+]);
+
+/* ------------------------------------------------------------------------- */
 /* Main-world bridge plumbing                                                */
 /* ------------------------------------------------------------------------- */
 
@@ -209,10 +239,119 @@ function sceReblogStripMarkdown(text) {
 }
 
 /**
+ * True when `url` is safe to use in the preview: a plain http(s) URL, or (when
+ * `allowRelative`) a same-site relative link or fragment. Everything else -
+ * notably `javascript:`/`data:` schemes - is rejected.
+ */
+function sceReblogIsSafeUrl(url, allowRelative) {
+    const value = String(url == null ? '' : url).trim();
+    if (!value) return false;
+    if (SCE_REBLOG_SAFE_IMAGE_URL_REGEX.test(value)) return true;
+    if (allowRelative && (value.startsWith('#') || /^\/(?!\/)/.test(value))) return true;
+    return false;
+}
+
+/**
+ * Removes any tag that is not on the allowlist, keeping its text, until only
+ * allowed elements remain. (Remarkable runs with `html: false`, so raw HTML is
+ * already escaped; this is defence in depth.)
+ */
+function sceReblogUnwrapDisallowedTags(root) {
+    let changed = true;
+    while (changed) {
+        changed = false;
+        Array.from(root.querySelectorAll('*')).forEach((element) => {
+            if (SCE_REBLOG_ALLOWED_TAGS.has(element.tagName)) return;
+            while (element.firstChild) {
+                element.parentNode.insertBefore(element.firstChild, element);
+            }
+            element.parentNode.removeChild(element);
+            changed = true;
+        });
+    }
+}
+
+/**
+ * Drops every attribute except a validated `href` on anchors and `src`/`alt` on
+ * images, and hardens the surviving links.
+ */
+function sceReblogStripAttributes(root) {
+    Array.from(root.querySelectorAll('*')).forEach((element) => {
+        const isAnchor = element.tagName === 'A';
+        const isImage = element.tagName === 'IMG';
+
+        Array.from(element.attributes).forEach((attribute) => {
+            const name = attribute.name.toLowerCase();
+            let keep = false;
+            if (isAnchor && name === 'href') {
+                keep = sceReblogIsSafeUrl(attribute.value, true);
+            } else if (isImage && name === 'src') {
+                keep = sceReblogIsSafeUrl(attribute.value, false)
+                    && attribute.value.length <= SCE_REBLOG_MAX_IMAGE_URL_LENGTH;
+            } else if (isImage && name === 'alt') {
+                keep = true;
+            }
+            if (!keep) element.removeAttribute(attribute.name);
+        });
+
+        if (isAnchor && element.hasAttribute('href')) {
+            element.setAttribute('rel', 'noopener noreferrer');
+            if (!/^\//.test(element.getAttribute('href'))) {
+                element.setAttribute('target', '_blank');
+            }
+        }
+    });
+}
+
+/**
+ * Parses Remarkable's HTML output into a detached container, stripping anything
+ * not on the allowlist. A `<template>` is used so nothing runs or loads while
+ * the markup is being parsed.
+ */
+function sceReblogSanitizeHtml(html) {
+    const template = document.createElement('template');
+    template.innerHTML = String(html == null ? '' : html);
+    const container = document.createElement('div');
+    container.appendChild(template.content.cloneNode(true));
+    sceReblogUnwrapDisallowedTags(container);
+    sceReblogStripAttributes(container);
+    return container;
+}
+
+/**
+ * Renders Markdown to plain text (used for the excerpt). Falls back to the
+ * legacy regex stripper when Remarkable failed to load.
+ */
+function sceReblogMarkdownToText(markdown) {
+    if (!markdown) return '';
+    if (!sceReblogMarkdown) {
+        return sceReblogStripMarkdown(markdown);
+    }
+    const container = sceReblogSanitizeHtml(sceReblogMarkdown.render(String(markdown)));
+    return (container.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Renders Markdown into `parent` as sanitized DOM. Falls back to the legacy
+ * inline renderer when Remarkable failed to load.
+ */
+function sceReblogRenderMarkdownInto(parent, text) {
+    const source = String(text == null ? '' : text);
+    if (!sceReblogMarkdown) {
+        sceReblogRenderInlineMarkdown(parent, source);
+        return;
+    }
+    const container = sceReblogSanitizeHtml(sceReblogMarkdown.render(source));
+    while (container.firstChild) {
+        parent.appendChild(container.firstChild);
+    }
+}
+
+/**
  * Builds a plain-text excerpt from the beginning of the original post.
  */
 function sceReblogBuildExcerpt(body, maxLength = SCE_REBLOG_EXCERPT_LENGTH) {
-    const plain = sceReblogStripMarkdown(body);
+    const plain = sceReblogMarkdownToText(body);
     if (plain.length <= maxLength) return plain;
 
     let cut = plain.slice(0, maxLength);
@@ -530,6 +669,99 @@ function sceReblogBuildOperations({ username, info, content, title, body, tags, 
 /* ------------------------------------------------------------------------- */
 
 /**
+ * Inserts Markdown at the current selection of `textarea`: wraps the selection
+ * when the syntax has a prefix and suffix, or prefixes each selected line
+ * otherwise. Refreshes the preview via an `input` event.
+ */
+function sceReblogApplyMarkdown(textarea, kind) {
+    if (!textarea) return;
+
+    const value = textarea.value;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selected = value.slice(start, end);
+
+    const wrap = (prefix, suffix, placeholder) => {
+        const inner = selected || placeholder;
+        return { text: prefix + inner + suffix, selStart: start + prefix.length, selEnd: start + prefix.length + inner.length };
+    };
+    const prefixLines = (prefix, placeholder) => {
+        const inner = selected || placeholder;
+        const text = inner.split('\n').map((line) => prefix + line).join('\n');
+        return { text: text, selStart: start, selEnd: start + text.length };
+    };
+
+    let change;
+    switch (kind) {
+        case 'bold': change = wrap('**', '**', 'bold text'); break;
+        case 'italic': change = wrap('*', '*', 'italic text'); break;
+        case 'strikethrough': change = wrap('~~', '~~', 'strikethrough'); break;
+        case 'code': change = wrap('`', '`', 'code'); break;
+        case 'heading': change = prefixLines('## ', 'Heading'); break;
+        case 'quote': change = prefixLines('> ', 'Quote'); break;
+        case 'bulletList': change = prefixLines('- ', 'List item'); break;
+        case 'numberedList': change = prefixLines('1. ', 'List item'); break;
+        case 'link': change = wrap('[', '](https://)', 'link text'); break;
+        case 'image': change = wrap('![', '](https://)', 'alt text'); break;
+        case 'codeBlock': {
+            const inner = selected || 'code';
+            const text = '```\n' + inner + '\n```';
+            change = { text: text, selStart: start + 4, selEnd: start + 4 + inner.length };
+            break;
+        }
+        default: return;
+    }
+
+    if (typeof textarea.setRangeText === 'function') {
+        textarea.setRangeText(change.text, start, end, 'end');
+    } else {
+        textarea.value = value.slice(0, start) + change.text + value.slice(end);
+    }
+
+    textarea.focus();
+    textarea.setSelectionRange(change.selStart, change.selEnd);
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+/**
+ * Builds the Markdown toolbar for the comment editor. Each button inserts the
+ * matching snippet into the textarea (see sceReblogApplyMarkdown).
+ */
+function sceReblogBuildToolbar(labels) {
+    const toolbar = document.createElement('div');
+    toolbar.className = 'sce-reblog-toolbar';
+
+    const actions = [
+        ['bold', 'B', labels.toolbarBold],
+        ['italic', 'I', labels.toolbarItalic],
+        ['strikethrough', 'S', labels.toolbarStrikethrough],
+        ['heading', 'H', labels.toolbarHeading],
+        ['quote', '\u201C', labels.toolbarQuote],
+        ['code', '</>', labels.toolbarCode],
+        ['codeBlock', '{ }', labels.toolbarCodeBlock],
+        ['bulletList', '\u2022', labels.toolbarBulletList],
+        ['numberedList', '1.', labels.toolbarNumberedList],
+        ['link', '\uD83D\uDD17', labels.toolbarLink],
+        ['image', '\uD83D\uDDBC', labels.toolbarImage]
+    ];
+
+    actions.forEach(([kind, symbol, title]) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'sce-reblog-toolbar-button';
+        button.dataset.kind = kind;
+        button.textContent = symbol;
+        if (title) {
+            button.title = title;
+            button.setAttribute('aria-label', title);
+        }
+        toolbar.appendChild(button);
+    });
+
+    return toolbar;
+}
+
+/**
  * Builds the reblog dialog DOM and returns references to its interactive parts.
  */
 function sceReblogBuildModal(labels) {
@@ -571,6 +803,27 @@ function sceReblogBuildModal(labels) {
     commentInput.rows = 5;
     commentInput.maxLength = SCE_REBLOG_MAX_COMMENT_LENGTH;
     commentInput.placeholder = labels.commentPlaceholder;
+
+    const toolbar = sceReblogBuildToolbar(labels);
+
+    const editorTabs = document.createElement('div');
+    editorTabs.className = 'sce-reblog-editor-tabs';
+    const writeTab = document.createElement('button');
+    writeTab.type = 'button';
+    writeTab.className = 'sce-reblog-editor-tab sce-reblog-editor-tab-active';
+    writeTab.dataset.mode = 'write';
+    writeTab.textContent = labels.writeTab;
+    const previewTab = document.createElement('button');
+    previewTab.type = 'button';
+    previewTab.className = 'sce-reblog-editor-tab';
+    previewTab.dataset.mode = 'preview';
+    previewTab.textContent = labels.previewTab;
+    editorTabs.appendChild(writeTab);
+    editorTabs.appendChild(previewTab);
+
+    const commentPreview = document.createElement('div');
+    commentPreview.className = 'sce-reblog-comment-preview sce-reblog-markdown';
+    commentPreview.style.display = 'none';
 
     const tagsLabel = document.createElement('label');
     tagsLabel.className = 'sce-reblog-label';
@@ -623,7 +876,10 @@ function sceReblogBuildModal(labels) {
     body.appendChild(titleLabel);
     body.appendChild(titleInput);
     body.appendChild(commentLabel);
+    body.appendChild(editorTabs);
+    body.appendChild(toolbar);
     body.appendChild(commentInput);
+    body.appendChild(commentPreview);
     body.appendChild(tagsLabel);
     body.appendChild(tagsInput);
     body.appendChild(includeImageLabel);
@@ -654,7 +910,7 @@ function sceReblogBuildModal(labels) {
     modal.appendChild(footer);
     backdrop.appendChild(modal);
 
-    return { backdrop, close, cancel, submit, titleInput, commentInput, tagsInput, includeImage, preview, postPreview, beneficiaryLabel, beneficiarySelect, beneficiary, status };
+    return { backdrop, close, cancel, submit, titleInput, commentInput, tagsInput, includeImage, preview, postPreview, beneficiaryLabel, beneficiarySelect, beneficiary, status, toolbar, editorTabs, commentPreview };
 }
 
 /**
@@ -780,9 +1036,9 @@ function sceReblogRenderPreview(container, { comment, excerpt, author, permlink,
     }
 
     if (comment && comment.trim()) {
-        const commentEl = document.createElement('p');
-        commentEl.className = 'sce-reblog-preview-comment';
-        sceReblogRenderInlineMarkdown(commentEl, comment.trim());
+        const commentEl = document.createElement('div');
+        commentEl.className = 'sce-reblog-preview-comment sce-reblog-markdown';
+        sceReblogRenderMarkdownInto(commentEl, comment.trim());
         container.appendChild(commentEl);
     }
 
@@ -810,11 +1066,9 @@ function sceReblogRenderPreview(container, { comment, excerpt, author, permlink,
         trailingNotes.push(labels.beneficiaryNote.replace('{percent}', beneficiaryPercent).replace('{author}', author));
     }
     if (trailingNotes.length) {
-        const attributionEl = document.createElement('p');
-        attributionEl.className = 'sce-reblog-preview-attribution';
-        const em = document.createElement('em');
-        sceReblogRenderInlineMarkdown(em, trailingNotes.join(' '));
-        attributionEl.appendChild(em);
+        const attributionEl = document.createElement('div');
+        attributionEl.className = 'sce-reblog-preview-attribution sce-reblog-markdown';
+        sceReblogRenderMarkdownInto(attributionEl, `_${trailingNotes.join(' ')}_`);
         container.appendChild(attributionEl);
     }
 }
@@ -1074,6 +1328,35 @@ async function openReblogDialog(info) {
     updatePostPreview();
     ui.commentInput.addEventListener('input', updatePostPreview);
     ui.includeImage.addEventListener('change', updatePostPreview);
+
+    // Markdown toolbar: insert the requested snippet into the comment box.
+    ui.toolbar.addEventListener('click', (event) => {
+        const button = event.target.closest('.sce-reblog-toolbar-button');
+        if (button) {
+            sceReblogApplyMarkdown(ui.commentInput, button.dataset.kind);
+        }
+    });
+
+    // Write / Preview toggle for the comment editor. The textarea stays the
+    // source of truth; the preview is only a rendered view of its value.
+    const renderCommentPreview = () => {
+        ui.commentPreview.textContent = '';
+        sceReblogRenderMarkdownInto(ui.commentPreview, ui.commentInput.value.trim());
+    };
+    const setEditorMode = (mode) => {
+        const isPreview = mode === 'preview';
+        if (isPreview) renderCommentPreview();
+        ui.commentInput.style.display = isPreview ? 'none' : '';
+        ui.toolbar.style.display = isPreview ? 'none' : '';
+        ui.commentPreview.style.display = isPreview ? '' : 'none';
+        ui.editorTabs.querySelectorAll('.sce-reblog-editor-tab').forEach((tab) => {
+            tab.classList.toggle('sce-reblog-editor-tab-active', tab.dataset.mode === mode);
+        });
+    };
+    ui.editorTabs.addEventListener('click', (event) => {
+        const tab = event.target.closest('.sce-reblog-editor-tab');
+        if (tab) setEditorMode(tab.dataset.mode);
+    });
     ui.beneficiarySelect.addEventListener('change', () => {
         updateBeneficiaryNote();
         updatePostPreview();
@@ -1111,6 +1394,7 @@ async function openReblogDialog(info) {
             const proceed = await sceReblogConfirm(warnings, labels);
             if (!proceed) {
                 // Return focus to the user's own text so they can revise it.
+                setEditorMode('write');
                 ui.commentInput.focus();
                 return;
             }
