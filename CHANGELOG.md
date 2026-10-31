@@ -14,8 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The excerpt from the original post is now derived with Remarkable (rendered to HTML, then reduced to plain text) instead of a regex-based Markdown stripper, so headings, lists, tables and code are converted to text more faithfully.
 - Vendored Remarkable 2.0.1 as `libs/remarkable.min.js` and added `.github/workflows/update-remarkable.yml`, which keeps the vendored copy current (mirroring the existing Chart.js workflow).
 
+### Fixed
+- Raw HTML in a post or comment (for example `<div class="pull-right">…</div>`) now renders in the preview instead of appearing as escaped text, and the quoted excerpt is derived as clean plain text again (raw HTML is no longer carried into the excerpt or into the broadcast body).
+
 ### Security
-- Markdown rendered in the reblog dialog is sanitized before it is inserted into the page: raw HTML in the source is escaped (Remarkable runs with `html: false`), only an allowlist of tags is kept, and link and image URLs are restricted to plain `http(s)` (or same-site relative) URLs.
+- Markdown rendered in the reblog dialog is sanitized before it is inserted into the page: raw HTML is parsed (Remarkable runs with `html: true`, matching Condenser) and then filtered — only an allowlist of tags and class names is kept, every other attribute is dropped, and link and image URLs are restricted to plain `http(s)` (or same-site relative) URLs.
 
 ## [0.9.1-beta] - 2026-10-27
 ### Added

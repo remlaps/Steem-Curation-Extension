@@ -294,6 +294,33 @@
     text-align: left;
 }
 
+/* Condenser's whitelisted float / alignment classes (e.g. post thumbnails). */
+.sce-reblog-markdown .pull-right {
+    float: right;
+    margin: 0 0 8px 8px;
+}
+
+.sce-reblog-markdown .pull-left {
+    float: left;
+    margin: 0 8px 8px 0;
+}
+
+.sce-reblog-markdown .text-center {
+    text-align: center;
+}
+
+.sce-reblog-markdown .text-right {
+    text-align: right;
+}
+
+.sce-reblog-markdown .text-left {
+    text-align: left;
+}
+
+.sce-reblog-markdown .text-justify {
+    text-align: justify;
+}
+
 .sce-reblog-markdown a {
     color: #1e90ff;
     text-decoration: underline;

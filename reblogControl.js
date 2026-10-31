@@ -54,8 +54,11 @@ let sceReblogToastTimer = null;
 // Remarkable is the Markdown engine Condenser's own editor uses. It is declared
 // before this script in manifest.json and exposes `window.remarkable`
 // (`Remarkable` plus the `linkify` plugin) in the isolated world. Options:
-//   html: false  - raw HTML in the source is escaped, never executed, so an
-//                  untrusted post body or comment cannot inject markup.
+//   html: true   - raw HTML in the source is parsed (so inline markup such as
+//                  <div class="pull-right"> renders, as it does on Condenser).
+//                  This is safe because every rendered string is passed through
+//                  sceReblogSanitizeHtml below, which unwraps disallowed tags
+//                  and strips every attribute it does not explicitly allow.
 //   breaks: true - single newlines become <br> (matches Condenser).
 // The linkify plugin (bundled in the same UMD build) turns bare http(s) URLs
 // into anchors, matching the previous hand-rolled preview behavior.
@@ -63,18 +66,26 @@ const sceReblogRemarkable = (typeof window !== 'undefined' && window.remarkable)
     ? window.remarkable
     : null;
 const sceReblogMarkdown = (sceReblogRemarkable && sceReblogRemarkable.Remarkable)
-    ? new sceReblogRemarkable.Remarkable({ html: false, breaks: true })
+    ? new sceReblogRemarkable.Remarkable({ html: true, breaks: true })
     : null;
 if (sceReblogMarkdown && typeof sceReblogRemarkable.linkify === 'function') {
     sceReblogMarkdown.use(sceReblogRemarkable.linkify);
 }
 
-// Tags Remarkable may emit (with the options above) that the preview is allowed
-// to keep. Everything else is unwrapped and every attribute is dropped.
+// Tags the preview is allowed to keep. Anything else is unwrapped (its text is
+// kept) and every attribute is dropped unless explicitly allowed below.
 const SCE_REBLOG_ALLOWED_TAGS = new Set([
     'P', 'A', 'STRONG', 'EM', 'DEL', 'S', 'BLOCKQUOTE', 'CODE', 'PRE',
     'UL', 'OL', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HR', 'BR',
-    'IMG', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD'
+    'IMG', 'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD',
+    'DIV', 'SPAN', 'FIGURE', 'FIGCAPTION', 'SUP', 'SUB'
+]);
+
+// Class names the preview may keep on allowed elements (the subset Condenser
+// itself whitelists for floats and text alignment). Every other class is dropped.
+const SCE_REBLOG_ALLOWED_CLASSES = new Set([
+    'pull-left', 'pull-right',
+    'text-left', 'text-center', 'text-right', 'text-justify'
 ]);
 
 /* ------------------------------------------------------------------------- */
@@ -253,8 +264,8 @@ function sceReblogIsSafeUrl(url, allowRelative) {
 
 /**
  * Removes any tag that is not on the allowlist, keeping its text, until only
- * allowed elements remain. (Remarkable runs with `html: false`, so raw HTML is
- * already escaped; this is defence in depth.)
+ * allowed elements remain. Remarkable runs with `html: true`, so raw HTML from
+ * the source reaches this step and must be filtered here.
  */
 function sceReblogUnwrapDisallowedTags(root) {
     let changed = true;
@@ -272,8 +283,8 @@ function sceReblogUnwrapDisallowedTags(root) {
 }
 
 /**
- * Drops every attribute except a validated `href` on anchors and `src`/`alt` on
- * images, and hardens the surviving links.
+ * Drops every attribute except a validated `href` on anchors, `src`/`alt` on
+ * images, and whitelisted `class` names, then hardens the surviving links.
  */
 function sceReblogStripAttributes(root) {
     Array.from(root.querySelectorAll('*')).forEach((element) => {
@@ -282,6 +293,17 @@ function sceReblogStripAttributes(root) {
 
         Array.from(element.attributes).forEach((attribute) => {
             const name = attribute.name.toLowerCase();
+            if (name === 'class') {
+                const allowed = String(attribute.value || '')
+                    .split(/\s+/)
+                    .filter((className) => SCE_REBLOG_ALLOWED_CLASSES.has(className));
+                if (allowed.length) {
+                    element.setAttribute('class', allowed.join(' '));
+                } else {
+                    element.removeAttribute('class');
+                }
+                return;
+            }
             let keep = false;
             if (isAnchor && name === 'href') {
                 keep = sceReblogIsSafeUrl(attribute.value, true);
@@ -318,6 +340,37 @@ function sceReblogSanitizeHtml(html) {
     return container;
 }
 
+// Block-level tags treated as word separators when rendered markup is reduced to
+// plain text, so paragraphs, list items and <br> do not run together.
+const SCE_REBLOG_BLOCK_TAGS = new Set([
+    'P', 'DIV', 'BR', 'LI', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
+    'BLOCKQUOTE', 'PRE', 'UL', 'OL', 'TABLE', 'TR', 'FIGURE', 'FIGCAPTION', 'HR'
+]);
+
+/**
+ * Reduces a rendered element to plain text, inserting a space at block
+ * boundaries so block elements stay separated once the text is collapsed to a
+ * single line.
+ */
+function sceReblogElementToText(root) {
+    const parts = [];
+    const walk = (node) => {
+        Array.from(node.childNodes).forEach((child) => {
+            if (child.nodeType === Node.TEXT_NODE) {
+                parts.push(child.nodeValue);
+                return;
+            }
+            if (child.nodeType !== Node.ELEMENT_NODE) return;
+            const isBlock = SCE_REBLOG_BLOCK_TAGS.has(child.tagName);
+            if (isBlock) parts.push(' ');
+            walk(child);
+            if (isBlock) parts.push(' ');
+        });
+    };
+    walk(root);
+    return parts.join('').replace(/\s+/g, ' ').trim();
+}
+
 /**
  * Renders Markdown to plain text (used for the excerpt). Falls back to the
  * legacy regex stripper when Remarkable failed to load.
@@ -328,7 +381,7 @@ function sceReblogMarkdownToText(markdown) {
         return sceReblogStripMarkdown(markdown);
     }
     const container = sceReblogSanitizeHtml(sceReblogMarkdown.render(String(markdown)));
-    return (container.textContent || '').replace(/\s+/g, ' ').trim();
+    return sceReblogElementToText(container);
 }
 
 /**
