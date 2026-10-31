@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "version": "0.9.1",
-  "version_name": "0.9.1-beta",
+  "version": "0.10.0",
+  "version_name": "0.10.0-beta",
   "name": "Steem Curation Extension",
   "description": "Supplemental curation information for Steem/Condenser sites, plus optional reblogs signed via Steem Keychain.",
   "icons": { 

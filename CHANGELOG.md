@@ -5,21 +5,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.10.0-beta] - 2026-10-31
 ### Added
-- The reblog dialog's comment editor now has a Markdown formatting toolbar (bold, italic, strikethrough, heading, quote, inline code, code block, bulleted and numbered lists, link, image).
-- The reblog dialog's live "Post preview" now renders the user's comment as full Markdown with proper heading sizes, inline-code styling and table borders, using Remarkable — the same Markdown engine Condenser's editor uses — instead of the previous hand-rolled renderer.
-- The reblog dialog is now resizable (drag its bottom-right corner) and can be maximized and restored, and the preview pane can be toggled to sit side by side with the editor instead of below it.
+- The reblog dialog's comment editor now supports Markdown with a formatting toolbar (bold, italic, strikethrough, heading, quote, inline code, code block, bulleted and numbered lists, link, image) and a single live "Post preview" rendered with Remarkable — the same Markdown engine Condenser's editor uses — replacing the previous hand-rolled renderer.
+- The reblog dialog is now resizable (drag its bottom-right corner), can be maximized and restored, and its preview pane can be toggled to sit side by side with the editor.
 
 ### Changed
-- The reblog dialog now shows a single "Post preview". The separate comment "Write/Preview" tab and the standalone "Excerpt from the original post" panel were removed as redundant (the excerpt already appears, quoted, inside the post preview).
-- The excerpt from the original post is now derived with Remarkable (rendered to HTML, then reduced to plain text) instead of a regex-based Markdown stripper, so headings, lists, tables and code are converted to text more faithfully.
-- Vendored Remarkable 2.0.1 as `libs/remarkable.min.js` and added `.github/workflows/update-remarkable.yml`, which keeps the vendored copy current (mirroring the existing Chart.js workflow).
-
-### Fixed
-- Raw HTML in a post or comment (for example `<div class="pull-right">…</div>`) now renders in the preview instead of appearing as escaped text, and the quoted excerpt is derived as clean plain text again (raw HTML is no longer carried into the excerpt or into the broadcast body).
+- The excerpt from the original post is now derived with Remarkable (rendered to HTML, then reduced to plain text) instead of a regex-based Markdown stripper, so raw HTML in the source no longer leaks into the excerpt or the broadcast body.
+- Vendored Remarkable 2.0.1 (`libs/remarkable.min.js`) and added `.github/workflows/update-remarkable.yml` to keep it current (mirroring the Chart.js workflow).
 
 ### Security
-- Markdown rendered in the reblog dialog is sanitized before it is inserted into the page: raw HTML is parsed (Remarkable runs with `html: true`, matching Condenser) and then filtered — only an allowlist of tags and class names is kept, every other attribute is dropped, and link and image URLs are restricted to plain `http(s)` (or same-site relative) URLs.
+- Markdown rendered in the reblog dialog is sanitized before it is inserted into the page: raw HTML is parsed (Remarkable runs with `html: true`, matching Condenser) then filtered — only an allowlist of tags and class names is kept, every other attribute is dropped, and link and image URLs are restricted to plain `http(s)` (or same-site relative) URLs.
 
 ## [0.9.1-beta] - 2026-10-27
 ### Added
