@@ -6,7 +6,9 @@ function createResteemToggleControl() {
     removeCondenserResteemToggle();
     const targetContainer = document.querySelector('#content > div > div:nth-child(2) > div > div > header > nav > div.small-6.medium-8.large-7.columns.Header__buttons');
     if (!targetContainer) {
-        console.warn("SCE: Resteem control target container not found!");
+        // Expected on any page that isn't a feed (post pages, profiles, wallet, ...),
+        // so this is informational, not a warning.
+        console.debug("SCE: Resteem control target container not found (not on a feed page).");
         return;
     }
 
@@ -110,7 +112,7 @@ function setControlBoxVisibility(visibility) {
     if (controlBox) {
         controlBox.style.display = visibility;
     } else {
-        console.warn("SCE: Control row element with class 'sce-control' not found!");
+        console.debug("SCE: Control row element with class 'sce-control' not found (nothing to toggle).");
     }
 }
 setControlBoxVisibility = withSilentMutations(setControlBoxVisibility);
